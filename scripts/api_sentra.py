@@ -38,6 +38,19 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
+#  Endpoint de debug pour vérifier OPENAI_API_KEY
+# ------------------------------------
+@app.get("/check_env")
+async def check_env():
+    """
+    Route de debug : affiche si OPENAI_API_KEY est défini et son préfixe.
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return {"env_OK": False, "detail": "OPENAI_API_KEY n'est pas défini."}
+    return {"env_OK": True, "OPENAI_API_KEY_prefix": api_key[:6] + "..."}
+
+# ------------------------------------
 #  Modèles de requête / réponse
 # ------------------------------------
 class RepriseRequest(BaseModel):
@@ -71,7 +84,7 @@ async def reprise_projet(req: RepriseRequest):
     if not projet:
         raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
 
-    # 1) Déterminer la racine du projet (SENTRA_CORE_MEM_merged)
+    # 1) Déterminer la racine du projet
     base_path = Path(__file__).parent.parent
 
     # 2) Chemins vers les scripts Python
@@ -79,7 +92,7 @@ async def reprise_projet(req: RepriseRequest):
     project_resume_script      = base_path / "scripts" / "project_resume.py"
     project_resumer_gpt_script = base_path / "scripts" / "project_resumer_gpt.py"
 
-    # Vérification rapide : les fichiers existent-ils ?
+    # Vérifier que tous les scripts existent
     for script_path in (
         discord_fetcher_script,
         project_resume_script,
@@ -135,7 +148,7 @@ async def reprise_projet(req: RepriseRequest):
     except Exception as e:
         return RepriseResponse(
             status="error",
-            detail=f"Exception interne lors de l’appel à project_resumer_gpt.py : {repr(e)}"
+            detail=f"Exception lors de l’appel à project_resumer_gpt.py : {repr(e)}"
         )
 
     # 6) Récupérer le dernier fichier resume_gpt_*.md
@@ -197,7 +210,7 @@ async def write_note(req: WriteNoteRequest):
     }
 
     try:
-        # 3) Ajouter au fichier JSON (append)
+        # 3) Écrire dans le fichier JSON (mode append)
         with memory_file.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception as e:
@@ -275,9 +288,9 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
-    base_path         = Path(__file__).parent.parent
-    project_slug      = projet.lower().replace(" ", "_")
-    dossier_fichiers  = base_path / "projects" / project_slug / "fichiers"
+    base_path        = Path(__file__).parent.parent
+    project_slug     = projet.lower().replace(" ", "_")
+    dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
 
     try:
         dossier_fichiers.mkdir(parents=True, exist_ok=True)
