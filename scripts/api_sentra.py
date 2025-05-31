@@ -4,7 +4,7 @@ import json
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -159,12 +159,12 @@ async def reprise_projet(req: RepriseRequest):
     )
 
 # ------------------------------------
-#  POST /write_note  (enregistrement direct dans memory/sentra_memory.json)
+#  POST /write_note  (enregistrement direct + journal mimétique)
 # ------------------------------------
 @app.post("/write_note", response_model=WriteResponse)
 async def write_note(req: WriteNoteRequest):
     """
-    Enregistre une note dans memory/sentra_memory.json sans passer par memory_agent.py.
+    Enregistre une note dans memory/sentra_memory.json et dans Z_MEMORIAL.md.
     """
     text = req.text.strip()
     if not text:
@@ -177,7 +177,7 @@ async def write_note(req: WriteNoteRequest):
     memory_dir.mkdir(parents=True, exist_ok=True)     # crée le dossier si nécessaire
     memory_file  = memory_dir / "sentra_memory.json"  # …/memory/sentra_memory.json
 
-    # 2) Préparer la nouvelle entrée (une ligne JSON)
+    # 2) Préparer l'entrée JSON pour sentra_memory.json
     entry = {
         "type": "note",
         "text": text,
@@ -185,13 +185,71 @@ async def write_note(req: WriteNoteRequest):
     }
 
     try:
-        # 3) Ajouter au fichier en mode “append”
+        # 3) Ajouter au fichier JSON (append)
         with memory_file.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
+    # 4) Journal mimétique Z_MEMORIAL.md
+    project_slug  = "sentra_core"  # ou dynamiquement: req.project.lower().replace(" ", "_")
+    memorial_dir  = project_root / "projects" / project_slug / "fichiers"
+    memorial_dir.mkdir(parents=True, exist_ok=True)
+    memorial_file = memorial_dir / "Z_MEMORIAL.md"
+    timestamp_md  = time.strftime("## %Y-%m-%d %H:%M:%S\n- ", time.localtime())
+
+    try:
+        with memorial_file.open("a", encoding="utf-8") as mf:
+            mf.write(f"{timestamp_md}{text}\n\n")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
+
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
+
+# ------------------------------------
+#  GET /get_notes  (affichage de sentra_memory.json)
+# ------------------------------------
+@app.get("/get_notes")
+async def get_notes():
+    """
+    Renvoie en texte brut le contenu complet de memory/sentra_memory.json.
+    """
+    script_dir   = Path(__file__).resolve().parent   # …/scripts
+    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
+    memory_file  = project_root / "memory" / "sentra_memory.json"
+
+    if not memory_file.exists():
+        return Response(content="", media_type="text/plain")
+
+    try:
+        content = memory_file.read_text(encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Impossible de lire le fichier : {repr(e)}")
+
+    return Response(content=content, media_type="text/plain")
+
+# ------------------------------------
+#  GET /get_memorial  (affichage de Z_MEMORIAL.md)
+# ------------------------------------
+@app.get("/get_memorial")
+async def get_memorial():
+    """
+    Renvoie en texte brut le contenu de projects/SENTRA_CORE/fichiers/Z_MEMORIAL.md.
+    """
+    script_dir   = Path(__file__).resolve().parent   # …/scripts
+    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
+    project_slug = "sentra_core"
+    memorial_file = project_root / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
+
+    if not memorial_file.exists():
+        return Response(content="Z_MEMORIAL.md non trouvé", media_type="text/plain")
+
+    try:
+        content = memorial_file.read_text(encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Impossible de lire le fichier : {repr(e)}")
+
+    return Response(content=content, media_type="text/plain")
 
 # ------------------------------------
 #  POST /write_file
@@ -205,9 +263,9 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
-    base_path       = Path(__file__).parent.parent
-    project_slug    = projet.lower().replace(" ", "_")
-    dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
+    base_path         = Path(__file__).parent.parent
+    project_slug      = projet.lower().replace(" ", "_")
+    dossier_fichiers  = base_path / "projects" / project_slug / "fichiers"
 
     try:
         dossier_fichiers.mkdir(parents=True, exist_ok=True)
