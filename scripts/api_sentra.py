@@ -80,7 +80,11 @@ async def reprise_projet(req: RepriseRequest):
     project_resumer_gpt_script = base_path / "scripts" / "project_resumer_gpt.py"
 
     # Vérification rapide : les fichiers existent-ils ?
-    for script_path in (discord_fetcher_script, project_resume_script, project_resumer_gpt_script):
+    for script_path in (
+        discord_fetcher_script,
+        project_resume_script,
+        project_resumer_gpt_script
+    ):
         if not script_path.exists():
             return RepriseResponse(
                 status="error",
@@ -113,29 +117,26 @@ async def reprise_projet(req: RepriseRequest):
             detail=f"Échec project_resume.py : {e.stderr or e}"
         )
 
-    # 5) Exécuter project_resumer_gpt.py <project>
- try:
--    subprocess.run(
--        ["python", str(project_resumer_gpt_script), projet],
--        check=True,
--        cwd=str(base_path)
--    )
-+    process = subprocess.run(
-+        ["python", str(project_resumer_gpt_script), projet],
-+        capture_output=True,  # capture stdout + stderr
-+        text=True,            # decode bytes en str
-+        cwd=str(base_path)
-+    )
-+    if process.returncode != 0:
-+        # Renvoie l’erreur brute pour debug
-+        detail = f"Erreur project_resumer_gpt.py (code {process.returncode}):\nSTDOUT:\n{process.stdout}\nSTDERR:\n{process.stderr}"
-+        return RepriseResponse(status="error", detail=detail)
- except subprocess.CalledProcessError as e:
-     return RepriseResponse(
-         status="error",
-         detail=f"Échec project_resumer_gpt.py : {e.stderr or e}"
-     )
-
+    # 5) Exécuter project_resumer_gpt.py <project> en capturant stdout/stderr
+    try:
+        process = subprocess.run(
+            ["python", str(project_resumer_gpt_script), projet],
+            capture_output=True,
+            text=True,
+            cwd=str(base_path)
+        )
+        if process.returncode != 0:
+            detail = (
+                f"Erreur project_resumer_gpt.py (code {process.returncode}):\n"
+                f"STDOUT:\n{process.stdout}\n"
+                f"STDERR:\n{process.stderr}"
+            )
+            return RepriseResponse(status="error", detail=detail)
+    except Exception as e:
+        return RepriseResponse(
+            status="error",
+            detail=f"Exception interne lors de l’appel à project_resumer_gpt.py : {repr(e)}"
+        )
 
     # 6) Récupérer le dernier fichier resume_gpt_*.md
     project_slug  = projet.lower().replace(" ", "_")
@@ -147,7 +148,10 @@ async def reprise_projet(req: RepriseRequest):
             detail=f"Aucun dossier 'resume' pour le projet {projet}."
         )
 
-    all_resumes = sorted(resume_folder.glob("resume_gpt_*.md"), key=lambda f: f.stat().st_mtime)
+    all_resumes = sorted(
+        resume_folder.glob("resume_gpt_*.md"),
+        key=lambda f: f.stat().st_mtime
+    )
     if not all_resumes:
         return RepriseResponse(
             status="error",
@@ -174,9 +178,6 @@ async def reprise_projet(req: RepriseRequest):
 # ------------------------------------
 @app.post("/write_note", response_model=WriteResponse)
 async def write_note(req: WriteNoteRequest):
-    """
-    Enregistre une note dans memory/sentra_memory.json et dans Z_MEMORIAL.md.
-    """
     text = req.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
@@ -203,7 +204,7 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     # 4) Journal mimétique Z_MEMORIAL.md
-    project_slug  = "sentra_core"  # ou dynamiquement: req.project.lower().replace(" ", "_")
+    project_slug  = "sentra_core"
     memorial_dir  = project_root / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
