@@ -1,0 +1,8 @@
+[2025-05-30 08:29:39] synchronisation mémoire -> Mémoire synchronisée dans Notion.
+[2025-05-30 08:29:41] rapport -> 📄 Rapport Markdown généré : C:\Users\julie\SENTRA_CORE_MEM_v0.1\reports\2025\05\rapport_2025-05-30_08h29.md
+[2025-05-30 08:29:42] squery -> ❌ Aucune donnée mémoire correspondant à la requête.
+[2025-05-31 12:11:01] smalltalk -> Bonjour! Comment puis-je vous aider aujourd'hui?
+2025-06-02T09:00:00+02:00 [INFO] Test rapport 02/06/2025 
+[2025-05-31 16:06:15] chat -> Vous m’avez demandé : « bonjour, comment ça va ? »
+2025-05-31T17:45:00+02:00 [INFO] Test journal 31/05/2025 
+[2025-05-31 19:05:59] save_note -> 🧠 Note reconnue et transmise au module mémoire.

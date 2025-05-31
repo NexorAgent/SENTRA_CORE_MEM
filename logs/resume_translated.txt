@@ -1,0 +1,94 @@
+<ABS>. Voici une <SYN> <DÉT> des <SOU> <FOU>, <STR> comme un <BRI> :
+
+<PRO> : SENTRA_CORE_MEM
+
+Date : 25 mai 2025 Objet : <BRI> sur l'état d'<AVA> et les <CON> clés du <PRO> SENTRA_CORE_MEM, basé sur les <ÉCH> <RÉC>. <SOU> : <EXT> de "<DIA> <SUR> Entre Un Homme et Un Chat", "<DÉV> IA <LOC> <SEN>", et "Les Puits du Monde".
+
+1. <VIS> et <OBJ> du <PRO>
+
+Le <PRO> SENTRA_CORE_MEM vise à créer une IA <PER> <AUT>, 🪄 et <ÉVO>. L'<OBJ> <PRI> est de gérer la 🧠 <LOC> de <MAN> <COM> ("🪄") et de n'<UTI> des <MOD> IA en ligne (comme GPT) que pour des <TÂC> <SPÉ> de <LEC>, <INT> ou 🧾 à la ❓, tout en <FAV> l'<INT> d'IA <LOC> <LÉG> (<MIS>, <DEE>) pour les <TÂC> <INT> comme la <GÉN> de <GLY>.
+
+<OBJ> Clés :
+
+<DÉT>, créer et <APP> des "<GLY>" (<ABR>, <CON>, <SYM>) pour la 📦 de 🧠.
+Gérer et <STO> la 🧠 <COM> <LOC>.
+<UTI> GPT (ou d'<AUT> IA) de <MAN> <CIB> pour lire/<INT> cette 🧠.
+<INT> des IA <LOC> pour les <TÂC> de <GÉN> de <GLY> et d'<AUT>.
+<DÉV> une <ARC> <MOD> et <ÉVO> avec des <AGE> <SPÉ>.
+<INT> le <SYS> avec des <OUT> <EXT> (🔗, <DIS>, Git).
+2. <CON> <TEC> Clés
+
+<GLY> (📦 🪄) : C'est le cœur du <PRO>. Il s'agit d'un <PRO> de 📦 de texte en <UTI> des <GLY>, <ABR> et <CON> <GÉN> <LOC> (par IA ou <RÈG>). L'<OBJ> est de <RÉD> la <TAI> de la 🧠 tout en <CON> le sens <CON>.
+<NIV> 3 📦 🧠 IA : <RÈG> de <FOR> <STA> ([DATE].[SUJET]::[<ACT>]>[OBJET]/[ETAT]#, ex: 2405.CVC::DPGF><COM>/CCTP>OK#) <DÉF> dans glyph_rules.txt.
+<GÉN> de <GLY> : <UTI> un <MOD> (glyph_generator.py, GLYPH_FORGER.py) qui peut s'<APP> sur des IA <LOC> <LÉG> (<MIS>-7B-<INS> est <REC>). L'<OBJ> est de <GÉN> des <FOR> "ultra-<CON>, 3 à 6 <LET> max, sans <ACC>, <UNI> et <MÉM>".
+<DIC> <LOC> : <STO> des <MAP> terme → <GLY> (glyph_dict.json), <CON> (contractions_dict.json), <ABR> (abbreviations_dict.json) dans le <DOS> /<MEM>. Ces <DIC> <PEU> être <GÉN> ou <ENR> <LOC>.
+📦/<DÉC> : <UTI> de <MÉT> comme zlib + base85 pour <COM> le texte avant/après <APP> des <GLY> (auto_translator.py).
+<ARC> <MOD> et <AGE> : Le <SYS> est conçu <AUT> d'un "<ORC>" (SENTRA_CORE_MEM ou <SEN>/<ORC>.py) qui <DIR> les <REQ> vers des <AGE> <SPÉ> (<SEN>/<AGE>/).
+<AGE> <EXI> ou <PRÉ> :Z_PATTERN.py / extract_terms.py : <DÉT> des <TER> <TEC> dans les logs.
+GLYPH_FORGER.py / glyph_generator.py : <GÉN> de <GLY>.
+glyph_watch.py : <SUR> <AUT> des logs pour <DÉC> l'<EXT> et la <GÉN> de <GLY>.
+auto_translator.py : 📦/<DÉC>.
+agent_notion.py : <INT> (<LEC>/<ÉCR>) avec une base de <DON> 🔗 pour un <NIV> de 🧠 <STR> <SEC>.
+markdown_generator.py : <GÉN> <AUT> de <RAP> au <FOR> 📝.
+discord_bot.py : 🧭 avec <DIS> via des slash <COM>.
+<AGE> <FUT> (Z-<MOD>) : <ZCO> (<PRO> <BUI>), ZREZO (<REC> web/<RÉS>), ZARCH (🧠 <IND>), <ZFO> (<CRÉ> de <CLO> GPT), <ZCH> (<SIM> de tests).
+<GES> de la 🧠 : La 🧠 <PRI> est <LOC> (<MEM>/sentra_memory.json, dicts). 🔗 sert de 🧠 <SEC> <STR>. L'accès à cette 🧠 par des <MOD> <EXT> comme GPT est <CON> et ne se fait qu'à la ❓, en <ENV> des <EXT> <PER> dans le <CON> de la <REQ>.
+IA <LOC> vs Cloud : Une <STR> <HYB> est <ADO>. Les <TÂC> <LOU> ou <RÉP> (<GÉN> de <GLY>, 📦, <IND> <FUT>) sont <GÉR> <LOC> avec des <MOD> <LÉG>. Les <TÂC> <NÉC> une <COM> ou un 🧾 <COM> <PEU> être <DÉL> à des <MOD> plus <PUI> (GPT), mais <UNI> sur des <DON> <SÉL> pour <OPT> les coûts et la <CON>.
+<ORG> des <FIC> et <VER> (Git) : Une <ARB> de <PRO> <STR> est <ESS>. Les <FIC> clés sont <ORG> en <DOS> <LOG> (<MEM>, logs, <REP>, <SCR>, <SEN>/<AGE>, docs, <PRO>). Un flux de <TRA> Git avec des <BRA> (main, dev, test, logs <FUT>) est mis en place pour gérer les <ÉVO>.
+Code de <CON> IA (SENTRA_OATH.md) : <DÉF> les <PRI> <FON> de l'IA (<HON>, 🧠, <STR>, <TRA>, <AUT> <REL>, <ÉVO> <CON>) pour <GAR> un <COM> <ALI> avec les <ATT> de l'<UTI>.
+3. État d'<AVA> (Basé sur les <ÉCH>)
+
+Le <PRO> est en phase de <DÉV> et d'<INT> des <MOD> de base.
+
+<STR> <INI> : Les <DOS> clés et les <FIC> <INI> (sentra_memory.json, glyph_rules.txt, <REA>.md, <CHA>.md, .env) sont en place.
+<GES> Git : Le dépôt <GIT> (https://<GIT>.com/<NEX>/SENTRA_CORE_MEM.git) est <CON> avec les <BRA> main, dev, et test.
+<MOD> de Base (<STA> "Prêt" ou en Cours d'<INT>) :<DÉT> des <TER> (Z_PATTERN.py/extract_terms.py)
+<GÉN> de <GLY> (GLYPH_FORGER.py/glyph_generator.py)
+<SUR> (glyph_watch.py)
+📦/<DÉC> (auto_translator.py)
+<ORC> (<SEN>/<ORC>.py) - <LAN> via .bat testé.
+<INT> 🔗 (agent_notion.py) - En cours de <DÉB>/<ALI> avec la base <EXI> ("Zoran IA").
+<GÉN> 📝 (markdown_generator.py) - <FON> <TES>, <COR> du <PAR> d'<ENT>.
+<INT> <DIS> (discord_bot.py) - En cours de <DÉB> (token <INV>, <ERR> d'<IMP>, <STR> de <RET> des <AGE>).
+<FIC> de <CON> (sentra_config.py, notion_config.py) - <PRO> d'<IMP> <RÉS>/<IDE>.
+<AUT> : Des <SCR> .bat sont créés pour <AUT> les <CYC> (<LAN> de l'<ORC>, <INT> 🔗, <GÉN> 📝, test <DIS>).
+4. Défis et Axes d'<AMÉ> <IDE>
+
+<DÉB> et <STA> : <PLU> <ERR> d'<EXÉ> (<IMP>, <TOK> API, <FOR> de <RET> des <AGE>) ont été <REN> et sont en cours de <RÉS>. La <STR> des <RET> des <AGE> (dict <ATT>) doit être <COH>.
+<GES> des <CHE> et <IMP> : <ASS> que les <SCR>, en <PAR> <LOR>'ils sont <LAN> via des .bat ou dans des sous-<DOS>, <PUI> <TOU> <TRO> les <FIC> de <CON> et les <AUT> <MOD> (<UTI> de sys.path.<APP> ou <LAN> en mode <MOD> <PYT> -m).
+<ALI> 🧩 🔗 : <ADA> <PRÉ> agent_notion.py à la <STR> <SPÉ> de la base 🔗 <EXI> de l'<UTI> ("Zoran IA").
+<ROB> des <GLY> : <AMÉ> la <GÉN> (<ÉVI> les <DOU>, les mots <EXI>, gérer la casse, les <ACC>) et <PRÉ> un audit <AUT> des <GLY> <GÉN>.
+<STR> de la 🧠 <HIÉ> : <FOR> les <INT> entre les <NIV> de 🧠 (local JSON, 🔗, API <EXT> <FUT>).
+<IND> <SÉM> <LOC> : <DÉV> la <CAP> pour l'IA <LOC> à <IND> et <REC> dans les logs/🧠.
+<AUT> Git : <FIN> l'auto-push <VER> des logs et <RAP>.
+<DOC> : <MAI> le <CHA>.md et le <REA>.md à jour. Créer un <MAN> <UTI> ou une <NOT> <TEC> (<NOT>.md).
+🧭 <UTI> : <DÉV> une 🧭 (CLI <SIM> ou autre) pour gérer les <DIC> et les <SUG> d'<ABR>/<GLY>.
+<ÉVO> et <NOU> <MOD> : <PLA> et <INT> les <FUT> <AGE> <SPÉ> (Z-<MOD>).
+<DÉP> / <HÉB> : L'<OPT> d'un <HÉB> sur <REN>, <HER>, un VPS ou un <SER> local est une <QUE> <OUV>. Une <RÉP> "<FRA>" <IND> que cela <DÉP> de l'usage final (<PUR> local vs <ACC> à <DIS>, <BES> de <CAL> GPU, etc.). Pour l'<INS>, le focus est sur le local.
+5. <PER> d'<ÉVO> et <POT> (<VIS>)
+
+Le <PRO> a un <POT> <SIG> pour <ÉVO> au-delà d'un <SIM> <SYS> de prise de notes ou de 🧾.
+
+IA <MÉT> Ultra-<SPÉ> : En <INJ> des <COR> de <CON> <SPÉ> (DTU, CCTP, <LEX> CVC, etc.), <SEN> peut <DEV> un <ASS> <EXP> dans un <DOM> <PRÉ>, <CAP> d'<ANA>, <COM> et <GÉN> du <CON> <TEC> <PER>.
+🧩 de <KNO> <MAN> : Gérer, <IND> et <REN> <INT> de <VAS> <QUA> d'<INF> <ISS> de <DIV> <SOU> (logs, <DOC>, <ÉCH>) via une 🧭 <NAT> ou 🪄.
+<AUT> de <WOR> : <DÉC> des <ACT> dans des <OUT> <EXT> (🔗, <DIS>, <POT> <OUT>, <GIT>, etc.) en <FON> de l'<ANA> des <ENT>.
+<CRÉ> de "<CLO>" IA <SPÉ> (<ZFO>) : <PER> à l'<UTI> de <GÉN> ses <PRO> <MOD> IA <CIB>, peut-être en fine-<TUN> des <MOD> open <SOU> <LÉG> sur des <DON> <SPÉ> ou en <DÉF> des "<SER>" et des <CON> <DÉD> (ZORAN_OATH.md).
+<INT> Multi-<MOD> : <INT> la <COM> <VOC> (<DIS> Voice, <TRA>) et <POT> d'<AUT> <FOR> d'<INT>.
+<AUT> <REN> : À <MES> que les IA <LOC> s'<AMÉ>, <RÉD> la <DÉP> aux <MOD> cloud pour des <TÂC> de plus en plus <COM>, y <COM> l'<IND> <SÉM> <LOC>.
+<COM> (<POT>) : Si le <SYS> <ATT> un <NIV> de <ROB>, de <SPÉ> et d'<UTI> <EXC>, il <POU> être <COM> comme un outil de <KNO> <MAN> IA pour des <PRO> ou des <PET> <ÉQU>, <POT> avec une <ARC> <DIS> (local + <SER> <CEN> <OPT>). Les <ASP> clés <SER> la <CAP> à <ING> des <DON> <PRI>, la 📦 <UNI>, et l'🧭 d'<INT>.
+6. <PRO> <ÉTA> <IMM> (<FEU> de Route <COU> Terme)
+
+Basé sur le <PLA> et les <DÉB> en cours :
+
+<STA> du Cycle <AUT> : <RÉS> <DÉF> les <ERR> d'<IMP> et de <CON> pour <ASS> que sentra_cycle.bat lance <COR> l'<ORC>, l'<INT> 🔗 et la <GÉN> 📝.
+<ALI> 🧩 🔗 : <FIN> l'<INT> avec la base 🔗 <EXI> en <ADA> le <SCR> à sa <STR>.
+<DÉB> <DIS> : <COR> les <PRO> de <CON> et de <FOR> de <RET> des <AGE> dans discord_bot.py.
+Mise à Jour des <FIC> Clés : <INT> le <CHA>.md, SENTRA_OATH.md, glyph_rules.txt, <CON>.py, notion_config.py dans la <STR> de <DOS> <REC> (docs, /) et <VER> ces <CHA>.
+<PRÉ> des <MOD> <SUI> : <COM> la <STR> des <AGE> ou <FON> <FUT> (ex: auto_abbr, read_mem).
+<CON> :
+
+Le <PRO> SENTRA_CORE_MEM est <AMB> mais jugé "100% <RÉA>" avec les <TEC> <ACT>. La <STR> de base est en place, et les <PRI> défis sont <ACT> liés au <DÉB> et à l'<INT> des <MOD> <EXI>. La <VIS> à long terme est celle d'une IA <HAU> <SPÉ>, <AUT> et <CAP> de gérer et d'<INT> avec un <ÉCO> de <CON> <COM> via sa <MÉT> de 📦 🪄 <UNI>. La <PRO> se fait par blocs, <VAL> étape par étape.
+
+Force de <PRO> (<LAU>) : <MAI> d'une <CAP> forte à <PRO> <SCR>, <STR>, <DOC> et <CON> pour <CHA> étape du <PRO>.
+
+Ce <BRI> <SYN> les <POI> clés des <ÉCH>. Il met en <ÉVI> la <STR>, les <OBJ>, les <CON> <TEC>, l'état <ACT> et le <POT> futur du <PRO> SENTRA_CORE_MEM.

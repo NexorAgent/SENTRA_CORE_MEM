@@ -1,0 +1,101 @@
+@CTX:¤SCM/2405.MEM_INIT
+@DIC:{"CON": "§00", "INT": "§01", "PRO": "§02", "MOD": "§03", "GÉN": "§04", "STR": "§05", "AUT": "§06", "LOC": "§07", "COM": "§08", "GLY": "§09", "AGE": "§0A", "UTI": "§0B", "SPÉ": "§0C", "DIS": "§0D", "EXT": "§0E", "ÉVO": "§0F", "FOR": "§10", "IND": "§11", "POT": "§12", "SEN": "§13", "OBJ": "§14", "TÂC": "§15", "TEC": "§16", "ORC": "§17", "EXI": "§18", "FUT": "§19", "FIC": "§1A", "DÉB": "§1B", "DÉV": "§1C", "PER": "§1D", "PRI": "§1E", "MAN": "§1F", "ACT": "§20", "DOS": "§21", "DÉC": "§22", "PRÉ": "§23", "SCR": "§24", "CHA": "§25", "IMP": "§26", "CAP": "§27", "DÉT": "§28", "SOU": "§29", "ÉCH": "§2A", "LÉG": "§2B", "APP": "§2C", "ABR": "§2D", "SYS": "§2E", "NIV": "§2F", "STA": "§30", "DÉF": "§31"}
+@SEQ:
+  ¤SCM→MEM.LOC→§ZL+§DICT
+  AGENT.ZARCH→SEARCH→MEM.LOG
+  GPT↔ONLY.ON.CALL
+#
+<ABS>. Voici une <SYN> §28 des §29 <FOU>, §05 comme un <BRI> :
+
+§02 : SENTRA_CORE_MEM
+
+Date : 25 mai 2025 Objet : <BRI> sur l'état d'<AVA> et les §00 clés du §02 SENTRA_CORE_MEM, basé sur les §2A <RÉC>. §29 : §0E de "<DIA> <SUR> Entre Un Homme et Un Chat", "§1C IA §07 §13", et "Les Puits du Monde".
+
+1. <VIS> et §14 du §02
+
+Le §02 SENTRA_CORE_MEM vise à créer une IA §1D §06, 🪄 et §0F. L'§14 §1E est de gérer la 🧠 §07 de §1F §08 ("🪄") et de n'§0B des §03 IA en ligne (comme GPT) que pour des §15 §0C de <LEC>, §01 ou 🧾 à la ❓, tout en <FAV> l'§01 d'IA §07 §2B (<MIS>, <DEE>) pour les §15 §01 comme la §04 de §09.
+
+§14 Clés :
+
+§28, créer et §2C des "§09" (§2D, §00, <SYM>) pour la 📦 de 🧠.
+Gérer et <STO> la 🧠 §08 §07.
+§0B GPT (ou d'§06 IA) de §1F <CIB> pour lire/§01 cette 🧠.
+§01 des IA §07 pour les §15 de §04 de §09 et d'§06.
+§1C une <ARC> §03 et §0F avec des §0A §0C.
+§01 le §2E avec des <OUT> §0E (🔗, §0D, Git).
+2. §00 §16 Clés
+
+§09 (📦 🪄) : C'est le cœur du §02. Il s'agit d'un §02 de 📦 de texte en §0B des §09, §2D et §00 §04 §07 (par IA ou <RÈG>). L'§14 est de <RÉD> la <TAI> de la 🧠 tout en §00 le sens §00.
+§2F 3 📦 🧠 IA : <RÈG> de §10 §30 ([DATE].[SUJET]::[§20]>[OBJET]/[ETAT]#, ex: 2405.CVC::DPGF>§08/CCTP>OK#) §31 dans glyph_rules.txt.
+§04 de §09 : §0B un §03 (glyph_generator.py, GLYPH_FORGER.py) qui peut s'§2C sur des IA §07 §2B (<MIS>-7B-<INS> est <REC>). L'§14 est de §04 des §10 "ultra-§00, 3 à 6 <LET> max, sans <ACC>, <UNI> et <MÉM>".
+<DIC> §07 : <STO> des <MAP> terme → §09 (glyph_dict.json), §00 (contractions_dict.json), §2D (abbreviations_dict.json) dans le §21 /<MEM>. Ces <DIC> <PEU> être §04 ou <ENR> §07.
+📦/§22 : §0B de <MÉT> comme zlib + base85 pour §08 le texte avant/après §2C des §09 (auto_translator.py).
+<ARC> §03 et §0A : Le §2E est conçu §06 d'un "§17" (SENTRA_CORE_MEM ou §13/§17.py) qui <DIR> les <REQ> vers des §0A §0C (§13/§0A/).
+§0A §18 ou §23 :Z_PATTERN.py / extract_terms.py : §28 des <TER> §16 dans les logs.
+GLYPH_FORGER.py / glyph_generator.py : §04 de §09.
+glyph_watch.py : <SUR> §06 des logs pour §22 l'§0E et la §04 de §09.
+auto_translator.py : 📦/§22.
+agent_notion.py : §01 (<LEC>/<ÉCR>) avec une base de <DON> 🔗 pour un §2F de 🧠 §05 <SEC>.
+markdown_generator.py : §04 §06 de <RAP> au §10 📝.
+discord_bot.py : 🧭 avec §0D via des slash §08.
+§0A §19 (Z-§03) : <ZCO> (§02 <BUI>), ZREZO (<REC> web/<RÉS>), ZARCH (🧠 §11), <ZFO> (<CRÉ> de <CLO> GPT), <ZCH> (<SIM> de tests).
+<GES> de la 🧠 : La 🧠 §1E est §07 (<MEM>/sentra_memory.json, dicts). 🔗 sert de 🧠 <SEC> §05. L'accès à cette 🧠 par des §03 §0E comme GPT est §00 et ne se fait qu'à la ❓, en <ENV> des §0E §1D dans le §00 de la <REQ>.
+IA §07 vs Cloud : Une §05 <HYB> est <ADO>. Les §15 <LOU> ou <RÉP> (§04 de §09, 📦, §11 §19) sont <GÉR> §07 avec des §03 §2B. Les §15 <NÉC> une §08 ou un 🧾 §08 <PEU> être <DÉL> à des §03 plus <PUI> (GPT), mais <UNI> sur des <DON> <SÉL> pour <OPT> les coûts et la §00.
+<ORG> des §1A et <VER> (Git) : Une <ARB> de §02 §05 est <ESS>. Les §1A clés sont <ORG> en §21 <LOG> (<MEM>, logs, <REP>, §24, §13/§0A, docs, §02). Un flux de <TRA> Git avec des <BRA> (main, dev, test, logs §19) est mis en place pour gérer les §0F.
+Code de §00 IA (SENTRA_OATH.md) : §31 les §1E <FON> de l'IA (<HON>, 🧠, §05, <TRA>, §06 <REL>, §0F §00) pour <GAR> un §08 <ALI> avec les <ATT> de l'§0B.
+3. État d'<AVA> (Basé sur les §2A)
+
+Le §02 est en phase de §1C et d'§01 des §03 de base.
+
+§05 <INI> : Les §21 clés et les §1A <INI> (sentra_memory.json, glyph_rules.txt, <REA>.md, §25.md, .env) sont en place.
+<GES> Git : Le dépôt <GIT> (https://<GIT>.com/<NEX>/SENTRA_CORE_MEM.git) est §00 avec les <BRA> main, dev, et test.
+§03 de Base (§30 "Prêt" ou en Cours d'§01) :§28 des <TER> (Z_PATTERN.py/extract_terms.py)
+§04 de §09 (GLYPH_FORGER.py/glyph_generator.py)
+<SUR> (glyph_watch.py)
+📦/§22 (auto_translator.py)
+§17 (§13/§17.py) - <LAN> via .bat testé.
+§01 🔗 (agent_notion.py) - En cours de §1B/<ALI> avec la base §18 ("Zoran IA").
+§04 📝 (markdown_generator.py) - <FON> <TES>, <COR> du <PAR> d'<ENT>.
+§01 §0D (discord_bot.py) - En cours de §1B (token <INV>, <ERR> d'§26, §05 de <RET> des §0A).
+§1A de §00 (sentra_config.py, notion_config.py) - §02 d'§26 <RÉS>/<IDE>.
+§06 : Des §24 .bat sont créés pour §06 les <CYC> (<LAN> de l'§17, §01 🔗, §04 📝, test §0D).
+4. Défis et Axes d'<AMÉ> <IDE>
+
+§1B et §30 : <PLU> <ERR> d'<EXÉ> (§26, <TOK> API, §10 de <RET> des §0A) ont été <REN> et sont en cours de <RÉS>. La §05 des <RET> des §0A (dict <ATT>) doit être <COH>.
+<GES> des <CHE> et §26 : <ASS> que les §24, en <PAR> <LOR>'ils sont <LAN> via des .bat ou dans des sous-§21, <PUI> <TOU> <TRO> les §1A de §00 et les §06 §03 (§0B de sys.path.§2C ou <LAN> en mode §03 <PYT> -m).
+<ALI> 🧩 🔗 : <ADA> §23 agent_notion.py à la §05 §0C de la base 🔗 §18 de l'§0B ("Zoran IA").
+<ROB> des §09 : <AMÉ> la §04 (<ÉVI> les <DOU>, les mots §18, gérer la casse, les <ACC>) et §23 un audit §06 des §09 §04.
+§05 de la 🧠 <HIÉ> : §10 les §01 entre les §2F de 🧠 (local JSON, 🔗, API §0E §19).
+§11 <SÉM> §07 : §1C la §27 pour l'IA §07 à §11 et <REC> dans les logs/🧠.
+§06 Git : <FIN> l'auto-push <VER> des logs et <RAP>.
+<DOC> : <MAI> le §25.md et le <REA>.md à jour. Créer un §1F §0B ou une <NOT> §16 (<NOT>.md).
+🧭 §0B : §1C une 🧭 (CLI <SIM> ou autre) pour gérer les <DIC> et les <SUG> d'§2D/§09.
+§0F et <NOU> §03 : <PLA> et §01 les §19 §0A §0C (Z-§03).
+<DÉP> / <HÉB> : L'<OPT> d'un <HÉB> sur <REN>, <HER>, un VPS ou un <SER> local est une <QUE> <OUV>. Une <RÉP> "<FRA>" §11 que cela <DÉP> de l'usage final (<PUR> local vs <ACC> à §0D, <BES> de <CAL> GPU, etc.). Pour l'<INS>, le focus est sur le local.
+5. §1D d'§0F et §12 (<VIS>)
+
+Le §02 a un §12 <SIG> pour §0F au-delà d'un <SIM> §2E de prise de notes ou de 🧾.
+
+IA <MÉT> Ultra-§0C : En <INJ> des <COR> de §00 §0C (DTU, CCTP, <LEX> CVC, etc.), §13 peut <DEV> un <ASS> <EXP> dans un <DOM> §23, §27 d'<ANA>, §08 et §04 du §00 §16 §1D.
+🧩 de <KNO> §1F : Gérer, §11 et <REN> §01 de <VAS> <QUA> d'<INF> <ISS> de <DIV> §29 (logs, <DOC>, §2A) via une 🧭 <NAT> ou 🪄.
+§06 de <WOR> : §22 des §20 dans des <OUT> §0E (🔗, §0D, §12 <OUT>, <GIT>, etc.) en <FON> de l'<ANA> des <ENT>.
+<CRÉ> de "<CLO>" IA §0C (<ZFO>) : §1D à l'§0B de §04 ses §02 §03 IA <CIB>, peut-être en fine-<TUN> des §03 open §29 §2B sur des <DON> §0C ou en §31 des "<SER>" et des §00 <DÉD> (ZORAN_OATH.md).
+§01 Multi-§03 : §01 la §08 <VOC> (§0D Voice, <TRA>) et §12 d'§06 §10 d'§01.
+§06 <REN> : À <MES> que les IA §07 s'<AMÉ>, <RÉD> la <DÉP> aux §03 cloud pour des §15 de plus en plus §08, y §08 l'§11 <SÉM> §07.
+§08 (§12) : Si le §2E <ATT> un §2F de <ROB>, de §0C et d'§0B <EXC>, il <POU> être §08 comme un outil de <KNO> §1F IA pour des §02 ou des <PET> <ÉQU>, §12 avec une <ARC> §0D (local + <SER> <CEN> <OPT>). Les <ASP> clés <SER> la §27 à <ING> des <DON> §1E, la 📦 <UNI>, et l'🧭 d'§01.
+6. §02 <ÉTA> <IMM> (<FEU> de Route <COU> Terme)
+
+Basé sur le <PLA> et les §1B en cours :
+
+§30 du Cycle §06 : <RÉS> §31 les <ERR> d'§26 et de §00 pour <ASS> que sentra_cycle.bat lance <COR> l'§17, l'§01 🔗 et la §04 📝.
+<ALI> 🧩 🔗 : <FIN> l'§01 avec la base 🔗 §18 en <ADA> le §24 à sa §05.
+§1B §0D : <COR> les §02 de §00 et de §10 de <RET> des §0A dans discord_bot.py.
+Mise à Jour des §1A Clés : §01 le §25.md, SENTRA_OATH.md, glyph_rules.txt, §00.py, notion_config.py dans la §05 de §21 <REC> (docs, /) et <VER> ces §25.
+§23 des §03 <SUI> : §08 la §05 des §0A ou <FON> §19 (ex: auto_abbr, read_mem).
+§00 :
+
+Le §02 SENTRA_CORE_MEM est <AMB> mais jugé "100% <RÉA>" avec les §16 §20. La §05 de base est en place, et les §1E défis sont §20 liés au §1B et à l'§01 des §03 §18. La <VIS> à long terme est celle d'une IA <HAU> §0C, §06 et §27 de gérer et d'§01 avec un <ÉCO> de §00 §08 via sa <MÉT> de 📦 🪄 <UNI>. La §02 se fait par blocs, <VAL> étape par étape.
+
+Force de §02 (<LAU>) : <MAI> d'une §27 forte à §02 §24, §05, <DOC> et §00 pour §25 étape du §02.
+
+Ce <BRI> <SYN> les <POI> clés des §2A. Il met en <ÉVI> la §05, les §14, les §00 §16, l'état §20 et le §12 futur du §02 SENTRA_CORE_MEM.

@@ -1,0 +1,82 @@
+Absolument. Basé sur les sources et notre conversation, voici un résumé complet et compréhensible des "notes", c'est-à-dire du projet d'assistant IA que nous avons co-développé, initialement appelé ZORAN_CORE_MEM et renommé SENTRA_CORE_MEM.
+
+**Vue d'ensemble du projet SENTRA_CORE_MEM**
+
+Le projet SENTRA_CORE_MEM vise à créer une **intelligence artificielle personnelle, autonome, glyphique et évolutive**. L'objectif principal est de pouvoir détecter, créer et appliquer des glyphes, gérer sa mémoire localement et de n'utiliser des services cloud comme OpenAI que sur commande pour lire ou interpréter cette mémoire. L'objectif est de construire un **système centralisé, structuré et intelligent** qui permet d'uniformiser les documents et les demandes, de centraliser les données, et d'automatiser les actions.
+
+**Architecture et principes clés**
+
+1.  **Architecture Hybride** :
+    *   La majorité des opérations (dictionnaires, abréviations, glyphes, mémoire, compression, détection, conversion, sauvegarde) sont gérées **localement** à l'aide de modules Python et, à terme, d'IA locales (comme Mistral ou DeepSeek).
+    *   L'intelligence et l'interprétation "super intelligence" sont assurées par des modèles cloud comme GPT d'OpenAI. Cependant, l'envoi de données à OpenAI se fait **uniquement sur demande manuelle** (via une commande comme `/read_mem`). Cela garantit que GPT n'accède à la mémoire que lorsque c'est nécessaire.
+    *   L'objectif est de **minimiser les coûts** en limitant les appels API onéreux et de **garantir la confidentialité** en gardant la mémoire localement la plupart du temps. Le coût de l'appel OpenAI pour la mémoire est minime car elle est ultra-compressée.
+    *   Une pile 100% locale est envisagée à terme.
+
+2.  **Mémoire Multi-Niveaux (Structure "The Runcore")** :
+    *   **Niveau 1 (Résumé standard humain)** : Lisible immédiatement par l'utilisateur, en français clair (3-5 lignes). Stocké localement (fichiers `.txt` / `.json`).
+    *   **Niveau 2 (Résumé hybride)** : Semi-structuré (markdown, balises) pour l'IA mais lisible pour l'humain. Utilisé pour le traitement automatisé (tags, tri, recherche) et stocké dans **Notion** via l'API.
+    *   **Niveau 3 (Résumé glyphique compact)** : Compression maximale, utilisant un langage glyphique pour un coût token ultra-réduit. Compréhensible **uniquement par l'IA** (SENTRA). Utilisé pour le stockage dans la mémoire longue (fichier `.json` ou base dédiée). Le format est standardisé.
+
+3.  **Gestion de la Mémoire** :
+    *   La mémoire (niveau 3) est stockée localement dans `sentra_memory.json`.
+    *   Une **recherche intelligente** est prévue pour parcourir les logs mémorisés (niveaux 2 et 3), identifier les entrées pertinentes (mots-clés, idées, liens sémantiques) et construire un briefing synthétique en réponse à une demande floue.
+    *   La mémoire est **injectée** dans le prompt de l'IA (OpenAI) à chaque nouvelle requête pour qu'elle dispose du contexte nécessaire.
+
+4.  **Code de Conduite (SENTRA_OATH)** :
+    *   Un fichier (`SENTRA_OATH.md`) contenant les principes fondamentaux de l'IA (honnêteté, mémoire, compression, hiérarchisation, sens critique, force de proposition, économie) est **chargé à chaque démarrage de session**. Cela garantit que l'IA se reconnecte à son identité et à ses règles, rendant le système cohérent et aligné.
+
+5.  **Agents Spécialisés** :
+    *   SENTRA est conçu comme un **orchestrateur** qui peut déléguer des tâches à des agents IA spécialisés (par exemple, Zoran_Forge pour générer des prompts, Zoran_Réseau pour la recherche, Zoran_Conducteur pour une expertise métier CVC). Ces agents peuvent interagir entre eux via un script central et une mémoire partagée.
+
+**Composants techniques et organisation du projet**
+
+Le projet s'organise en plusieurs dossiers :
+
+*   `/prompts` : Contient les prompts de base des agents, y compris `sentra_core.prompt.txt` qui définit l'identité de SENTRA.
+*   `/memory` : Stocke la mémoire compressée locale dans `sentra_memory.json`.
+*   `/scripts` : Modules Python contenant la logique interne.
+*   `/sentra` : Contient les agents spécialisés (`/agents`) et l'orchestrateur (`orchestrator.py`).
+*   `/reports` : Les rapports Markdown générés sont stockés ici, classés automatiquement par année/mois/date.
+*   `/logs` : Journal d'exécution des appels (`execution_log.txt`).
+*   `/docs` : Documentation du projet, incluant `SENTRA_OATH.md` et `glyph_rules.txt`.
+*   `.env` : Fichier sécurisé pour stocker les clés API (OpenAI, Notion).
+*   `main.py` : Point d'entrée principal.
+*   `requirements.txt` : Dépendances Python nécessaires.
+*   `README.md` : Documentation de haut niveau du projet.
+*   `CHANGELOG.md` : Historique des versions.
+*   `config.py` / `sentra_config.py` : Fichiers de configuration.
+*   `markdown_generator.py` : Script pour générer les rapports.
+*   `.bat` : Scripts Windows pour automatiser des cycles d'actions (ex: cycle complet d'exécution, synchronisation Git).
+
+**Fonctionnalités implémentées et en cours**
+
+Au cours de notre conversation, nous avons progressé sur plusieurs points :
+
+*   Création de la structure de dossiers.
+*   Définition du code de conduite (`SENTRA_OATH.md`) et des règles glyphiques (`glyph_rules.txt`).
+*   Mise en place de l'écriture automatique dans la mémoire glyphique locale (`sentra_memory.json`) et du journal d'exécution (`execution_log.txt`).
+*   Développement et test du générateur de rapports Markdown (`markdown_generator.py`) avec classement automatique.
+*   Structuration de l'orchestrateur (`orchestrator.py`).
+*   Automatisation partielle du cycle avec des scripts `.bat`.
+*   Intégration réussie avec Notion pour le stockage de la mémoire de Niveau 2, incluant l'analyse de la structure de base de données existante et la correction des scripts (`agent_notion.py`).
+*   Mise en place du versioning Git (branche `dev` pour le développement, `main` pour le stable).
+*   Début de l'intégration Discord pour les commandes vocales et textuelles.
+
+**Prochaines étapes et vision future**
+
+Le planning prévoit de continuer le développement par modules :
+
+*   Finaliser les agents de mémoire (lecture intelligente dans Notion et mémoire locale - ZARCH).
+*   Déployer l'intégration Discord complète (commandes vocales, agents dédiés).
+*   Mettre en place une structure de mémoire hiérarchisée (Niveau 1/2/3).
+*   Finaliser l'exportation et la persistance Git versionnée.
+*   Développer les agents multi-GPT spécialisés (ZCODEX, ZREZO, ZARCH, ZFORGE, ZCHALL).
+
+Sur le long terme, le projet a le potentiel d'évoluer considérablement :
+
+*   Devenir un **noyau IA open-source** léger pour la mémoire et les workflows.
+*   Se transformer potentiellement en une **plateforme SaaS** très spécialisée ("GPT with Memory").
+*   Développer des agents autonomes pour interagir avec des outils comme LinkedIn, Gmail, Outlook.
+*   Créer des **IA métiers** hyper-spécialisées (comme l'exemple du Zoran Conducteur CVC) en injectant des bases de connaissances spécifiques (DTU, devis, plans).
+
+Le projet SENTRA_CORE_MEM est donc une base solide pour construire une IA personnelle sur mesure, axée sur l'autonomie, la mémoire contrôlée, l'économie de coûts et l'évolutivité, en s'appuyant sur une combinaison stratégique d'outils locaux et cloud.

@@ -1,12 +1,4 @@
-[
-  {
-    "date": "2025-05-24",
-    "type": "init",
-    "contenu": "Initialisation du noyau SENTRA_CORE_MEM v0.1."
-  },
-  {
-    "date": "2025-05-24",
-    "type": "résumé",
-    "contenu": "⟁M++ G4n.OK Px∞ MEMSYNC.001✓\nZFAM.ALLIGN(ZCORE🦋,ZCODEX🛠️,ZARCH📚,ZREZO,ZCHALL🧪)\nZRULE.SET(✔crit.active,✔inject.auto,✔style.sync)\nZFLOW.LOG>>L1>GLY>L3.RAX⇄0.29$\nINJECT@Z.RAX001 = Σ.startpoint"
-  }
-]
+{"type": "note", "text": "garde cette idée : essence du projet SENTRA", "timestamp": "2025-05-31T19:41:14"}
+{"type": "note", "text": "derniere sauvegarde", "timestamp": "2025-05-31T20:03:06"}
+{"type": "note", "text": "Ceci est une note de test via l’API.", "timestamp": "2025-05-31T22:07:52"}
+{"type": "note", "text": "Note d’exemple via l’API - test réussi.", "timestamp": "2025-05-31T22:09:17"}
