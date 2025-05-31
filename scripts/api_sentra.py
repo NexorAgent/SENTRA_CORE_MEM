@@ -161,7 +161,7 @@ async def reprise_projet(req: RepriseRequest):
 # ------------------------------------
 @app.post("/write_note", response_model=WriteResponse)
 async def write_note(req: WriteNoteRequest):
-    from memory_agent import save_note_from_text  # ou ajustez selon l’import réel
+    from scripts.memory_agent import save_note_from_text  # ou ajustez selon l’import réel
 
     texte = req.text.strip()
     if not texte:
