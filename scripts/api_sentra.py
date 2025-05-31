@@ -1,9 +1,12 @@
 import os
 import subprocess
+import json
+import time
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from pathlib import Path
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -60,7 +63,7 @@ class WriteResponse(BaseModel):
     path: str | None = None
 
 # ------------------------------------
-#  POST /reprise  (DISCORD →Résumé Brut→Résumé GPT)
+#  POST /reprise  (DISCORD → Résumé Brut → Résumé GPT)
 # ------------------------------------
 @app.post("/reprise", response_model=RepriseResponse)
 async def reprise_projet(req: RepriseRequest):
@@ -69,12 +72,11 @@ async def reprise_projet(req: RepriseRequest):
         raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
 
     # 1) Déterminer la racine du projet (SENTRA_CORE_MEM_merged)
-    #    __file__ vaut ".../SENTRA_CORE_MEM_merged/scripts/api_sentra.py"
     base_path = Path(__file__).parent.parent
 
-    # 2) Chemins absolus vers les scripts Python
-    discord_fetcher_script   = base_path / "scripts" / "discord_fetcher.py"
-    project_resume_script    = base_path / "scripts" / "project_resume.py"
+    # 2) Chemins vers les scripts Python
+    discord_fetcher_script     = base_path / "scripts" / "discord_fetcher.py"
+    project_resume_script      = base_path / "scripts" / "project_resume.py"
     project_resumer_gpt_script = base_path / "scripts" / "project_resumer_gpt.py"
 
     # Vérification rapide : les fichiers existent-ils ?
@@ -90,7 +92,7 @@ async def reprise_projet(req: RepriseRequest):
         subprocess.run(
             ["python", str(discord_fetcher_script), projet],
             check=True,
-            cwd=str(base_path)  # on force le cwd sur la racine du projet
+            cwd=str(base_path)
         )
     except subprocess.CalledProcessError as e:
         return RepriseResponse(
@@ -124,8 +126,8 @@ async def reprise_projet(req: RepriseRequest):
             detail=f"Échec project_resumer_gpt.py : {e.stderr or e}"
         )
 
-    # 6) Récupérer le dernier fichier resume_gpt_*.md généré
-    project_slug = projet.lower().replace(" ", "_")
+    # 6) Récupérer le dernier fichier resume_gpt_*.md
+    project_slug  = projet.lower().replace(" ", "_")
     resume_folder = base_path / "projects" / project_slug / "resume"
 
     if not resume_folder.exists():
@@ -157,20 +159,37 @@ async def reprise_projet(req: RepriseRequest):
     )
 
 # ------------------------------------
-#  POST /write_note
+#  POST /write_note  (enregistrement direct dans memory/sentra_memory.json)
 # ------------------------------------
 @app.post("/write_note", response_model=WriteResponse)
 async def write_note(req: WriteNoteRequest):
-    from scripts.memory_agent import save_note_from_text  # ou ajustez selon l’import réel
-
-    texte = req.text.strip()
-    if not texte:
+    """
+    Enregistre une note dans memory/sentra_memory.json sans passer par memory_agent.py.
+    """
+    text = req.text.strip()
+    if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
+    # 1) Chemin vers la racine du projet
+    script_dir   = Path(__file__).resolve().parent   # …/scripts
+    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
+    memory_dir   = project_root / "memory"            # …/memory
+    memory_dir.mkdir(parents=True, exist_ok=True)     # crée le dossier si nécessaire
+    memory_file  = memory_dir / "sentra_memory.json"  # …/memory/sentra_memory.json
+
+    # 2) Préparer la nouvelle entrée (une ligne JSON)
+    entry = {
+        "type": "note",
+        "text": text,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+    }
+
     try:
-        save_note_from_text(texte)
+        # 3) Ajouter au fichier en mode “append”
+        with memory_file.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur write_note : {e}")
+        raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
@@ -179,15 +198,15 @@ async def write_note(req: WriteNoteRequest):
 # ------------------------------------
 @app.post("/write_file", response_model=WriteResponse)
 async def write_file(req: WriteFileRequest):
-    projet = req.project.strip()
+    projet   = req.project.strip()
     filename = req.filename.strip()
-    contenu = req.content
+    contenu  = req.content
 
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
-    base_path = Path(__file__).parent.parent
-    project_slug = projet.lower().replace(" ", "_")
+    base_path       = Path(__file__).parent.parent
+    project_slug    = projet.lower().replace(" ", "_")
     dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
 
     try:
