@@ -114,17 +114,28 @@ async def reprise_projet(req: RepriseRequest):
         )
 
     # 5) Exécuter project_resumer_gpt.py <project>
-    try:
-        subprocess.run(
-            ["python", str(project_resumer_gpt_script), projet],
-            check=True,
-            cwd=str(base_path)
-        )
-    except subprocess.CalledProcessError as e:
-        return RepriseResponse(
-            status="error",
-            detail=f"Échec project_resumer_gpt.py : {e.stderr or e}"
-        )
+ try:
+-    subprocess.run(
+-        ["python", str(project_resumer_gpt_script), projet],
+-        check=True,
+-        cwd=str(base_path)
+-    )
++    process = subprocess.run(
++        ["python", str(project_resumer_gpt_script), projet],
++        capture_output=True,  # capture stdout + stderr
++        text=True,            # decode bytes en str
++        cwd=str(base_path)
++    )
++    if process.returncode != 0:
++        # Renvoie l’erreur brute pour debug
++        detail = f"Erreur project_resumer_gpt.py (code {process.returncode}):\nSTDOUT:\n{process.stdout}\nSTDERR:\n{process.stderr}"
++        return RepriseResponse(status="error", detail=detail)
+ except subprocess.CalledProcessError as e:
+     return RepriseResponse(
+         status="error",
+         detail=f"Échec project_resumer_gpt.py : {e.stderr or e}"
+     )
+
 
     # 6) Récupérer le dernier fichier resume_gpt_*.md
     project_slug  = projet.lower().replace(" ", "_")
