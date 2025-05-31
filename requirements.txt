@@ -6,3 +6,4 @@ pydantic
 python-dotenv   # si vous utilisez des variables d’environnement
 requests        # si vos scripts en dépendent
 discord.py      # ou autre lib pour discord_fetcher.py
+packaging
