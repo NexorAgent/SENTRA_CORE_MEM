@@ -9,21 +9,22 @@ from typing import List, Dict
 
 def load_memory_entries() -> List[Dict]:
     """
-    Charge toutes les entrées JSON (une par ligne) dans memory/sentra_memory.json.
+    Charge toutes les entrées JSON depuis memory/sentra_memory.json.
     """
     project_root = Path(__file__).resolve().parent.parent
     memory_file = project_root / "memory" / "sentra_memory.json"
     if not memory_file.exists():
         return []
 
-    entries = []
-    with memory_file.open("r", encoding="utf-8") as f:
-        for line in f:
-            try:
-                entries.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return entries
+    try:
+        with memory_file.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            else:
+                return []
+    except json.JSONDecodeError:
+        return []
 
 def search_memory(query: str, max_results: int = 5) -> List[str]:
     """
