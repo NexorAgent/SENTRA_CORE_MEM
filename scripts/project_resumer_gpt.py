@@ -4,7 +4,7 @@ import base64
 import openai
 from pathlib import Path
 from datetime import datetime
-from packaging import version  # pour comparer les versions
+from packaging import version  # pour comparer les versions (optionnel ici)
 
 # ————————————————
 # 1. Configuration OpenAI
@@ -25,7 +25,7 @@ def compress_to_glyph(text: str) -> str:
     return b64
 
 # ————————————————
-# 3. Appel à l’API (interface adaptée selon la version du SDK)
+# 3. Appel à l’API via l’ancienne interface
 # ————————————————
 def summarize_with_gpt(compressed_content: str) -> str:
     prompt = (
@@ -37,26 +37,20 @@ def summarize_with_gpt(compressed_content: str) -> str:
         f"Contenu glyphique : {compressed_content}\n"
     )
 
-    # On ne passe PAS l’argument 'proxies' au client OpenAI
-    oi_version = version.parse(openai.__version__)
-    if oi_version >= version.parse("1.0.0"):
-        # Nouvelle interface pour openai >= 1.0.0
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-            temperature=0.3
-        )
-        return response.choices[0].message.content
+    # On appelle uniquement l’ancienne interface ChatCompletion
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=300,
+        temperature=0.3
+    )
+
+    choice = response.choices[0].message
+    # Selon la version du SDK, le message peut être un dict ou un objet avec un attribut "content"
+    if isinstance(choice, dict):
+        return choice.get("content", "")
     else:
-        # Ancienne interface pour openai < 1.0.0
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-            temperature=0.3
-        )
-        return response.choices[0].message["content"]
+        return getattr(choice, "content", "")
 
 # ————————————————
 # 4. Fonction principale
@@ -67,22 +61,18 @@ def main(project_name: str):
     resume_folder = Path("projects") / project_slug / "resume"
     if not resume_folder.exists():
         print(f"❌ Pas de dossier resume pour le projet {project_name}.")
-        return
+        exit(1)
 
     # Sélectionner le fichier résumé brut le plus récent
     resume_files = list(resume_folder.glob("resume_*.md"))
     if not resume_files:
         print(f"❌ Aucun fichier résumé trouvé dans {resume_folder}.")
-        return
+        exit(1)
     latest_resume = max(resume_files, key=lambda f: f.stat().st_mtime)
     print(f"📄 Lecture du fichier résumé : {latest_resume}")
 
     # Lire le contenu brut du fichier
-    try:
-        content = latest_resume.read_text(encoding="utf-8")
-    except Exception as e:
-        print(f"❌ Impossible de lire le fichier résumé : {e}")
-        return
+    content = latest_resume.read_text(encoding="utf-8")
 
     # Compression glyphique
     glyph = compress_to_glyph(content)
@@ -90,8 +80,13 @@ def main(project_name: str):
 
     # Configurer OpenAI et demander le résumé
     setup_openai()
-    # Si OpenAI plante, on laisse l’exception remonter afin que l’API /reprise puisse renvoyer une erreur
-    summary = summarize_with_gpt(glyph)
+
+    try:
+        summary = summarize_with_gpt(glyph)
+    except Exception as e:
+        # Si ça plante, on affiche l’erreur et on termine avec un code non-zéro
+        print(f"❌ Erreur OpenAI : {e}")
+        exit(1)
 
     # Sauvegarder le résumé GPT dans un nouveau fichier
     output_folder = Path("projects") / project_slug / "resume"
@@ -103,6 +98,7 @@ def main(project_name: str):
         print(f"✅ Résumé GPT généré : {output_path}")
     except Exception as e:
         print(f"❌ Erreur écriture du résumé GPT : {e}")
+        exit(1)
 
 if __name__ == "__main__":
     import sys
