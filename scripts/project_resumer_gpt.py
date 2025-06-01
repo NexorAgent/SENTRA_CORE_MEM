@@ -37,28 +37,26 @@ def summarize_with_gpt(compressed_content: str) -> str:
         f"Contenu glyphique : {compressed_content}\n"
     )
 
-    try:
-        oi_version = version.parse(openai.__version__)
-        if oi_version >= version.parse("1.0.0"):
-            # Nouvelle interface pour openai >= 1.0.0
-            response = openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-                temperature=0.3
-            )
-            return response.choices[0].message.content
-        else:
-            # Ancienne interface pour openai < 1.0.0
-            response = openai.ChatCompletion.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-                temperature=0.3
-            )
-            return response.choices[0].message["content"]
-    except Exception as e:
-        return f"❌ Erreur OpenAI : {e}"
+    # On ne passe PAS l’argument 'proxies' au client OpenAI
+    oi_version = version.parse(openai.__version__)
+    if oi_version >= version.parse("1.0.0"):
+        # Nouvelle interface pour openai >= 1.0.0
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    else:
+        # Ancienne interface pour openai < 1.0.0
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+            temperature=0.3
+        )
+        return response.choices[0].message["content"]
 
 # ————————————————
 # 4. Fonction principale
@@ -92,6 +90,7 @@ def main(project_name: str):
 
     # Configurer OpenAI et demander le résumé
     setup_openai()
+    # Si OpenAI plante, on laisse l’exception remonter afin que l’API /reprise puisse renvoyer une erreur
     summary = summarize_with_gpt(glyph)
 
     # Sauvegarder le résumé GPT dans un nouveau fichier
