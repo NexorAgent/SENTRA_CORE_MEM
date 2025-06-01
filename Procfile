@@ -1,1 +1,1 @@
-worker: python scripts/discord_bot.py
+web: python scripts/discord_bot.py
