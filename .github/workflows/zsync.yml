@@ -20,8 +20,5 @@ jobs:
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
-      - name: Vérifier la présence du fichier
-        run: ls scripts/zsync_scheduler.py
-
-      - name: Exécuter le script ZSYNC
-        run: python scripts/zsync_scheduler.py
+      - name: Exécuter zsync_scheduler via module
+        run: python -m scripts.zsync_scheduler
