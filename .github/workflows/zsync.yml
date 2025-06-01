@@ -1,0 +1,24 @@
+name: ZSYNC Scheduler
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # tous les jours à 03:00 UTC
+  workflow_dispatch:       # permet de le lancer manuellement aussi
+
+jobs:
+  zsync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloner le repo
+        uses: actions/checkout@v3
+
+      - name: Configurer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Exécuter zsync_scheduler.py
+        run: python scripts/zsync_scheduler.py
