@@ -12,23 +12,32 @@ MEM_PATH = ROOT / "memory" / "sentra_memory.json"
 
 def append_memory(contenu: str, typ: str = "log") -> None:
     """
-    Ajoute une entrée dans le fichier de mémoire.
+    Ajoute une entrée dans le fichier de mémoire (format liste JSON).
     """
     # Crée le dossier si besoin
     MEM_PATH.parent.mkdir(parents=True, exist_ok=True)
-    # Initialise le fichier si inexistant
-    if not MEM_PATH.exists():
-        MEM_PATH.write_text("[]", encoding="utf-8")
 
-    # Charge, modifie et sauvegarde
-    with MEM_PATH.open("r+", encoding="utf-8") as f:
-        data = json.load(f)
-        data.append({
-            "date": datetime.date.today().isoformat(),
-            "type": typ,
-            "contenu": contenu
-        })
-        f.seek(0)
+    # Charger la mémoire existante (ou init vide)
+    if MEM_PATH.exists():
+        try:
+            with MEM_PATH.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+                if not isinstance(data, list):
+                    data = []
+        except json.JSONDecodeError:
+            data = []
+    else:
+        data = []
+
+    # Ajouter la nouvelle entrée
+    data.append({
+        "date": datetime.date.today().isoformat(),
+        "type": typ,
+        "contenu": contenu
+    })
+
+    # Réécriture complète
+    with MEM_PATH.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.truncate()
 

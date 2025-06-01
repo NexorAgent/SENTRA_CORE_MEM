@@ -1,4 +1,12 @@
-{"type": "note", "text": "garde cette idée : essence du projet SENTRA", "timestamp": "2025-05-31T19:41:14"}
-{"type": "note", "text": "derniere sauvegarde", "timestamp": "2025-05-31T20:03:06"}
-{"type": "note", "text": "Ceci est une note de test via l’API.", "timestamp": "2025-05-31T22:07:52"}
-{"type": "note", "text": "Note d’exemple via l’API - test réussi.", "timestamp": "2025-05-31T22:09:17"}
+[
+  {
+    "type": "note",
+    "text": "note ceci est un test memoire",
+    "timestamp": "2025-06-01T08:12:52"
+  },
+  {
+    "type": "note",
+    "text": "Première note test CLI",
+    "timestamp": "2025-06-01T08:26:52"
+  }
+]
