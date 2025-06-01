@@ -1,0 +1,9 @@
+name: Render-KeepAlive
+on:
+  schedule:
+    - cron: "*/14 * * * *"
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -s https://<https://sentra-core-mem.onrender.com>.onrender.com/
