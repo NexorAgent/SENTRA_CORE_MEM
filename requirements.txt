@@ -4,6 +4,6 @@ uvicorn[standard]
 pydantic
 python-dotenv==1.0.1
 requests
-discord.py==2.4.2           # si discord_fetcher.py l’utilise
+discord.py>=2.5.0,<2.6.0      # si discord_fetcher.py l’utilise
 packaging
 unicodedata2 ; sys_platform == 'win32'
