@@ -20,5 +20,10 @@ jobs:
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
+      - name: Injecter secrets dans l'environnement
+        run: |
+          echo "NOTION_TOKEN=${{ secrets.NOTION_TOKEN }}" >> $GITHUB_ENV
+          echo "NOTION_DB_ID=${{ secrets.NOTION_DB_ID }}" >> $GITHUB_ENV
+
       - name: Exécuter zsync_scheduler via module
         run: python -m scripts.zsync_scheduler
