@@ -7,6 +7,7 @@ import sys
 import os
 import threading
 from pathlib import Path
+import traceback
 
 # ─── Chemin projet ───────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -17,7 +18,6 @@ if str(PROJECT_ROOT) not in sys.path:
 import discord
 from discord.ext import commands
 from flask import Flask
-import traceback
 
 from sentra.zarch import quick_query
 from sentra.dispatcher import detect_intent_and_route

@@ -1,0 +1,10 @@
+# Ignorer bytecode Python
+__pycache__/
+*.pyc
+
+# Ignorer environnements virtuels
+.venv/
+venv/
+
+# Ignorer dossier de rapports (si tu ne veux pas le versionner)
+reports/
