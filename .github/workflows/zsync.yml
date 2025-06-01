@@ -2,8 +2,8 @@ name: ZSYNC Scheduler
 
 on:
   schedule:
-    - cron: "0 3 * * *"  # tous les jours à 03:00 UTC
-  workflow_dispatch:       # permet de le lancer manuellement aussi
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 jobs:
   zsync:
@@ -20,5 +20,8 @@ jobs:
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
-      - name: Exécuter zsync_scheduler.py
+      - name: Vérifier la présence du fichier
+        run: ls scripts/zsync_scheduler.py
+
+      - name: Exécuter le script ZSYNC
         run: python scripts/zsync_scheduler.py
