@@ -74,10 +74,7 @@ docs/       → MANUEL, README, rapports Markdown
 - La clé API `OPENAI_API_KEY` doit être définie en variable d’environnement.
 - Le fichier `configs/config.json` définit le modèle, température, etc.
 
-## 📞 Contact
 
-Développé avec amour par **ZORAN IA**  
-Frédéric Tabary — [LinkedIn](https://www.linkedin.com/in/frederictabary)
 
 ---
 
