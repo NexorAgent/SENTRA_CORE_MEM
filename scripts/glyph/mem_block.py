@@ -4,12 +4,33 @@ import zlib
 import re
 from typing import Dict
 
-from .glyph_generator import compress_text, decompress_text, decompress_with_dict, export_dict
+from .glyph_generator import (
+    compress_text,
+    decompress_text,
+    decompress_with_dict,
+    export_dict,
+)
 
 
-def make_mem_block(fields: Dict[str, str], text: str, *, include_mapping: bool = False) -> str:
-    """Return a MEM.BLOCK string from fields and input text."""
-    compressed_glyph = compress_text(text)
+def make_mem_block(
+    fields: Dict[str, str],
+    text: str,
+    *,
+    include_mapping: bool = False,
+    obfuscate: bool = False,
+) -> str | tuple[str, Dict[str, str]]:
+    """Return a MEM.BLOCK string from fields and input text.
+
+    When ``obfuscate`` is True, glyph assignments are randomized for this block
+    only and the mapping is returned separately so it can be persisted by the
+    caller. ``include_mapping`` is ignored in this mode.
+    """
+    if obfuscate:
+        compressed_glyph, mapping = compress_text(text, obfuscate=True)
+    else:
+        compressed_glyph = compress_text(text)
+        mapping = export_dict() if include_mapping else None
+
     z = base64.b85encode(zlib.compress(compressed_glyph.encode("utf-8"))).decode("utf-8")
     parts = [
         "⦿MEM.BLOCK🧠∴",
@@ -21,9 +42,11 @@ def make_mem_block(fields: Dict[str, str], text: str, *, include_mapping: bool =
         "⟁SEAL⟶✅SENTRA",
     ]
     block = "".join(parts)
-    if include_mapping:
-        mapping_json = json.dumps(export_dict(), ensure_ascii=False)
+    if include_mapping and not obfuscate and mapping is not None:
+        mapping_json = json.dumps(mapping, ensure_ascii=False)
         block += "\n" + mapping_json
+    if obfuscate:
+        return block, mapping  # caller should store mapping separately
     return block
 
 

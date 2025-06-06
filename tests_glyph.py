@@ -3,8 +3,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.glyph import glyph_generator as gg
-from scripts.glyph import make_mem_block, decode_mem_block
+from scripts.glyph import (
+    glyph_generator as gg,
+    make_mem_block,
+    decode_mem_block,
+    decompress_with_dict,
+)
 
 
 class GlyphRoundTripTest(unittest.TestCase):
@@ -37,6 +41,13 @@ class GlyphRoundTripTest(unittest.TestCase):
         fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
         block = make_mem_block(fields, text, include_mapping=True)
         restored = decode_mem_block(block)
+        self.assertEqual(restored, text)
+
+    def test_obfuscate_mode(self):
+        text = "obfuscation unique test"
+        compressed, mapping = gg.compress_text(text, obfuscate=True)
+        self.assertIsInstance(mapping, dict)
+        restored = decompress_with_dict(compressed, mapping)
         self.assertEqual(restored, text)
 
 
