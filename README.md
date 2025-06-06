@@ -74,6 +74,32 @@ docs/       → MANUEL, README, rapports Markdown
 - La clé API `OPENAI_API_KEY` doit être définie en variable d’environnement.
 - Le fichier `configs/config.json` définit le modèle, température, etc.
 
+- ## Sécurité des clés API
+
+La clé OpenAI (et toute clé sensible) ne doit jamais être committée dans le code ni dans les fichiers de configuration.  
+Elle doit être fournie comme **variable d’environnement** :
+
+- **Sur Windows** :
+  - Ouvrir PowerShell ou Git Bash
+  - Exécuter :  
+    `setx OPENAI_API_KEY "ta-clé-ici"`
+  - (Redémarrer le terminal pour prise en compte)
+
+- **Sur Render.com / autre hébergeur** :
+  - Ajouter la variable dans les paramètres “Environment Variables” du projet (OPENAI_API_KEY)
+
+- **Sur GitHub Actions** :
+  - Définir la clé comme “Repository Secret” (Settings > Secrets and variables > Actions > New repository secret)
+
+> **Aucun fichier .env n’est fourni dans le repo.**  
+> La clé reste privée sur chaque environnement.
+
+Les scripts Python lisent automatiquement la clé avec :
+```python
+import os
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
 
 
 ---
