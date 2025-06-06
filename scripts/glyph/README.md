@@ -45,3 +45,23 @@ Example block taken from `logs/tets/test_log_translated.txt`:
 ⦿MEM.BLOCK🧠∴⟁ID⟶ZCORE↯⟁TS⟶2025.05.29T18:00↯⟁INT⟶TEST.TRADUCTION↯⟁Σ⟶MEM.GLYPH++↯⟁CMPZ⟶ƛ:Gz85#abc123...↯⟁SEAL⟶✅SENTRA
 ```
 
+### Obfuscation Mode
+
+Calling the compressor with `--obfuscate` assigns random glyphs instead of the
+persistent dictionary. The temporary mapping is written to `obfuscated_map.json`
+(or the path provided with `--map-out`). Decryption simply loads this mapping and
+passes it to `decompress_with_dict()`:
+
+```python
+from scripts.glyph.glyph_generator import compress_text, decompress_with_dict
+import json
+
+compressed = compress_text("texte secret", obfuscate=True, mapping_file="map.json")
+mapping = json.load(open("map.json", "r", encoding="utf-8"))
+original = decompress_with_dict(compressed, mapping)
+```
+
+This feature only obscures content. It is *not* strong encryption—frequency
+analysis of the glyphs could reveal common terms—so keep the mapping file safe
+if confidentiality matters.
+
