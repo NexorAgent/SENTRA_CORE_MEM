@@ -104,4 +104,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 ---
 
+## Licence
+Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
+
 © 2025 — Projet open-source modulable ✨
