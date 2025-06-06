@@ -28,6 +28,29 @@ print(compressed)
 print(decompress_text(compressed))
 ```
 
+## Adding New Glyph Sets
+
+1. Create a new JSON dictionary such as `memory/glyph_dict_custom.json`.
+2. Set the environment variable `GLYPH_DICT_PATH` to this file.
+3. Use `glyph_watcher.py` or `pipeline_traducteur.py` to populate it.
+
+## Sharing the Dictionary
+
+All agents read from the path given in `GLYPH_DICT_PATH`. Point this variable
+to a common location (network share or repository) so every agent uses the same
+mapping table.
+
+## Backup and Versioning
+
+Commit `glyph_dict.json` to Git and keep a compressed copy with:
+`gzip -k memory/glyph_dict.json`. Archiving the dictionary preserves its
+evolution and can slightly improve compression over time.
+
+## Obfuscation Mode
+
+Pass `include_mapping=False` to `make_mem_block()` to omit the glyph table.
+Only agents with the dictionary will be able to decode the block.
+
 ## Tests
 
 A suite `tests_glyph.py` uses `unittest` to verify that compressing then
