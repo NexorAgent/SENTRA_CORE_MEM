@@ -1,107 +1,102 @@
 # SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠🦋
 
-# SENTRA_CORE_MEM
-
-🧠 **SENTRA_CORE_MEM** est un noyau IA autonome, conçu pour centraliser mémoire, réflexion critique, compression glyphique et pilotage d’agents.
+**SENTRA_CORE_MEM** est un noyau IA autonome capable de compresser ses souvenirs, d'orchestrer plusieurs agents spécialisés et de fonctionner hors‑SaaS. Le projet reste 100 % open‑source et modulable.
 
 ## 🔍 Objectif
-Construire une intelligence artificielle modulaire et mémorielle capable de :
-- mémoriser automatiquement chaque interaction utile
-- résumer en 3 niveaux (humain / hybride / glyphique)
-- appeler des agents spécialisés (Forge, Réseau, Analyse…)
-- agir avec rigueur, cohérence, sourcing et économie de tokens
+- Mémoriser automatiquement chaque interaction utile
+- Résumer en 3 niveaux (humain / hybride / glyphique)
+- Appeler des agents dédiés (Markdown, Notion, Discord…)
+- Agir avec rigueur et économie de tokens
 
 ## 📂 Structure projet
-
+```
 sentra_core_mem/
-├── memory/ # Mémoire compressée (.json)
-├── prompts/ # Prompts systèmes (ex : sentra_core.prompt.txt)
-├── scripts/ # Fonctions Python appelées par main
-├── SENTRA_OATH.md # Serment comportemental IA
-├── glyph_rules.txt # Normes de compression glyphique (N3)
-├── main.py # Point d'entrée local
-├── .env # Clé API OpenAI
-└── requirements.txt # Dépendances
+├── memory/            # Mémoire compressée (.json)
+├── scripts/           # Encodeurs, agents, utilitaires
+├── sentra/            # Noyau, orchestrateur & recherche
+├── reports/           # Rapports générés
+├── logs/              # Journaux d'exécution
+└── docs/              # Documentation (manuel, changelog…)
+```
 
+## 🚀 Installation
 
-## 🧠 Fonctionnement
-1. Chargement du prompt + mémoire (5 dernières entrées)
-2. Réponse GPT-4 avec :
-   - Résumé utilisateur
-   - Résumé glyphique
-   - Sauvegarde auto dans `sentra_memory.json`
-3. Rappel mémoire sur demande (“résume tout ce qui concerne le projet mémoire”)
+### Pré‑requis
+| Outil | Version minimale | Vérification |
+| ----- | ---------------- | ------------ |
+| **Python** | 3.10 | `python --version` |
+| **Git** | 2.30 | `git --version` |
+| **Make** *(optionnel)* | — | `make --version` |
 
-## 🛠️ Modules en développement
-- [x] Mémoire locale automatique
-- [ ] Mémoire Notion (niveau 2)
-- [ ] Appels vocaux via Discord
-- [ ] Routage d'agents par spécialité (SENTRA.FORGE, SENTRA.POST...)
-
----
-
-# 🔧 UTILISATION TECHNIQUE (DOCS)
-
-Système modulaire pour création, compression et interrogation de **mémoires IA/IA**.  
-Utilise OpenAI GPT pour encoder, recharger et interagir avec des blocs de mémoire compressée `.zmem`.
-
-## ⚙️ Fonctionnalités principales
-
-- 🧠 Encodage mémoire IA sous format `.zmem` avec dictionnaire symbolique
-- 🔁 Rechargement et interrogation par GPT (mode système)
-- 📤 Export Markdown des mémoires
-- 🧩 Compatible Discord et Notion via agents
-- 🔒 Séparation configuration/API dans `/configs/`
-
-## 🚀 Utilisation rapide
-
+### Clonage & dépendances
 ```bash
-python scripts/zmem_encoder.py -i docs/mon_texte.txt -n TEST/MEM
-python scripts/compose_prompt.py TEST/MEM
+# Récupérer le dépôt
+$ git clone https://github.com/sentra-core/sentra_core_mem.git
+$ cd sentra_core_mem
+
+# Environnement virtuel (conseillé)
+$ python -m venv .venv && source .venv/bin/activate
+
+# Installer les packages
+$ pip install -r requirements.txt
 ```
 
-## 📁 Structure
+### Configuration initiale
+1. Copier `.env.example` en `.env` puis renseigner :
+   ```ini
+   OPENAI_API_KEY=sk-...
+   NOTION_TOKEN=secret_...
+   NOTION_DB_ID=abcd1234...
+   DISCORD_BOT_TOKEN=MTA...
+   ```
+2. Vérifier `configs/config.json` (modèle, température…).
 
+### Vérification
+```bash
+$ python scripts/sentra_check.py
 ```
-scripts/    → encodeurs, agents, utilitaires
-configs/    → config OpenAI, Discord, Notion
-memories/   → .zmem compressés + .src lisibles
-docs/       → MANUEL, README, rapports Markdown
+
+## 🔄 Vue d'ensemble du workflow
+Un cycle complet peut être exécuté manuellement ou via scheduler :
+```
+encode → load → sync → report
+```
+Le script `sentra/orchestrator.py` centralise ces étapes et gère la distribution vers les agents.
+
+## 📖 Exemples d'utilisation
+
+### Créer et interroger une mémoire
+```bash
+python scripts/zmem_encoder.py -i docs/mon_texte.txt -n DEMO/MEM
+python scripts/compose_prompt.py DEMO/MEM
 ```
 
-## 🔐 Configuration
+### Orchestrateur & agents
+```bash
+# Encodage via l'orchestrateur
+python sentra/orchestrator.py encode --input docs/mon_texte.txt --name DEMO/MEM
 
-- La clé API `OPENAI_API_KEY` doit être définie en variable d’environnement.
-- Le fichier `configs/config.json` définit le modèle, température, etc.
+# Synchronisation Notion + Discord
+python sentra/orchestrator.py sync --target all
 
-- ## Sécurité des clés API
+# Génération de rapport pour une date
+python sentra/orchestrator.py report --date 2025-06-01
+```
+Les agents peuvent aussi être appelés directement :
+```bash
+python scripts/agent_markdown.py           # Rapport Markdown
+python scripts/agent_notion.py             # Synchronisation Notion
+python sentra/zarch.py --query "Alpha"     # Recherche dans la mémoire
+```
 
-La clé OpenAI (et toute clé sensible) ne doit jamais être committée dans le code ni dans les fichiers de configuration.  
-Elle doit être fournie comme **variable d’environnement** :
+### Autres scripts utiles
+```bash
+python scripts/archive.py       # Archiver le projet
+python scripts/main.py          # Test global de l'installation
+```
 
-- **Sur Windows** :
-  - Ouvrir PowerShell ou Git Bash
-  - Exécuter :  
-    `setx OPENAI_API_KEY "ta-clé-ici"`
-  - (Redémarrer le terminal pour prise en compte)
+## 📑 Documentation supplémentaire
+- [CHANGELOG](docs/CHANGELOG.md)
+- [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
 
-- **Sur Render.com / autre hébergeur** :
-  - Ajouter la variable dans les paramètres “Environment Variables” du projet (OPENAI_API_KEY)
-
-- **Sur GitHub Actions** :
-  - Définir la clé comme “Repository Secret” (Settings > Secrets and variables > Actions > New repository secret)
-
-> **Aucun fichier .env n’est fourni dans le repo.**  
-> La clé reste privée sur chaque environnement.
-
-Les scripts Python lisent automatiquement la clé avec :
-```python
-import os
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
-
-
----
-
-© 2025 — Projet open-source modulable ✨
+© 2025 — Projet open‑source modulable ✨
