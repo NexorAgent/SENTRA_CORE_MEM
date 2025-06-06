@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from scripts.glyph import glyph_generator as gg
@@ -37,6 +38,14 @@ class GlyphRoundTripTest(unittest.TestCase):
         fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
         block = make_mem_block(fields, text, include_mapping=True)
         restored = decode_mem_block(block)
+        self.assertEqual(restored, text)
+
+    def test_obfuscation_cycle(self):
+        text = "secret message"
+        map_path = Path(self.tmp.name) / "obf.json"
+        compressed = gg.compress_text(text, obfuscate=True, mapping_file=map_path)
+        mapping = json.loads(map_path.read_text(encoding="utf-8"))
+        restored = gg.decompress_with_dict(compressed, mapping)
         self.assertEqual(restored, text)
 
 

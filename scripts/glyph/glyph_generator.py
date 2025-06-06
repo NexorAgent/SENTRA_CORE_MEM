@@ -4,7 +4,7 @@ import pathlib
 import random
 import re
 import string
-from typing import Dict
+from typing import Dict, Optional
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_DICT_PATH = ROOT / "memory" / "glyph_dict.json"
@@ -48,9 +48,36 @@ def get_term(glyph: str) -> str:
     return reverse.get(glyph, glyph)
 
 
-def compress_text(text: str) -> str:
-    """Replace words in text with glyphs."""
+def compress_text(
+    text: str,
+    *,
+    obfuscate: bool = False,
+    mapping_file: Optional[str | pathlib.Path] = None,
+) -> str:
+    """Replace words in text with glyphs.
+
+    When ``obfuscate`` is True, random glyphs are assigned instead of using the
+    persistent dictionary. The mapping is saved to ``mapping_file`` so the text
+    can be restored later.
+    """
     words = re.findall(r"\b\w+\b", text)
+    if obfuscate:
+        mapping: Dict[str, str] = {}
+        used: set[str] = set()
+        for w in set(words):
+            glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            while glyph in used:
+                glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            mapping[w] = glyph
+            used.add(glyph)
+        for w, glyph in mapping.items():
+            pattern = rf"\b{re.escape(w)}\b"
+            text = re.sub(pattern, lambda _m, g=glyph: g, text)
+        out = pathlib.Path(mapping_file or "obfuscated_map.json")
+        out.write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8")
+        return text
+
+    # regular mode using persistent dictionary
     for w in set(words):
         glyph = get_glyph(w)
         pattern = rf"\b{re.escape(w)}\b"
