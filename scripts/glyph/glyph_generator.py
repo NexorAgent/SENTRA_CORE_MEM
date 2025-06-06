@@ -4,7 +4,7 @@ import pathlib
 import random
 import re
 import string
-from typing import Dict
+from typing import Dict, Tuple
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_DICT_PATH = ROOT / "memory" / "glyph_dict.json"
@@ -48,9 +48,28 @@ def get_term(glyph: str) -> str:
     return reverse.get(glyph, glyph)
 
 
-def compress_text(text: str) -> str:
-    """Replace words in text with glyphs."""
+def compress_text(text: str, *, obfuscate: bool = False) -> str | Tuple[str, Dict[str, str]]:
+    """Replace words in text with glyphs.
+
+    If ``obfuscate`` is True, generate a temporary random mapping instead of
+    updating the persistent dictionary. The function then returns a tuple
+    ``(compressed_text, mapping)`` where ``mapping`` maps original words to the
+    random glyphs.
+    """
     words = re.findall(r"\b\w+\b", text)
+    if obfuscate:
+        mapping: Dict[str, str] = {}
+        used = set()
+        for w in set(words):
+            glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            while glyph in used:
+                glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            used.add(glyph)
+            mapping[w] = glyph
+            pattern = rf"\b{re.escape(w)}\b"
+            text = re.sub(pattern, lambda _m, g=glyph: g, text)
+        return text, mapping
+
     for w in set(words):
         glyph = get_glyph(w)
         pattern = rf"\b{re.escape(w)}\b"
