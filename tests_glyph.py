@@ -4,7 +4,10 @@ import unittest
 from pathlib import Path
 
 from scripts.glyph import glyph_generator as gg
-from scripts.glyph import make_mem_block, decode_mem_block
+from scripts.glyph import make_mem_block, decode_mem_block, Compressor
+import subprocess
+import json
+import sys
 
 
 class GlyphRoundTripTest(unittest.TestCase):
@@ -38,6 +41,39 @@ class GlyphRoundTripTest(unittest.TestCase):
         block = make_mem_block(fields, text, include_mapping=True)
         restored = decode_mem_block(block)
         self.assertEqual(restored, text)
+
+    def test_compressor_modes(self):
+        text = "exemple de texte compressable"
+        for mode in [Compressor.GLYPH, Compressor.ZLIB, Compressor.BOTH]:
+            with self.subTest(mode=mode):
+                comp = Compressor(mode)
+                data = comp.compress(text)
+                self.assertEqual(comp.decompress(data), text)
+
+    def _run_cli(self, mode: str):
+        workdir = Path(self.tmp.name) / f"data_{mode}"
+        workdir.mkdir()
+        originals = []
+        for i in range(3):
+            p = workdir / f"file{i}.txt"
+            content = f"ligne {i} pour {mode}"
+            p.write_text(content, encoding="utf-8")
+            originals.append((p, content))
+
+        cmd = [sys.executable, "-m", "scripts.glyph.batch_cli", mode, str(workdir)]
+        subprocess.run(cmd, check=True)
+
+        report_path = workdir / "compression_report.json"
+        self.assertTrue(report_path.exists())
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        for src, content in originals:
+            dec_file = Path(report[str(src)]["decompressed"])
+            self.assertEqual(dec_file.read_text(encoding="utf-8"), content)
+
+    def test_batch_cli_all_modes(self):
+        for mode in [Compressor.GLYPH, Compressor.ZLIB, Compressor.BOTH]:
+            with self.subTest(mode=mode):
+                self._run_cli(mode)
 
 
 if __name__ == "__main__":
