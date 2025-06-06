@@ -99,4 +99,11 @@ python scripts/main.py          # Test global de l'installation
 - [CHANGELOG](docs/CHANGELOG.md)
 - [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
 
+ codex/mettre-à-jour-readme.md
 © 2025 — Projet open‑source modulable ✨
+
+## Licence
+Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
+
+© 2025 — Projet open-source modulable ✨
+ dev
