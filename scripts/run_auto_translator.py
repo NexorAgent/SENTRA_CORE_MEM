@@ -5,11 +5,14 @@ import json
 import zlib
 import base64
 import argparse
+import random
 from datetime import datetime
 from collections import Counter
 
 parser = argparse.ArgumentParser(description="Pipeline de compression + mémoire IA/IA")
 parser.add_argument("-i", "--input", default="resume_translated.txt", help="Fichier source à traiter")
+parser.add_argument("--obfuscate", action="store_true", help="Randomise les glyphes pour cette exécution")
+parser.add_argument("--map-out", default=None, help="Fichier de sortie pour la table de correspondance")
 args = parser.parse_args()
 
 INPUT_FILE = args.input
@@ -20,6 +23,7 @@ ZLIB_TXT_OUTPUT = f"{FILENAME}.zlib.txt"
 ZLIB_BIN_OUTPUT = f"{FILENAME}.zlib"
 SRC_OUTPUT = "memory_zia/sentra_memory.zmem.src"
 ZMEM_OUTPUT = "memory_zia/sentra_memory.zmem"
+MAPPING_OUTPUT = args.map_out or f"{FILENAME}_mapping.json"
 
 os.makedirs("memory_zia", exist_ok=True)
 
@@ -27,26 +31,34 @@ os.makedirs("memory_zia", exist_ok=True)
 with open(INPUT_FILE, "r", encoding="utf-8") as f:
     content = f.read()
 
-# Charger dictionnaire existant
-if os.path.exists(DICT_PATH):
-    with open(DICT_PATH, "r", encoding="utf-8") as f:
-        tag_dict = json.load(f)
-else:
-    tag_dict = {}
-
-# Détection et ajout de nouvelles balises
+# Détection des balises dans le texte
 tags = re.findall(r"<([^>]+)>", content)
 tag_counts = Counter(tags)
 top_tags = tag_counts.most_common(50)
 
-for tag, _ in top_tags:
-    if tag not in tag_dict:
-        new_sym = f"§{len(tag_dict):02X}"
-        tag_dict[tag] = new_sym
-
-# Sauvegarder le dictionnaire mis à jour
-with open(DICT_PATH, "w", encoding="utf-8") as f:
-    json.dump(tag_dict, f, ensure_ascii=False, indent=2)
+if args.obfuscate:
+    tag_dict = {}
+    existing = set()
+    for tag, _ in top_tags:
+        glyph = f"§{random.randint(0,255):02X}"
+        while glyph in existing:
+            glyph = f"§{random.randint(0,255):02X}"
+        tag_dict[tag] = glyph
+        existing.add(glyph)
+    with open(MAPPING_OUTPUT, "w", encoding="utf-8") as f:
+        json.dump(tag_dict, f, ensure_ascii=False, indent=2)
+else:
+    if os.path.exists(DICT_PATH):
+        with open(DICT_PATH, "r", encoding="utf-8") as f:
+            tag_dict = json.load(f)
+    else:
+        tag_dict = {}
+    for tag, _ in top_tags:
+        if tag not in tag_dict:
+            new_sym = f"§{len(tag_dict):02X}"
+            tag_dict[tag] = new_sym
+    with open(DICT_PATH, "w", encoding="utf-8") as f:
+        json.dump(tag_dict, f, ensure_ascii=False, indent=2)
 
 # Remplacer les balises par les symboles
 compressed_content = content
@@ -81,3 +93,5 @@ print(f"ZLIB .txt    : {ZLIB_TXT_OUTPUT}")
 print(f"ZLIB .bin    : {ZLIB_BIN_OUTPUT}")
 print(f"ZMEM .src    : {SRC_OUTPUT}")
 print(f"ZMEM .bin    : {ZMEM_OUTPUT}")
+if args.obfuscate:
+    print(f"Mapping      : {MAPPING_OUTPUT}")
