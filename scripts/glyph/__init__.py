@@ -9,6 +9,7 @@ from .glyph_generator import (
     export_dict,
 )
 from .mem_block import make_mem_block, decode_mem_block
+from .compressor import Compressor
 
 __all__ = [
     "get_glyph",
@@ -21,4 +22,5 @@ __all__ = [
     "export_dict",
     "make_mem_block",
     "decode_mem_block",
+    "Compressor",
 ]
