@@ -4,7 +4,7 @@ import zlib
 import re
 from typing import Dict, Optional, Tuple
 
-from .glyph_generator import (
+from scripts.glyph.glyph_generator import (
     compress_text,
     decompress_text,
     decompress_with_dict,
