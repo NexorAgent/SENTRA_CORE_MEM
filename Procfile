@@ -1,2 +1,2 @@
-web: gunicorn -w 1 -b 0.0.0.0:$PORT scripts.discord_bot:app
+web: uvicorn scripts.api_sentra:app --host 0.0.0.0 --port $PORT
 
