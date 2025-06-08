@@ -8,7 +8,7 @@ from .glyph_generator import (
     randomize_mapping,
     export_dict,
 )
-from .mem_block import make_mem_block, decode_mem_block
+from scripts.mem_block import make_mem_block, decode_mem_block
 from .compressor import Compressor
 
 __all__ = [
