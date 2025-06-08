@@ -8,6 +8,10 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from .git_utils import git_commit_push
+from .memory_lookup import search_memory
+from .memory_manager import query_memory
+
 # ------------------------------------
 #  Création de l’application FastAPI
 # ------------------------------------
@@ -74,6 +78,10 @@ class WriteResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
+
+class ReadNoteResponse(BaseModel):
+    status: str
+    results: list[str]
 
 # ------------------------------------
 #  POST /reprise  (DISCORD → Résumé Brut → Résumé GPT)
@@ -210,9 +218,19 @@ async def write_note(req: WriteNoteRequest):
     }
 
     try:
-        # 3) Écrire dans le fichier JSON (mode append)
-        with memory_file.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        # 3) Charger la mémoire existante (liste JSON)
+        if memory_file.exists():
+            try:
+                memory = json.loads(memory_file.read_text(encoding="utf-8"))
+                if not isinstance(memory, list):
+                    memory = []
+            except json.JSONDecodeError:
+                memory = []
+        else:
+            memory = []
+        # 4) Ajouter l'entrée puis réécrire complètement
+        memory.append(entry)
+        memory_file.write_text(json.dumps(memory, indent=2, ensure_ascii=False), encoding="utf-8")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
@@ -228,6 +246,11 @@ async def write_note(req: WriteNoteRequest):
             mf.write(f"{timestamp_md}{text}\n\n")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
+
+    try:
+        git_commit_push([memory_file, memorial_file], f"GPT note: {text[:50]}")
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
@@ -252,6 +275,21 @@ async def get_notes():
         raise HTTPException(status_code=500, detail=f"Impossible de lire le fichier : {repr(e)}")
 
     return Response(content=content, media_type="text/plain")
+
+# ------------------------------------
+#  GET /read_note  (recherche simple dans la mémoire)
+# ------------------------------------
+@app.get("/read_note", response_model=ReadNoteResponse)
+async def read_note(term: str = "", limit: int = 5):
+    try:
+        if term:
+            results = search_memory(term, max_results=limit)
+        else:
+            recent = query_memory(limit)
+            results = [f"- [{e.get('timestamp','')}] {e.get('text','')}" for e in recent]
+        return ReadNoteResponse(status="success", results=results)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lecture mémoire : {repr(e)}")
 
 # ------------------------------------
 #  GET /get_memorial  (affichage de Z_MEMORIAL.md)
@@ -302,6 +340,11 @@ async def write_file(req: WriteFileRequest):
         file_path.write_text(contenu, encoding="utf-8")
     except Exception as e:
         return WriteResponse(status="error", detail=f"Erreur écriture du fichier {file_path} : {e}")
+
+    try:
+        git_commit_push([file_path], f"GPT file update: {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(
         status="success",
