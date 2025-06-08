@@ -113,6 +113,8 @@ curl -X POST http://localhost:8000/write_file \
 Chaque écriture déclenche automatiquement un `git commit` suivi d’un `git push`,
 assurant la persistance des modifications. Les notes sont sauvegardées dans
 `memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`.
+Lorsqu’un champ `project` est fourni, elles sont aussi ajoutées dans
+`projects/<slug>/fichiers/memoire_<slug>.md`.
 
 
 ## 🔒 Obfuscation glyphique
