@@ -4,8 +4,8 @@ import datetime
 import pathlib
 
 # ─── Configuration ─────────────────────────────────────────────
-# Définit la racine du projet (deux niveaux au-dessus de ce fichier)
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+# Définit la racine du projet (un niveau au-dessus de ce fichier)
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 MEM_PATH = ROOT / "memory" / "sentra_memory.json"
 
 # ─── Fonctions de gestion de la mémoire persistante ──────────────
