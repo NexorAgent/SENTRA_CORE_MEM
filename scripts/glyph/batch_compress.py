@@ -10,14 +10,13 @@ Usage:
 - --report : chemin du rapport de compression (CSV ou Markdown, auto selon extension)
 - --obfuscate : encode chaque fichier en MEM.BLOCK SANS mapping (plus sûr pour le partage)
 
-Exemples :
+Exemple :
     python batch_compress.py ./in ./out --mode glyph --report ./out/report.md --obfuscate
 """
 
 import argparse
 import base64
 import csv
-import json
 import zlib
 from pathlib import Path
 from datetime import datetime
