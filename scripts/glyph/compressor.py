@@ -1,64 +1,120 @@
+import argparse
+import json
 import os
-import tempfile
-import unittest
-from pathlib import Path
+import pathlib
+import random
+import re
+import string
+from typing import Dict, Iterable
 
-from scripts.compressor import Compressor
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+DEFAULT_DICT_DIR = ROOT / "memory"
 
-class CompressorTest(unittest.TestCase):
-    def setUp(self):
-        # Crée un dossier temporaire isolé pour chaque test (mapping non persistant)
-        self.tmp = tempfile.TemporaryDirectory()
-        os.environ["GLYPH_DICT_PATH"] = str(Path(self.tmp.name) / "glyph_dict.json")
+GLYPH_POOL = list("↯⊚⟴⚡∑¤†⌇⟁⊕⚙⚖🜁🧩🌀⧉♒︎⩾⊗" + string.punctuation)
+EMOJI_POOL = list("😀😁😂🤣😃😄😅😆😉😊😋😎🥳🤖👾👻")
 
-    def tearDown(self):
-        self.tmp.cleanup()
-        os.environ.pop("GLYPH_DICT_PATH", None)
+class Compressor:
+    """Generic text compressor with multiple modes."""
 
-    def test_visual_mode(self):
-        comp = Compressor("visual")
-        txt = "chat avec intelligence augmentée"
-        compressed = comp.compress(txt)
-        self.assertIsInstance(compressed, str)
-        restored = comp.decompress(compressed)
-        self.assertEqual(restored, txt)
+    def __init__(self, mode: str = "glyph", dict_dir: pathlib.Path | None = None):
+        self.mode = mode
+        self.dict_dir = pathlib.Path(dict_dir) if dict_dir else DEFAULT_DICT_DIR
+        self.mapping = self._load_dict()
 
-    def test_abbrev_mode(self):
-        comp = Compressor("abbrev")
-        txt = "compression et décompression abbreviation abbreviation"
-        compressed = comp.compress(txt)
-        # Vérifie présence d'abréviation (premiers caractères)
-        self.assertIn("abb", compressed)
-        restored = comp.decompress(compressed)
-        self.assertEqual(restored, txt)
+    # ------------------------------------------------------------------
+    # Dictionary helpers
+    def dict_file(self) -> pathlib.Path:
+        """Return path to dictionary file for current mode."""
+        filename = f"{self.mode}_dict.json"
+        env = os.environ.get(f"{self.mode.upper()}_DICT_PATH")
+        return pathlib.Path(env) if env else self.dict_dir / filename
 
-    def test_alphanumeric_mode(self):
-        comp = Compressor("alphanumeric")
-        txt = "test alphanumérique token token"
-        compressed = comp.compress(txt)
-        self.assertIn("T", compressed)
-        restored = comp.decompress(compressed)
-        self.assertEqual(restored, txt)
+    def _load_dict(self) -> Dict[str, str]:
+        path = self.dict_file()
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+        return {}
 
-    def test_custom_mode_existing_mapping(self):
-        comp = Compressor("custom")
-        # Prép: mapping manuel pour custom (pas d'ajout auto)
-        comp.mapping = {"hello": "XX", "world": "YY"}
-        comp._save_mapping()
-        txt = "hello world"
-        compressed = comp.compress(txt)
-        self.assertIn("XX", compressed)
-        self.assertIn("YY", compressed)
-        restored = comp.decompress(compressed)
-        self.assertEqual(restored, txt)
+    def _save_dict(self) -> None:
+        path = self.dict_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(self.mapping, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
 
-    def test_custom_mode_no_new_tokens(self):
-        comp = Compressor("custom")
-        # mapping volontairement vide
-        txt = "nouveau mot"
-        compressed = comp.compress(txt)
-        # Aucun remplacement car pas de mapping connu
-        self.assertEqual(compressed, txt)
+    # ------------------------------------------------------------------
+    # Token generation
+    def _generate_token(self, used: Iterable[str]) -> str:
+        used = set(used)
+        if self.mode == "emoji":
+            pool = EMOJI_POOL
+            token = random.choice(pool)
+            while token in used:
+                token = random.choice(pool)
+            return token
+        elif self.mode == "abbr":
+            token = "".join(random.choice(string.ascii_uppercase) for _ in range(3))
+            while token in used:
+                token = "".join(
+                    random.choice(string.ascii_uppercase) for _ in range(3)
+                )
+            return token
+        elif self.mode == "alphanum":
+            chars = string.ascii_uppercase + string.digits
+            token = "".join(random.choice(chars) for _ in range(2))
+            while token in used:
+                token = "".join(random.choice(chars) for _ in range(2))
+            return token
+        # default glyph mode
+        token = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+        while token in used:
+            token = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+        return token
+
+    # ------------------------------------------------------------------
+    # Public API
+    def get_token(self, term: str) -> str:
+        if term not in self.mapping:
+            self.mapping[term] = self._generate_token(self.mapping.values())
+            self._save_dict()
+        return self.mapping[term]
+
+    def get_term(self, token: str) -> str:
+        reverse = {v: k for k, v in self.mapping.items()}
+        return reverse.get(token, token)
+
+    def compress_text(self, text: str) -> str:
+        words = re.findall(r"\b\w+\b", text)
+        for w in set(words):
+            token = self.get_token(w)
+            pattern = rf"\b{re.escape(w)}\b"
+            text = re.sub(pattern, lambda _m, t=token: t, text)
+        return text
+
+    def decompress_text(self, text: str) -> str:
+        for term, token in sorted(self.mapping.items(), key=lambda x: len(x[1]), reverse=True):
+            text = text.replace(token, term)
+        return text
+
+# ----------------------------------------------------------------------
+# CLI entry point
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Compress/decompress text")
+    parser.add_argument("input", help="Input text file")
+    parser.add_argument("output", help="Output text file")
+    parser.add_argument("--mode", default="glyph", choices=["glyph", "emoji", "abbr", "alphanum"], help="Compression mode")
+    parser.add_argument("--decompress", action="store_true", help="Decompress instead of compress")
+    args = parser.parse_args(argv)
+
+    comp = Compressor(args.mode)
+    data = pathlib.Path(args.input).read_text(encoding="utf-8")
+    if args.decompress:
+        result = comp.decompress_text(data)
+    else:
+        result = comp.compress_text(data)
+    pathlib.Path(args.output).write_text(result, encoding="utf-8")
 
 if __name__ == "__main__":
-    unittest.main()
+    main()
