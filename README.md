@@ -81,6 +81,7 @@ docs/       → MANUEL, README, rapports Markdown
 Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour interagir avec la mémoire :
 - `POST /write_note` – ajoute une note textuelle dans la mémoire
 - `GET /get_notes` – lit le fichier JSON complet (lecture de note)
+- `GET /read_note` – recherche des notes par mot-clé ou affiche les dernières
 - `GET /get_memorial` – renvoie le journal Markdown du projet
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
 - `POST /reprise` – résume un canal Discord
@@ -96,6 +97,9 @@ curl -X POST http://localhost:8000/write_note \
 
 # Lire la mémoire JSON
 curl http://localhost:8000/get_notes
+
+# Rechercher dans la mémoire
+curl "http://localhost:8000/read_note?term=project"
 
 # Écrire un fichier dans le projet "sentra_core"
 curl -X POST http://localhost:8000/write_file \
