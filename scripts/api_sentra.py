@@ -254,6 +254,38 @@ async def get_notes():
     return Response(content=content, media_type="text/plain")
 
 # ------------------------------------
+#  GET /read_note  (recherche dans la mémoire)
+# ------------------------------------
+@app.get("/read_note")
+async def read_note(term: str = "", date: str = "", limit: int = 5):
+    """Rechercher des notes dans ``sentra_memory.json``.
+
+    Args:
+        term: mot ou expression à chercher dans le champ ``text``.
+        date: filtre optionnel ``YYYY-MM-DD`` sur ``timestamp``.
+        limit: nombre maximum de résultats renvoyés.
+
+    Retourne une liste de notes formatées ``- [timestamp] text``.
+    """
+    from .memory_lookup import load_memory_entries, search_memory
+
+    entries = load_memory_entries()
+    results: list[str]
+
+    if term:
+        # Recherche textuelle puis filtrage date
+        results = search_memory(term, max_results=len(entries))
+        if date:
+            results = [r for r in results if r.startswith(f"- [{date}")]
+    else:
+        # Pas de terme : filtrage manuel
+        if date:
+            entries = [e for e in entries if e.get("timestamp", "").startswith(date)]
+        results = [f"- [{e.get('timestamp','')}] {e.get('text','')}" for e in entries]
+
+    return {"results": results[: limit]}
+
+# ------------------------------------
 #  GET /get_memorial  (affichage de Z_MEMORIAL.md)
 # ------------------------------------
 @app.get("/get_memorial")
