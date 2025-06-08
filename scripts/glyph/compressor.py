@@ -1,100 +1,64 @@
-import json
-import re
-import pathlib
-from typing import Dict
+import os
+import tempfile
+import unittest
+from pathlib import Path
 
-from .glyph_generator import (
-    compress_text as glyph_compress,
-    decompress_text as glyph_decompress,
-    dict_file,
-)
+from scripts.compressor import Compressor
 
-class Compressor:
-    """Compressor supporting multiple mapping modes."""
+class CompressorTest(unittest.TestCase):
+    def setUp(self):
+        # Crée un dossier temporaire isolé pour chaque test (mapping non persistant)
+        self.tmp = tempfile.TemporaryDirectory()
+        os.environ["GLYPH_DICT_PATH"] = str(Path(self.tmp.name) / "glyph_dict.json")
 
-    MODES = {
-        "visual": "glyph_dict.json",
-        "abbrev": "abbreviations_dict.json",
-        "alphanumeric": "alphanumeric_dict.json",
-        "custom": "custom_dict.json",
-    }
+    def tearDown(self):
+        self.tmp.cleanup()
+        os.environ.pop("GLYPH_DICT_PATH", None)
 
-    def __init__(self, mode: str = "visual") -> None:
-        if mode not in self.MODES:
-            raise ValueError(f"Unknown mode: {mode}")
-        self.mode = mode
-        self.dict_path = dict_file().parent / self.MODES[self.mode]
-        self.mapping: Dict[str, str] = self._load_mapping()
+    def test_visual_mode(self):
+        comp = Compressor("visual")
+        txt = "chat avec intelligence augmentée"
+        compressed = comp.compress(txt)
+        self.assertIsInstance(compressed, str)
+        restored = comp.decompress(compressed)
+        self.assertEqual(restored, txt)
 
-    def _load_mapping(self) -> Dict[str, str]:
-        if self.dict_path.exists():
-            try:
-                return json.loads(self.dict_path.read_text(encoding="utf-8"))
-            except Exception:
-                return {}
-        return {}
+    def test_abbrev_mode(self):
+        comp = Compressor("abbrev")
+        txt = "compression et décompression abbreviation abbreviation"
+        compressed = comp.compress(txt)
+        # Vérifie présence d'abréviation (premiers caractères)
+        self.assertIn("abb", compressed)
+        restored = comp.decompress(compressed)
+        self.assertEqual(restored, txt)
 
-    def _save_mapping(self) -> None:
-        self.dict_path.parent.mkdir(parents=True, exist_ok=True)
-        self.dict_path.write_text(
-            json.dumps(self.mapping, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+    def test_alphanumeric_mode(self):
+        comp = Compressor("alphanumeric")
+        txt = "test alphanumérique token token"
+        compressed = comp.compress(txt)
+        self.assertIn("T", compressed)
+        restored = comp.decompress(compressed)
+        self.assertEqual(restored, txt)
 
-    def _generate_token(self, word: str) -> str:
-        existing = set(self.mapping.values())
-        if self.mode == "abbrev":
-            base = word[:3].lower()
-            token = base
-            idx = 1
-            while token in existing:
-                token = f"{base}{idx}"
-                idx += 1
-            return token
-        if self.mode == "alphanumeric":
-            return f"T{len(self.mapping) + 1}"
-        return f"C{len(self.mapping) + 1}"
+    def test_custom_mode_existing_mapping(self):
+        comp = Compressor("custom")
+        # Prép: mapping manuel pour custom (pas d'ajout auto)
+        comp.mapping = {"hello": "XX", "world": "YY"}
+        comp._save_mapping()
+        txt = "hello world"
+        compressed = comp.compress(txt)
+        self.assertIn("XX", compressed)
+        self.assertIn("YY", compressed)
+        restored = comp.decompress(compressed)
+        self.assertEqual(restored, txt)
 
-    def compress(self, text: str) -> str:
-        if self.mode == "visual":
-            return glyph_compress(text)
-        words = re.findall(r"\b\w+\b", text)
-        for w in set(words):
-            token = self.mapping.get(w)
-            if not token:
-                token = self._generate_token(w)
-                self.mapping[w] = token
-        for term, token in sorted(self.mapping.items(), key=lambda x: -len(x[0])):
-            text = re.sub(rf"\b{re.escape(term)}\b", token, text)
-        self._save_mapping()
-        return text
-
-    def decompress(self, text: str) -> str:
-        if self.mode == "visual":
-            return glyph_decompress(text)
-        for term, token in sorted(self.mapping.items(), key=lambda x: len(x[1]), reverse=True):
-            text = text.replace(token, term)
-        return text
-
-def main(argv=None) -> None:
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Compress or decompress a text file using the selected mapping mode"
-    )
-    parser.add_argument("--mode", choices=list(Compressor.MODES.keys()), default="visual", help="Compression mode")
-    parser.add_argument("input", help="Input text file")
-    parser.add_argument("output", help="Output text file")
-    parser.add_argument("--decompress", action="store_true", help="Decompress instead of compress")
-    args = parser.parse_args(argv)
-
-    comp = Compressor(args.mode)
-    content = pathlib.Path(args.input).read_text(encoding="utf-8")
-    if args.decompress:
-        result = comp.decompress(content)
-    else:
-        result = comp.compress(content)
-    pathlib.Path(args.output).write_text(result, encoding="utf-8")
+    def test_custom_mode_no_new_tokens(self):
+        comp = Compressor("custom")
+        # mapping volontairement vide
+        txt = "nouveau mot"
+        compressed = comp.compress(txt)
+        # Aucun remplacement car pas de mapping connu
+        self.assertEqual(compressed, txt)
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

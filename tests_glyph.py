@@ -17,6 +17,7 @@ from scripts.glyph import (
     compress_with_dict,
     decompress_with_dict,
 )
+from scripts.compressor import Compressor
 from scripts import zmem_encoder
 from scripts.zmem_encoder import encode_zmem
 
@@ -245,6 +246,20 @@ class GlyphRoundTripTest(unittest.TestCase):
             zlib.decompress(base64.b85decode(zmem_bin.read_bytes())).decode("utf-8"),
             zmem_src.read_text(encoding="utf-8"),
         )
+
+    def test_compressor_all_modes(self):
+        # Test tous les modes du Compressor (visual, abbrev, alphanumeric, custom)
+        txt = "test unitaire pour tous les modes compressor compressor"
+        for mode in ["visual", "abbrev", "alphanumeric", "custom"]:
+            with self.subTest(mode=mode):
+                comp = Compressor(mode)
+                # Pour 'custom' il ne doit pas générer de mapping si vide
+                if mode == "custom":
+                    comp.mapping = {"test": "X1", "unitaire": "Y2", "pour": "Z3", "tous": "A4", "les": "B5", "modes": "C6", "compressor": "C7"}
+                    comp._save_mapping()
+                compressed = comp.compress(txt)
+                decompressed = comp.decompress(compressed)
+                self.assertEqual(decompressed, txt)
 
 if __name__ == "__main__":
     unittest.main()
