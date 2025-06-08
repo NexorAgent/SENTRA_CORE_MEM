@@ -93,7 +93,7 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 # Écrire une note
 curl -X POST http://localhost:8000/write_note \
      -H "Content-Type: application/json" \
-     -d '{"text": "Nouvelle note"}'
+     -d '{"text": "Nouvelle note", "project": "sentra_core"}'
 
 # Lire la mémoire JSON
 curl http://localhost:8000/get_notes
@@ -110,6 +110,8 @@ curl -X POST http://localhost:8000/write_file \
 Chaque écriture déclenche automatiquement un `git commit` suivi d’un `git push`,
 assurant la persistance des modifications. Les notes sont sauvegardées dans
 `memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`.
+Lorsqu’un champ `project` est fourni, elles sont aussi ajoutées dans
+`projects/<slug>/fichiers/memoire_<slug>.md`.
 
 
 ## 🔒 Obfuscation glyphique

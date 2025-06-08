@@ -68,6 +68,7 @@ class RepriseResponse(BaseModel):
 
 class WriteNoteRequest(BaseModel):
     text: str
+    project: str | None = None
 
 class WriteFileRequest(BaseModel):
     project: str
@@ -236,8 +237,11 @@ async def write_note(req: WriteNoteRequest):
 
     # 4) Journal mimétique Z_MEMORIAL.md
     project_slug  = "sentra_core"
+    if req.project:
+        project_slug = req.project.strip().lower().replace(" ", "_")
     memorial_dir  = project_root / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
+
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
     timestamp_md  = time.strftime("## %Y-%m-%d %H:%M:%S\n- ", time.localtime())
 
@@ -247,8 +251,21 @@ async def write_note(req: WriteNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
 
+    # 5) Mémoire markdown spécifique au projet si project fourni
+    extra_files = [memory_file, memorial_file]
+    if req.project:
+        memoire_file = memorial_dir / f"memoire_{project_slug}.md"
+        if not memoire_file.exists():
+            memoire_file.touch()
+        try:
+            with memoire_file.open("a", encoding="utf-8") as mf:
+                mf.write(f"{timestamp_md}{text}\n\n")
+            extra_files.append(memoire_file)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Échec écriture memoire_{project_slug}.md : {repr(e)}")
+
     try:
-        git_commit_push([memory_file, memorial_file], f"GPT note: {text[:50]}")
+        git_commit_push(extra_files, f"GPT note: {text[:50]}")
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
