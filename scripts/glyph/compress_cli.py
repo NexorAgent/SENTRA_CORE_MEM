@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .mem_block import make_mem_block
+from scripts.mem_block import make_mem_block
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compresse un texte en MEM.BLOCK glyphique (avec ou sans mapping, obfuscation possible)")

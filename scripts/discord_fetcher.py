@@ -3,6 +3,7 @@ import subprocess
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from scripts.git_utils import commit_changes
 from pathlib import Path
 from datetime import datetime
 
@@ -123,10 +124,14 @@ async def write_note(req: WriteNoteRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
+    mem_file = Path("memory") / "sentra_memory.json"
+
     try:
         save_note_from_text(text)
+        msg = f"GPT note: {text[:40]}"
+        commit_changes([str(mem_file)], msg)
     except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur write_note: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur write_note: {e}")
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
@@ -162,6 +167,12 @@ async def write_file(req: WriteFileRequest):
             status="error",
             detail=f"Erreur écriture du fichier {file_path}: {e}"
         )
+
+    try:
+        msg = f"GPT note: {filename[:40]}"
+        commit_changes([str(file_path)], msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur git: {e}")
 
     return WriteResponse(
         status="success",

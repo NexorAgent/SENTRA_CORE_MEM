@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from scripts.git_utils import commit_changes
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -229,6 +230,13 @@ async def write_note(req: WriteNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
 
+    # 5) Commit automatique dans Git
+    try:
+        msg = f"GPT note: {text[:40]}"
+        commit_changes([str(memory_file), str(memorial_file)], msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Git commit failed: {e}")
+
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
 # ------------------------------------
@@ -302,6 +310,13 @@ async def write_file(req: WriteFileRequest):
         file_path.write_text(contenu, encoding="utf-8")
     except Exception as e:
         return WriteResponse(status="error", detail=f"Erreur écriture du fichier {file_path} : {e}")
+
+    # Commit automatique du fichier créé/modifié
+    try:
+        msg = f"GPT note: {filename[:40]}"
+        commit_changes([str(file_path)], msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Git commit failed: {e}")
 
     return WriteResponse(
         status="success",
