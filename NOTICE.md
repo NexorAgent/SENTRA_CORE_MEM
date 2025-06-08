@@ -169,6 +169,59 @@ Le **dispatcher** (dans `orchestrator.py`) mappe automatiquement l’intention d
 * Alphabet étendu (unicode privé) + dictionnaire adaptatif.
 * Cible : **×10** de compression.
 
+<<<<<< codex/document-création-de-glyph-sets-et-compression
+### 8.3  Création de nouveaux sets de glyphes
+
+* L’outil `glyph_watcher.py` scanne un dossier de logs et génère un glyphe pour
+  chaque terme trouvé :
+
+```bash
+python scripts/glyph/glyph_watcher.py logs/
+```
+
+* Pour un mot isolé, la fonction `forge_glyph()` du module `GLYPH_FORGER.py`
+  retourne le symbole associé :
+
+```bash
+python -c "from scripts.GLYPH_FORGER import forge_glyph; print(forge_glyph('exemple'))"
+```
+
+Les glyphes produits sont stockés dans `memory/glyph_dict.json`.
+
+### 8.4  Partage du dictionnaire entre agents
+
+Tous les modules glyphiques lisent le chemin depuis la variable d’environnement
+`GLYPH_DICT_PATH` (par défaut `memory/glyph_dict.json`). Pour mutualiser un même
+dictionnaire sur plusieurs machines :
+
+```bash
+export GLYPH_DICT_PATH=/chemin/partage/glyph_dict.json
+```
+
+### 8.5  Compression par lot
+
+Le script `run_auto_translator.py` applique les glyphes puis compresse en `zlib`
+et `base85`. Exemple :
+
+```bash
+python scripts/run_auto_translator.py -i "docs/resume sentra.zlib.txt"
+```
+
+Sur ce fichier d’essai, la taille passe de 11 995 octets à 4 992 octets (×2,4)
+pour la version `.zlib`, puis à 6 379 octets pour le bloc `.zmem` (×1,9). Intégrez
+cette commande dans un script `.bat` ou un `for` shell pour traiter un répertoire
+complet.
+
+### 8.6  Intégration dans un pipeline IA
+
+* Prédécompressez ou compressez vos jeux de données avant de les envoyer à
+  `orchestrator.py` ou à un modèle tiers afin de réduire le nombre de tokens
+  échangés.
+* Partager `GLYPH_DICT_PATH` permet aux agents de décoder tout `MEM.BLOCK` via
+  `mem_block.decode_mem_block()`.
+* `pipeline_traducteur.py` ou `run_auto_translator.py` peuvent être appelés
+  directement dans vos jobs CI/CD pour maintenir une mémoire compressée homogène.
+=======
 ### 8.3  Ajouter un jeu de glyphes
 
 1. Créez un fichier JSON dans `memory/` (ex : `glyph_dict_custom.json`).
@@ -186,6 +239,7 @@ Le **dispatcher** (dans `orchestrator.py`) mappe automatiquement l’intention d
 La fonction `make_mem_block()` peut exclure la table de correspondance
 (`include_mapping=False`). Le texte compressé reste alors lisible
 uniquement par les agents possédant le dictionnaire.
+>>>>>> main
 
 ---
 
