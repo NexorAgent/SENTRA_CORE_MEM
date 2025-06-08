@@ -2,15 +2,15 @@ import base64
 import json
 import zlib
 import re
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 from .glyph_generator import (
     compress_text,
     decompress_text,
     decompress_with_dict,
     export_dict,
+    compress_with_dict,
 )
-
 
 def make_mem_block(
     fields: Dict[str, str],
@@ -18,15 +18,18 @@ def make_mem_block(
     *,
     include_mapping: bool = False,
     obfuscate: bool = False,
-) -> str | tuple[str, Dict[str, str]]:
-    """Return a MEM.BLOCK string from fields and input text.
+    mapping: Optional[Dict[str, str]] = None,
+) -> str | Tuple[str, Dict[str, str]]:
+    """Crée un MEM.BLOCK compressé à partir d’un texte et de champs.
 
-    When ``obfuscate`` is True, glyph assignments are randomized for this block
-    only and the mapping is returned separately so it can be persisted by the
-    caller. ``include_mapping`` is ignored in this mode.
+    - Si obfuscate=True : mapping random, retour (bloc, mapping) à stocker à part.
+    - Si mapping est fourni : il est utilisé pour la compression (optionnel).
+    - Si include_mapping=True : mapping embarqué dans le bloc (pour partage).
     """
     if obfuscate:
         compressed_glyph, mapping = compress_text(text, obfuscate=True)
+    elif mapping is not None:
+        compressed_glyph = compress_with_dict(text, mapping)
     else:
         compressed_glyph = compress_text(text)
         mapping = export_dict() if include_mapping else None
@@ -42,16 +45,15 @@ def make_mem_block(
         "⟁SEAL⟶✅SENTRA",
     ]
     block = "".join(parts)
-    if include_mapping and not obfuscate and mapping is not None:
+    if include_mapping and mapping is not None and not obfuscate:
         mapping_json = json.dumps(mapping, ensure_ascii=False)
         block += "\n" + mapping_json
     if obfuscate:
-        return block, mapping  # caller should store mapping separately
+        return block, mapping
     return block
 
-
 def decode_mem_block(block: str) -> str:
-    """Decode a MEM.BLOCK string and return original text."""
+    """Décompresse et décode un MEM.BLOCK."""
     if "\n" in block:
         block_line, mapping_part = block.split("\n", 1)
         try:
@@ -70,3 +72,46 @@ def decode_mem_block(block: str) -> str:
     if mapping:
         return decompress_with_dict(compressed_glyph, mapping)
     return decompress_text(compressed_glyph)
+
+if __name__ == "__main__":
+    import argparse
+    from pathlib import Path
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser(description="Create a MEM.BLOCK from a text file")
+    parser.add_argument("input", help="source text file")
+    parser.add_argument("-o", "--output", help="destination block file")
+    parser.add_argument("--include-mapping", action="store_true", help="embed mapping in the block")
+    parser.add_argument("--mapping-file", help="path to save the glyph mapping")
+    parser.add_argument("--obfuscate", action="store_true", help="randomize glyph assignments")
+    args = parser.parse_args()
+
+    text = Path(args.input).read_text(encoding="utf-8")
+    fields = {
+        "ID": "ZCLI",
+        "TS": datetime.now().strftime("%Y-%m-%dT%H:%M"),
+        "INT": "CLI.COMPRESS",
+        "Σ": "MEM.GLYPH",
+    }
+
+    if args.obfuscate:
+        block, mapping = make_mem_block(
+            fields, text, obfuscate=True
+        )
+    else:
+        block = make_mem_block(
+            fields, text, include_mapping=args.include_mapping
+        )
+        mapping = None
+
+    if args.output:
+        Path(args.output).write_text(block, encoding="utf-8")
+    else:
+        print(block)
+
+    if args.obfuscate or (args.include_mapping and mapping is not None):
+        map_path = args.mapping_file
+        if not map_path:
+            base = args.output or args.input
+            map_path = str(Path(base).with_suffix(".map.json"))
+        Path(map_path).write_text(json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8")
