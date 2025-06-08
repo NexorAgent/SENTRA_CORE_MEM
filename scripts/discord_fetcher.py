@@ -45,6 +45,7 @@ class RepriseResponse(BaseModel):
 
 class WriteNoteRequest(BaseModel):
     text: str  # contenu de la note à enregistrer
+    project: str | None = None
 
 class WriteFileRequest(BaseModel):
     project: str        # e.g. "SENTRA_CORE"
@@ -118,6 +119,7 @@ async def write_note(req: WriteNoteRequest):
     Enregistre une note dans la mémoire JSON (memory/sentra_memory.json).
     """
     from scripts.memory_agent import save_note_from_text
+    from scripts.git_utils import git_commit_push
 
     text = req.text.strip()
     if not text:
@@ -127,6 +129,23 @@ async def write_note(req: WriteNoteRequest):
         save_note_from_text(text)
     except Exception as e:
         return WriteResponse(status="error", detail=f"Erreur write_note: {e}")
+
+    project_slug = req.project.strip().lower().replace(" ", "_") if req.project else "sentra_core"
+    base_dir = Path("projects") / project_slug / "fichiers"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    memoire_file = base_dir / f"memoire_{project_slug}.md"
+    timestamp_md = datetime.now().strftime("## %Y-%m-%d %H:%M:%S\n- ")
+    try:
+        with memoire_file.open("a", encoding="utf-8") as mf:
+            mf.write(f"{timestamp_md}{text}\n\n")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur écriture mémoire : {e}")
+
+    mem_json = Path("memory") / "sentra_memory.json"
+    try:
+        git_commit_push([mem_json, memoire_file], f"GPT note: {text[:50]}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
