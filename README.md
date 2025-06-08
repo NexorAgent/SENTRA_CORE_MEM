@@ -76,6 +76,38 @@ memories/   → .zmem compressés + .src lisibles
 docs/       → MANUEL, README, rapports Markdown
 ```
 
+## 🌐 Endpoints API
+
+Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour interagir avec la mémoire :
+- `POST /write_note` – ajoute une note textuelle dans la mémoire
+- `GET /get_notes` – lit le fichier JSON complet (lecture de note)
+- `GET /get_memorial` – renvoie le journal Markdown du projet
+- `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
+- `POST /reprise` – résume un canal Discord
+- `GET /check_env` – vérifie la clé API (debug)
+
+### Exemples `curl`
+
+```bash
+# Écrire une note
+curl -X POST http://localhost:8000/write_note \
+     -H "Content-Type: application/json" \
+     -d '{"text": "Nouvelle note"}'
+
+# Lire la mémoire JSON
+curl http://localhost:8000/get_notes
+
+# Écrire un fichier dans le projet "sentra_core"
+curl -X POST http://localhost:8000/write_file \
+     -H "Content-Type: application/json" \
+     -d '{"project": "sentra_core", "filename": "todo.md", "content": "- [ ] Tâche"}'
+```
+
+Chaque écriture déclenche automatiquement un `git commit` suivi d’un `git push`,
+assurant la persistance des modifications. Les notes sont sauvegardées dans
+`memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`.
+
+
 ## 🔒 Obfuscation glyphique
 
 L'option `--obfuscate` du script `run_auto_translator.py` attribue des glyphes
