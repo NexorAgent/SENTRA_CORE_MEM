@@ -1,4 +1,4 @@
-# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠🦋
+# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠
 
 # SENTRA_CORE_MEM
 
