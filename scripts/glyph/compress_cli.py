@@ -1,29 +1,49 @@
 #!/usr/bin/env python3
-"""Simple CLI to compress files with the glyph compressor."""
+"""CLI pour compresser un fichier texte en MEM.BLOCK (glyphique)."""
+
 import argparse
 import json
 from pathlib import Path
 
-from .glyph_generator import compress_text
-
+from .mem_block import make_mem_block
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compress a text file using glyphs")
-    parser.add_argument("input", help="Input text file")
-    parser.add_argument("output", nargs="?", help="Output file for compressed text")
-    parser.add_argument("--obfuscate", action="store_true", help="Randomize glyphs and save mapping")
-    parser.add_argument("--map-out", default="obfuscated_map.json", help="Mapping file when using --obfuscate")
+    parser = argparse.ArgumentParser(description="Compresse un texte en MEM.BLOCK glyphique (avec ou sans mapping, obfuscation possible)")
+    parser.add_argument("input", help="Fichier texte source")
+    parser.add_argument("-o", "--output", required=True, help="Fichier destination pour le MEM.BLOCK")
+    parser.add_argument("--id", default="ZCLI", help="Champ ID pour le bloc")
+    parser.add_argument("--obfuscate", action="store_true", help="Obfusque les glyphes (randomise les tokens)")
+    parser.add_argument("--mapping-out", help="Chemin où sauvegarder le mapping (JSON)")
     args = parser.parse_args()
 
     text = Path(args.input).read_text(encoding="utf-8")
-    compressed = compress_text(text, obfuscate=args.obfuscate, mapping_file=args.map_out)
+    fields = {"ID": args.id, "TS": "", "INT": "CLI", "Σ": "MEM.GLYPH"}
 
-    out_path = Path(args.output) if args.output else Path(args.input).with_suffix(".glyph")
-    out_path.write_text(compressed, encoding="utf-8")
     if args.obfuscate:
-        print(f"Mapping written to {args.map_out}")
-    print(f"Compressed text written to {out_path}")
-
+        block, mapping = make_mem_block(fields, text, obfuscate=True)
+        Path(args.output).write_text(block, encoding="utf-8")
+        if args.mapping_out:
+            Path(args.mapping_out).write_text(
+                json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+        print(f"Wrote MEM.BLOCK to {args.output}")
+        print(f"Mapping saved to {args.mapping_out}" if args.mapping_out else "")
+    else:
+        include = args.mapping_out is not None
+        block = make_mem_block(fields, text, include_mapping=include)
+        Path(args.output).write_text(block, encoding="utf-8")
+        if args.mapping_out and include:
+            # Si mapping inclus dans le bloc, extraire le mapping du bloc
+            try:
+                _header, mapping_json = block.split("\n", 1)
+                mapping = json.loads(mapping_json)
+                Path(args.mapping_out).write_text(
+                    json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+                print(f"Mapping saved to {args.mapping_out}")
+            except Exception:
+                print("[WARN] Impossible d’extraire le mapping du bloc généré.")
+        print(f"Wrote MEM.BLOCK to {args.output}")
 
 if __name__ == "__main__":
     main()

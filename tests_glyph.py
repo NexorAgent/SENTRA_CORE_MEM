@@ -15,6 +15,7 @@ from scripts.glyph import (
     decode_mem_block,
     randomize_mapping,
     compress_with_dict,
+    decompress_with_dict,
 )
 from scripts import zmem_encoder
 from scripts.zmem_encoder import encode_zmem
@@ -64,6 +65,13 @@ class GlyphRoundTripTest(unittest.TestCase):
         gg.compress_text(text)  # ensure glyphs exist in dictionary
         block = make_mem_block(fields, text, include_mapping=False)
         restored = decode_mem_block(block)
+        self.assertEqual(restored, text)
+
+    def test_obfuscate_mode(self):
+        text = "obfuscation unique test"
+        compressed, mapping = gg.compress_text(text, obfuscate=True)
+        self.assertIsInstance(mapping, dict)
+        restored = decompress_with_dict(compressed, mapping)
         self.assertEqual(restored, text)
 
     def test_obfuscate_cycle(self):

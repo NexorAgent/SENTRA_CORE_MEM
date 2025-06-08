@@ -2,7 +2,7 @@ import base64
 import json
 import zlib
 import re
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 from .glyph_generator import (
     compress_text,
@@ -12,24 +12,28 @@ from .glyph_generator import (
     compress_with_dict,
 )
 
-
 def make_mem_block(
     fields: Dict[str, str],
     text: str,
     *,
     include_mapping: bool = False,
-    mapping: Dict[str, str] | None = None,
-) -> str:
-    """Return a MEM.BLOCK string from fields and input text.
+    obfuscate: bool = False,
+    mapping: Optional[Dict[str, str]] = None,
+) -> str | Tuple[str, Dict[str, str]]:
+    """Crée un MEM.BLOCK compressé à partir d’un texte et de champs.
 
-    If ``mapping`` is provided, it is used for compression and optionally
-    embedded when ``include_mapping`` is True. Otherwise the persistent
-    dictionary is used.
+    - Si obfuscate=True : mapping random, retour (bloc, mapping) à stocker à part.
+    - Si mapping est fourni : il est utilisé pour la compression (optionnel).
+    - Si include_mapping=True : mapping embarqué dans le bloc (pour partage).
     """
-    if mapping is not None:
+    if obfuscate:
+        compressed_glyph, mapping = compress_text(text, obfuscate=True)
+    elif mapping is not None:
         compressed_glyph = compress_with_dict(text, mapping)
     else:
         compressed_glyph = compress_text(text)
+        mapping = export_dict() if include_mapping else None
+
     z = base64.b85encode(zlib.compress(compressed_glyph.encode("utf-8"))).decode("utf-8")
     parts = [
         "⦿MEM.BLOCK🧠∴",
@@ -41,14 +45,15 @@ def make_mem_block(
         "⟁SEAL⟶✅SENTRA",
     ]
     block = "".join(parts)
-    if include_mapping:
-        mapping_json = json.dumps(mapping if mapping is not None else export_dict(), ensure_ascii=False)
+    if include_mapping and mapping is not None and not obfuscate:
+        mapping_json = json.dumps(mapping, ensure_ascii=False)
         block += "\n" + mapping_json
+    if obfuscate:
+        return block, mapping
     return block
 
-
 def decode_mem_block(block: str) -> str:
-    """Decode a MEM.BLOCK string and return original text."""
+    """Décompresse et décode un MEM.BLOCK."""
     if "\n" in block:
         block_line, mapping_part = block.split("\n", 1)
         try:
@@ -67,7 +72,6 @@ def decode_mem_block(block: str) -> str:
     if mapping:
         return decompress_with_dict(compressed_glyph, mapping)
     return decompress_text(compressed_glyph)
-
 
 if __name__ == "__main__":
     import argparse
@@ -90,20 +94,22 @@ if __name__ == "__main__":
         "Σ": "MEM.GLYPH",
     }
 
-    mapping = None
     if args.obfuscate:
-        from .glyph_generator import randomize_mapping, export_dict
-
-        mapping = randomize_mapping(export_dict())
-
-    block = make_mem_block(fields, text, include_mapping=args.include_mapping, mapping=mapping)
+        block, mapping = make_mem_block(
+            fields, text, obfuscate=True
+        )
+    else:
+        block = make_mem_block(
+            fields, text, include_mapping=args.include_mapping
+        )
+        mapping = None
 
     if args.output:
         Path(args.output).write_text(block, encoding="utf-8")
     else:
         print(block)
 
-    if mapping is not None:
+    if args.obfuscate or (args.include_mapping and mapping is not None):
         map_path = args.mapping_file
         if not map_path:
             base = args.output or args.input
