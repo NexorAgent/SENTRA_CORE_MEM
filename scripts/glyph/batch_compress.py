@@ -53,6 +53,7 @@ def process_file(src: Path, dst: Path, mode: str, obfuscate: bool) -> Tuple[int,
     except Exception:
         content = src.read_text(errors="ignore")
     compressed = compress_content(content, mode, obfuscate, src.stem)
+    dst = dst.with_suffix(dst.suffix + ".mb")
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(compressed, encoding="utf-8")
     return len(content.encode("utf-8")), len(compressed.encode("utf-8"))
@@ -79,6 +80,26 @@ def write_report(entries: Iterable[Tuple[str, int, int]], report_path: Path) -> 
                 ratio = comp / orig if orig else 0
                 writer.writerow([rel, orig, comp, f"{ratio:.2f}"])
 
+def compress_directory(src: Path, dst: Path, mode: str = "glyph", obfuscate: bool = False) -> Path:
+    """Compress all text files from *src* into *dst* and return report path."""
+    if mode == "csv":
+        algo = "glyph"
+        report_path = dst / "report.csv"
+    elif mode in {"md", "markdown"}:
+        algo = "glyph"
+        report_path = dst / "report.md"
+    else:
+        algo = mode
+        report_path = dst / ("report.md" if algo == "glyph" and obfuscate else "report.csv")
+    entries = []
+    for path in iter_text_files(src):
+        rel = path.relative_to(src)
+        dest_file = dst / rel
+        orig, comp = process_file(path, dest_file, algo, obfuscate)
+        entries.append((str(rel), orig, comp))
+    write_report(entries, report_path)
+    return report_path
+
 def main():
     parser = argparse.ArgumentParser(description="Batch compress text files using glyph or zlib")
     parser.add_argument("src", type=Path, help="Source directory (recursif, *.txt)")
@@ -90,17 +111,11 @@ def main():
 
     src = args.src
     dst = args.dst
-    report_path = args.report if args.report else dst / (
-        "report.md" if args.mode == "glyph" and args.obfuscate else "report.csv"
-    )
-
-    entries = []
-    for path in iter_text_files(src):
-        rel = path.relative_to(src)
-        dest_file = dst / rel
-        orig, comp = process_file(path, dest_file, args.mode, args.obfuscate)
-        entries.append((str(rel), orig, comp))
-    write_report(entries, report_path)
+    report_path = args.report if args.report else None
+    report = compress_directory(src, dst, mode=args.mode, obfuscate=args.obfuscate)
+    if report_path and report_path != report:
+        report.rename(report_path)
 
 if __name__ == "__main__":
     main()
+
