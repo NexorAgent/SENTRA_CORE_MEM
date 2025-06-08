@@ -1,4 +1,4 @@
-# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠🦋
+# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠
 
 # SENTRA_CORE_MEM
 
@@ -109,16 +109,23 @@ Elle doit être fournie comme **variable d’environnement** :
 - **Sur GitHub Actions** :
   - Définir la clé comme “Repository Secret” (Settings > Secrets and variables > Actions > New repository secret)
 
-> **Aucun fichier .env n’est fourni dans le repo.**  
+> **Aucun fichier .env n’est fourni dans le repo.**
 > La clé reste privée sur chaque environnement.
 
 Les scripts Python lisent automatiquement la clé avec :
 ```python
 import os
 openai.api_key = os.getenv("OPENAI_API_KEY")
+```
 
+## Obfuscation des glyphes
 
-
+L'outil `mem_block.py` dispose de l'option `--obfuscate` pour exporter un bloc
+avec des glyphes réassignés aléatoirement. Le mapping généré est écrit dans un
+fichier `.map.json` afin de pouvoir décompresser le texte plus tard. Cette
+méthode complique simplement la lecture directe et ne constitue pas une
+protection cryptographique : toute personne possédant ce mapping peut retrouver
+le contenu original.
 
 ---
 
