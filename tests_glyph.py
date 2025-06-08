@@ -1,11 +1,31 @@
 import os
 import tempfile
 import unittest
+import subprocess
+import sys
+import base64
+import zlib
+import json
 from pathlib import Path
+import types
 
-from scripts.glyph import glyph_generator as gg
-from scripts.glyph import make_mem_block, decode_mem_block
+from scripts.glyph import (
+    glyph_generator as gg,
+    make_mem_block,
+    decode_mem_block,
+    randomize_mapping,
+    compress_with_dict,
+    decompress_with_dict,
+)
+from scripts import zmem_encoder
+from scripts.zmem_encoder import encode_zmem
 
+# Mock openai if not installed, for scripts.project_resumer_gpt
+sys.modules.setdefault("openai", types.ModuleType("openai"))
+try:
+    from scripts.project_resumer_gpt import compress_to_glyph
+except ImportError:
+    compress_to_glyph = None  # Optionally, skip test if unavailable
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -39,6 +59,192 @@ class GlyphRoundTripTest(unittest.TestCase):
         restored = decode_mem_block(block)
         self.assertEqual(restored, text)
 
+    def test_mem_block_no_mapping(self):
+        text = "cycle sans mapping"
+        fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
+        gg.compress_text(text)  # ensure glyphs exist in dictionary
+        block = make_mem_block(fields, text, include_mapping=False)
+        restored = decode_mem_block(block)
+        self.assertEqual(restored, text)
+
+    def test_obfuscate_mode(self):
+        text = "obfuscation unique test"
+        compressed, mapping = gg.compress_text(text, obfuscate=True)
+        self.assertIsInstance(mapping, dict)
+        restored = decompress_with_dict(compressed, mapping)
+        self.assertEqual(restored, text)
+
+    def test_obfuscate_cycle(self):
+        text = "secret memo"
+        base_mapping = {"secret": "AA", "memo": "BB"}
+        obf_mapping = randomize_mapping(base_mapping)
+        compressed = compress_with_dict(text, obf_mapping)
+        restored = gg.decompress_with_dict(compressed, obf_mapping)
+        self.assertEqual(restored, text)
+
+    def test_obfuscation_cycle(self):
+        text = "secret message"
+        map_path = Path(self.tmp.name) / "obf.json"
+        compressed = gg.compress_text(text, obfuscate=True, mapping_file=map_path)
+        mapping = json.loads(map_path.read_text(encoding="utf-8"))
+        restored = gg.decompress_with_dict(compressed, mapping)
+        self.assertEqual(restored, text)
+
+    def test_zmem_cycle(self):
+        text = "texte pour zmem"
+        zmem = Path(self.tmp.name) / "sample.zmem"
+        src = Path(self.tmp.name) / "sample.src"
+        ltxt = Path(self.tmp.name) / "sample.l64.t"
+        lbin = Path(self.tmp.name) / "sample.l64.b"
+        encode_zmem(
+            content=text,
+            ctx_tag="TEST",
+            zlib_txt_out=str(ltxt),
+            zlib_bin_out=str(lbin),
+            zmem_src_out=str(src),
+            zmem_bin_out=str(zmem),
+            update_dict_path=str(Path(self.tmp.name) / "index.json"),
+        )
+        data = base64.b64decode(zmem.read_text())
+        restored = zlib.decompress(data).decode("utf-8")
+        self.assertEqual(restored, text)
+
+    def test_zmem_encoder_cycle(self):
+        text = "compression zmem locale"
+        base = Path(self.tmp.name)
+        zlib_txt = base / "out.l64.t"
+        zlib_bin = base / "out.l64.b"
+        zmem_src = base / "out.src"
+        zmem_bin = base / "out.zmem"
+        index = base / "index.json"
+
+        zmem_encoder.encode_zmem(
+            content=text,
+            ctx_tag="TCTX",
+            zlib_txt_out=str(zlib_txt),
+            zlib_bin_out=str(zlib_bin),
+            zmem_src_out=str(zmem_src),
+            zmem_bin_out=str(zmem_bin),
+            update_dict_path=str(index),
+        )
+
+        decoded = zlib.decompress(base64.b64decode(zmem_bin.read_text())).decode("utf-8")
+        self.assertEqual(decoded, text)
+        if zlib_bin.exists():
+            decoded2 = zlib.decompress(zlib_bin.read_bytes()).decode("utf-8")
+            self.assertEqual(decoded2, text)
+
+    def test_base64_round_trip(self):
+        if compress_to_glyph is None:
+            self.skipTest("compress_to_glyph unavailable (project_resumer_gpt missing)")
+        text = "contenu base64 compressé"
+        compressed = compress_to_glyph(text)
+        decoded = zlib.decompress(base64.b64decode(compressed)).decode("utf-8")
+        self.assertEqual(decoded, text)
+
+    def test_encode_zmem_round_trip(self):
+        text = "texte mémoire zmem"
+        out_dir = Path(self.tmp.name)
+        encode_zmem(
+            content=text,
+            ctx_tag="TST",
+            zlib_txt_out=str(out_dir / "t.l64.t"),
+            zlib_bin_out=str(out_dir / "t.l64.b"),
+            zmem_src_out=str(out_dir / "t.src"),
+            zmem_bin_out=str(out_dir / "t.zmem"),
+            update_dict_path=str(out_dir / "index.json"),
+        )
+        encoded = (out_dir / "t.zmem").read_text(encoding="utf-8")
+        decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
+        self.assertEqual(decoded, text)
+
+    def test_batch_compression_directory(self):
+        batch_dir = Path(self.tmp.name) / "batch"
+        out_dir = Path(self.tmp.name) / "out"
+        batch_dir.mkdir()
+        out_dir.mkdir()
+        samples = {
+            "a.txt": "alpha",
+            "b.txt": "beta",
+            "c.txt": "gamma",
+        }
+        for fname, content in samples.items():
+            (batch_dir / fname).write_text(content, encoding="utf-8")
+
+        for fname, content in samples.items():
+            encode_zmem(
+                content=content,
+                ctx_tag=fname,
+                zlib_txt_out=str(out_dir / f"{fname}.l64.t"),
+                zlib_bin_out=str(out_dir / f"{fname}.l64.b"),
+                zmem_src_out=str(out_dir / f"{fname}.src"),
+                zmem_bin_out=str(out_dir / f"{fname}.zmem"),
+                update_dict_path=str(out_dir / "index.json"),
+            )
+
+        for fname, original in samples.items():
+            encoded = (out_dir / f"{fname}.zmem").read_text(encoding="utf-8")
+            decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
+            self.assertEqual(decoded, original)
+
+    def test_batch_script(self):
+        input_dir = Path(self.tmp.name) / "in"
+        out_dir = Path(self.tmp.name) / "out"
+        input_dir.mkdir()
+        out_dir.mkdir()
+        samples = {"a.txt": "bonjour monde", "b.txt": "deuxieme fichier"}
+        for name, text in samples.items():
+            (input_dir / name).write_text(text, encoding="utf-8")
+        script = Path(__file__).resolve().parent / "scripts" / "batch_compress.py"
+        subprocess.run([sys.executable, str(script), str(input_dir), str(out_dir)], check=True)
+        # Adapted for the current report file output, can adjust if changed:
+        report_file_json = out_dir / "compression_report.json"
+        report_file_csv = out_dir / "compression_report.csv"
+        if report_file_json.exists():
+            report = json.loads(report_file_json.read_text())
+        elif report_file_csv.exists():
+            # Optionally, add CSV parsing if needed
+            with report_file_csv.open(encoding="utf-8") as f:
+                lines = f.readlines()[1:]  # skip header
+                report = {line.split(',')[0]: line.strip().split(',')[1:] for line in lines}
+        else:
+            self.fail("No report file found")
+        for name, original in samples.items():
+            zpath = out_dir / f"{Path(name).stem}.zmem"
+            data = base64.b64decode(zpath.read_text())
+            restored = zlib.decompress(data).decode("utf-8")
+            self.assertEqual(restored, original)
+            self.assertIn(name, report)
+
+    def test_batch_cli_outputs(self):
+        sample = "<note>demo de batch</note>"
+        input_path = Path(self.tmp.name) / "sample.txt"
+        input_path.write_text(sample, encoding="utf-8")
+        script = Path(__file__).resolve().parent / "scripts" / "run_auto_translator.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "-i", str(input_path)],
+            cwd=self.tmp.name,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Pipeline complet exécuté", result.stdout)
+
+        out_txt = Path(self.tmp.name) / f"{input_path.stem}.zlib.txt"
+        out_bin = Path(self.tmp.name) / f"{input_path.stem}.zlib"
+        zmem_src = Path(self.tmp.name) / "memory_zia" / "sentra_memory.zmem.src"
+        zmem_bin = Path(self.tmp.name) / "memory_zia" / "sentra_memory.zmem"
+        dict_file = Path(self.tmp.name) / "memory_zia" / "mem_dict.json"
+
+        for f in (out_txt, out_bin, zmem_src, zmem_bin, dict_file):
+            self.assertTrue(f.exists(), f"Missing {f}")
+
+        comp_txt = out_txt.read_text(encoding="utf-8")
+        self.assertEqual(zlib.decompress(out_bin.read_bytes()).decode("utf-8"), comp_txt)
+        self.assertEqual(
+            zlib.decompress(base64.b85decode(zmem_bin.read_bytes())).decode("utf-8"),
+            zmem_src.read_text(encoding="utf-8"),
+        )
 
 if __name__ == "__main__":
     unittest.main()
