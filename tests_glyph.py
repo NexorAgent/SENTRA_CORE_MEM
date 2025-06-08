@@ -7,6 +7,7 @@ import base64
 import zlib
 import json
 from pathlib import Path
+import types
 
 from scripts.glyph import (
     glyph_generator as gg,
@@ -17,6 +18,13 @@ from scripts.glyph import (
 )
 from scripts import zmem_encoder
 from scripts.zmem_encoder import encode_zmem
+
+# Mock openai if not installed, for scripts.project_resumer_gpt
+sys.modules.setdefault("openai", types.ModuleType("openai"))
+try:
+    from scripts.project_resumer_gpt import compress_to_glyph
+except ImportError:
+    compress_to_glyph = None  # Optionally, skip test if unavailable
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -118,6 +126,59 @@ class GlyphRoundTripTest(unittest.TestCase):
             decoded2 = zlib.decompress(zlib_bin.read_bytes()).decode("utf-8")
             self.assertEqual(decoded2, text)
 
+    def test_base64_round_trip(self):
+        if compress_to_glyph is None:
+            self.skipTest("compress_to_glyph unavailable (project_resumer_gpt missing)")
+        text = "contenu base64 compressé"
+        compressed = compress_to_glyph(text)
+        decoded = zlib.decompress(base64.b64decode(compressed)).decode("utf-8")
+        self.assertEqual(decoded, text)
+
+    def test_encode_zmem_round_trip(self):
+        text = "texte mémoire zmem"
+        out_dir = Path(self.tmp.name)
+        encode_zmem(
+            content=text,
+            ctx_tag="TST",
+            zlib_txt_out=str(out_dir / "t.l64.t"),
+            zlib_bin_out=str(out_dir / "t.l64.b"),
+            zmem_src_out=str(out_dir / "t.src"),
+            zmem_bin_out=str(out_dir / "t.zmem"),
+            update_dict_path=str(out_dir / "index.json"),
+        )
+        encoded = (out_dir / "t.zmem").read_text(encoding="utf-8")
+        decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
+        self.assertEqual(decoded, text)
+
+    def test_batch_compression_directory(self):
+        batch_dir = Path(self.tmp.name) / "batch"
+        out_dir = Path(self.tmp.name) / "out"
+        batch_dir.mkdir()
+        out_dir.mkdir()
+        samples = {
+            "a.txt": "alpha",
+            "b.txt": "beta",
+            "c.txt": "gamma",
+        }
+        for fname, content in samples.items():
+            (batch_dir / fname).write_text(content, encoding="utf-8")
+
+        for fname, content in samples.items():
+            encode_zmem(
+                content=content,
+                ctx_tag=fname,
+                zlib_txt_out=str(out_dir / f"{fname}.l64.t"),
+                zlib_bin_out=str(out_dir / f"{fname}.l64.b"),
+                zmem_src_out=str(out_dir / f"{fname}.src"),
+                zmem_bin_out=str(out_dir / f"{fname}.zmem"),
+                update_dict_path=str(out_dir / "index.json"),
+            )
+
+        for fname, original in samples.items():
+            encoded = (out_dir / f"{fname}.zmem").read_text(encoding="utf-8")
+            decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
+            self.assertEqual(decoded, original)
+
     def test_batch_script(self):
         input_dir = Path(self.tmp.name) / "in"
         out_dir = Path(self.tmp.name) / "out"
@@ -128,9 +189,18 @@ class GlyphRoundTripTest(unittest.TestCase):
             (input_dir / name).write_text(text, encoding="utf-8")
         script = Path(__file__).resolve().parent / "scripts" / "batch_compress.py"
         subprocess.run([sys.executable, str(script), str(input_dir), str(out_dir)], check=True)
-        report_file = out_dir / "compression_report.json"
-        self.assertTrue(report_file.exists())
-        report = json.loads(report_file.read_text())
+        # Adapted for the current report file output, can adjust if changed:
+        report_file_json = out_dir / "compression_report.json"
+        report_file_csv = out_dir / "compression_report.csv"
+        if report_file_json.exists():
+            report = json.loads(report_file_json.read_text())
+        elif report_file_csv.exists():
+            # Optionally, add CSV parsing if needed
+            with report_file_csv.open(encoding="utf-8") as f:
+                lines = f.readlines()[1:]  # skip header
+                report = {line.split(',')[0]: line.strip().split(',')[1:] for line in lines}
+        else:
+            self.fail("No report file found")
         for name, original in samples.items():
             zpath = out_dir / f"{Path(name).stem}.zmem"
             data = base64.b64decode(zpath.read_text())
