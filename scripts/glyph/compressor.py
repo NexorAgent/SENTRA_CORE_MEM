@@ -8,11 +8,8 @@ import string
 from typing import Dict, Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-
-# Default dictionary directory under /memory
 DEFAULT_DICT_DIR = ROOT / "memory"
 
-# Token pools for different modes
 GLYPH_POOL = list("↯⊚⟴⚡∑¤†⌇⟁⊕⚙⚖🜁🧩🌀⧉♒︎⩾⊗" + string.punctuation)
 EMOJI_POOL = list("😀😁😂🤣😃😄😅😆😉😊😋😎🥳🤖👾👻")
 
@@ -40,6 +37,7 @@ class Compressor:
 
     def _save_dict(self) -> None:
         path = self.dict_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(self.mapping, indent=2, ensure_ascii=False),
             encoding="utf-8",

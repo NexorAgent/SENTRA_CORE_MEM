@@ -1,4 +1,4 @@
-# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠🦋
+# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠
 
 # SENTRA_CORE_MEM
 
@@ -69,6 +69,24 @@ memories/   → .zmem compressés + .src lisibles
 docs/       → MANUEL, README, rapports Markdown
 ```
 
+## 🔒 Obfuscation glyphique
+
+L'option `--obfuscate` du script `run_auto_translator.py` attribue des glyphes
+aléatoires à chaque balise. Le mapping généré est écrit dans un fichier
+`<nom>_mapping.json` (ou chemin défini par `--map-out`).
+
+**Attention :** perdre ce fichier rend la décompression impossible. Conservez-le
+précieusement ou lancez le script sans obfuscation si la récupération prévaut.
+
+Pour restaurer un texte :
+
+```python
+from scripts.glyph.glyph_generator import decompress_with_dict
+import json
+mapping = json.load(open("FICHIER_mapping.json", "r", encoding="utf-8"))
+plain = decompress_with_dict(glyph_text, mapping)
+```
+
 ## 🔐 Configuration
 
 - La clé API `OPENAI_API_KEY` doit être définie en variable d’environnement.
@@ -91,16 +109,23 @@ Elle doit être fournie comme **variable d’environnement** :
 - **Sur GitHub Actions** :
   - Définir la clé comme “Repository Secret” (Settings > Secrets and variables > Actions > New repository secret)
 
-> **Aucun fichier .env n’est fourni dans le repo.**  
+> **Aucun fichier .env n’est fourni dans le repo.**
 > La clé reste privée sur chaque environnement.
 
 Les scripts Python lisent automatiquement la clé avec :
 ```python
 import os
 openai.api_key = os.getenv("OPENAI_API_KEY")
+```
 
+## Obfuscation des glyphes
 
-
+L'outil `mem_block.py` dispose de l'option `--obfuscate` pour exporter un bloc
+avec des glyphes réassignés aléatoirement. Le mapping généré est écrit dans un
+fichier `.map.json` afin de pouvoir décompresser le texte plus tard. Cette
+méthode complique simplement la lecture directe et ne constitue pas une
+protection cryptographique : toute personne possédant ce mapping peut retrouver
+le contenu original.
 
 ---
 
