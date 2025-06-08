@@ -16,8 +16,14 @@ EMOJI_POOL = list("😀😁😂🤣😃😄😅😆😉😊😋😎🥳🤖👾�
 class Compressor:
     """Generic text compressor with multiple modes."""
 
+    _ALIAS = {
+        "visual": "glyph",
+        "abbrev": "abbr",
+        "alphanumeric": "alphanum",
+    }
+
     def __init__(self, mode: str = "glyph", dict_dir: pathlib.Path | None = None):
-        self.mode = mode
+        self.mode = self._ALIAS.get(mode, mode)
         self.dict_dir = pathlib.Path(dict_dir) if dict_dir else DEFAULT_DICT_DIR
         self.mapping = self._load_dict()
 
@@ -42,6 +48,10 @@ class Compressor:
             json.dumps(self.mapping, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+    # backward compatibility
+    def _save_mapping(self) -> None:
+        self._save_dict()
 
     # ------------------------------------------------------------------
     # Token generation
@@ -97,6 +107,13 @@ class Compressor:
             text = text.replace(token, term)
         return text
 
+    # Compatibility aliases
+    def compress(self, text: str) -> str:
+        return self.compress_text(text)
+
+    def decompress(self, text: str) -> str:
+        return self.decompress_text(text)
+
 # ----------------------------------------------------------------------
 # CLI entry point
 
@@ -104,7 +121,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Compress/decompress text")
     parser.add_argument("input", help="Input text file")
     parser.add_argument("output", help="Output text file")
-    parser.add_argument("--mode", default="glyph", choices=["glyph", "emoji", "abbr", "alphanum"], help="Compression mode")
+    parser.add_argument("--mode", default="glyph", help="Compression mode")
     parser.add_argument("--decompress", action="store_true", help="Decompress instead of compress")
     args = parser.parse_args(argv)
 
@@ -118,3 +135,4 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+

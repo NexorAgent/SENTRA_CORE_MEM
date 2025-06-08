@@ -66,10 +66,14 @@ def compress_text(
             used.add(glyph)
         for w, glyph in mapping.items():
             pattern = rf"\b{re.escape(w)}\b"
-            text = re.sub(pattern, lambda _m, g=glyph: g, text)
-        out = pathlib.Path(mapping_file or "obfuscated_map.json")
-        out.write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8")
-        return text
+            text = re.sub(pattern, glyph, text)
+        out_path = pathlib.Path(mapping_file) if mapping_file else None
+        if out_path is None:
+            out_path = pathlib.Path("obfuscated_map.json")
+        out_path.write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8")
+        if mapping_file:
+            return text
+        return text, mapping
 
     # regular mode using persistent dictionary
     for w in set(words):
