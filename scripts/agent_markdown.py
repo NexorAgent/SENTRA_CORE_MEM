@@ -22,15 +22,16 @@ MEMORY_FILE = PROJECT_ROOT / "memory" / "sentra_memory.json"
 LOG_FILE = PROJECT_ROOT / "logs" / "execution_log.txt"
 
 def load_memory_entries():
-    entries = []
-    if MEMORY_FILE.exists():
-        try:
-            with MEMORY_FILE.open("r", encoding="utf-8") as f:
-                for line in f:
-                    entries.append(json.loads(line))
-        except Exception:
-            pass
-    return entries
+    """Retourne la liste des entrées mémoire JSON."""
+    if not MEMORY_FILE.exists():
+        return []
+
+    try:
+        with MEMORY_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception:
+        return []
 
 
 def load_logs_for_date(date_str):

@@ -1,5 +1,5 @@
 from datetime import datetime
-import os, json
+import json
 from pathlib import Path
 
 # ─── Compression glyphique : stub si le module n’existe pas ───
@@ -18,6 +18,18 @@ def compress_entry(entry):
     """Raccourci visuel d’une entrée (pour logs éventuels)."""
     contenu = entry.get("contenu", "") if isinstance(entry, dict) else str(entry)
     return contenu if len(contenu) <= 20 else contenu[:10] + "..." + contenu[-10:]
+
+
+def _load_memory(mem_path: Path) -> list:
+    """Charge et retourne la liste de mémoire."""
+    if not mem_path.exists():
+        return []
+    try:
+        with mem_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except json.JSONDecodeError:
+        return []
 
 # ─────────────────────────────────────────────
 #  FONCTION PRINCIPALE : save_note_from_text
@@ -47,21 +59,12 @@ def save_note_from_text(note_text: str):
         print(f"⚠️  Compression zmem ignorée : {e}")
 
     # --- Écriture mémoire persistante (liste JSON) ---
-    project_root = Path(__file__).resolve().parent.parent   # …/SENTRA_CORE_MEM_merged
-    mem_file     = project_root / "memory" / "sentra_memory.json"
+    project_root = Path(__file__).resolve().parent.parent
+    mem_file = project_root / "memory" / "sentra_memory.json"
     mem_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # Charger l’existant
-    if mem_file.exists():
-        try:
-            with mem_file.open("r", encoding="utf-8") as f:
-                memory = json.load(f)
-                if not isinstance(memory, list):
-                    memory = []
-        except json.JSONDecodeError:
-            memory = []
-    else:
-        memory = []
+    # Charger l'existant
+    memory = _load_memory(mem_file)
 
     # Ajouter la nouvelle entrée
     memory.append({

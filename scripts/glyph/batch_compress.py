@@ -23,7 +23,7 @@ from datetime import datetime
 from typing import Iterable, Tuple
 
 from .glyph_generator import compress_text
-from .mem_block import make_mem_block
+from scripts.mem_block import make_mem_block
 
 def compress_content(text: str, mode: str, obfuscate: bool, src_name: str = "") -> str:
     """Compress text using glyph or zlib, option obfuscate (MEM.BLOCK sans mapping)."""
