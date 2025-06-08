@@ -69,6 +69,24 @@ memories/   → .zmem compressés + .src lisibles
 docs/       → MANUEL, README, rapports Markdown
 ```
 
+## 🔒 Obfuscation glyphique
+
+L'option `--obfuscate` du script `run_auto_translator.py` attribue des glyphes
+aléatoires à chaque balise. Le mapping généré est écrit dans un fichier
+`<nom>_mapping.json` (ou chemin défini par `--map-out`).
+
+**Attention :** perdre ce fichier rend la décompression impossible. Conservez-le
+précieusement ou lancez le script sans obfuscation si la récupération prévaut.
+
+Pour restaurer un texte :
+
+```python
+from scripts.glyph.glyph_generator import decompress_with_dict
+import json
+mapping = json.load(open("FICHIER_mapping.json", "r", encoding="utf-8"))
+plain = decompress_with_dict(glyph_text, mapping)
+```
+
 ## 🔐 Configuration
 
 - La clé API `OPENAI_API_KEY` doit être définie en variable d’environnement.
