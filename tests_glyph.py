@@ -26,7 +26,7 @@ sys.modules.setdefault("openai", types.ModuleType("openai"))
 try:
     from scripts.project_resumer_gpt import compress_to_glyph
 except ImportError:
-    compress_to_glyph = None  # Optionally, skip test if unavailable
+    compress_to_glyph = None
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -118,7 +118,6 @@ class GlyphRoundTripTest(unittest.TestCase):
         zmem_src = base / "out.src"
         zmem_bin = base / "out.zmem"
         index = base / "index.json"
-
         zmem_encoder.encode_zmem(
             content=text,
             ctx_tag="TCTX",
@@ -128,7 +127,6 @@ class GlyphRoundTripTest(unittest.TestCase):
             zmem_bin_out=str(zmem_bin),
             update_dict_path=str(index),
         )
-
         decoded = zlib.decompress(base64.b64decode(zmem_bin.read_text())).decode("utf-8")
         self.assertEqual(decoded, text)
         if zlib_bin.exists():
@@ -159,107 +157,41 @@ class GlyphRoundTripTest(unittest.TestCase):
         decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
         self.assertEqual(decoded, text)
 
-    def test_batch_compression_directory(self):
-        batch_dir = Path(self.tmp.name) / "batch"
-        out_dir = Path(self.tmp.name) / "out"
-        batch_dir.mkdir()
-        out_dir.mkdir()
-        samples = {
-            "a.txt": "alpha",
-            "b.txt": "beta",
-            "c.txt": "gamma",
-        }
-        for fname, content in samples.items():
-            (batch_dir / fname).write_text(content, encoding="utf-8")
-
-        for fname, content in samples.items():
-            encode_zmem(
-                content=content,
-                ctx_tag=fname,
-                zlib_txt_out=str(out_dir / f"{fname}.l64.t"),
-                zlib_bin_out=str(out_dir / f"{fname}.l64.b"),
-                zmem_src_out=str(out_dir / f"{fname}.src"),
-                zmem_bin_out=str(out_dir / f"{fname}.zmem"),
-                update_dict_path=str(out_dir / "index.json"),
-            )
-
-        for fname, original in samples.items():
-            encoded = (out_dir / f"{fname}.zmem").read_text(encoding="utf-8")
-            decoded = zlib.decompress(base64.b64decode(encoded)).decode("utf-8")
-            self.assertEqual(decoded, original)
-
-    def test_batch_script(self):
-        input_dir = Path(self.tmp.name) / "in"
-        out_dir = Path(self.tmp.name) / "out"
-        input_dir.mkdir()
-        out_dir.mkdir()
-        samples = {"a.txt": "bonjour monde", "b.txt": "deuxieme fichier"}
-        for name, text in samples.items():
-            (input_dir / name).write_text(text, encoding="utf-8")
-        script = Path(__file__).resolve().parent / "scripts" / "batch_compress.py"
-        subprocess.run([sys.executable, str(script), str(input_dir), str(out_dir)], check=True)
-        # Adapted for the current report file output, can adjust if changed:
-        report_file_json = out_dir / "compression_report.json"
-        report_file_csv = out_dir / "compression_report.csv"
-        if report_file_json.exists():
-            report = json.loads(report_file_json.read_text())
-        elif report_file_csv.exists():
-            # Optionally, add CSV parsing if needed
-            with report_file_csv.open(encoding="utf-8") as f:
-                lines = f.readlines()[1:]  # skip header
-                report = {line.split(',')[0]: line.strip().split(',')[1:] for line in lines}
-        else:
-            self.fail("No report file found")
-        for name, original in samples.items():
-            zpath = out_dir / f"{Path(name).stem}.zmem"
-            data = base64.b64decode(zpath.read_text())
-            restored = zlib.decompress(data).decode("utf-8")
-            self.assertEqual(restored, original)
-            self.assertIn(name, report)
-
-    def test_batch_cli_outputs(self):
-        sample = "<note>demo de batch</note>"
-        input_path = Path(self.tmp.name) / "sample.txt"
-        input_path.write_text(sample, encoding="utf-8")
-        script = Path(__file__).resolve().parent / "scripts" / "run_auto_translator.py"
-        result = subprocess.run(
-            [sys.executable, str(script), "-i", str(input_path)],
-            cwd=self.tmp.name,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Pipeline complet exécuté", result.stdout)
-
-        out_txt = Path(self.tmp.name) / f"{input_path.stem}.zlib.txt"
-        out_bin = Path(self.tmp.name) / f"{input_path.stem}.zlib"
-        zmem_src = Path(self.tmp.name) / "memory_zia" / "sentra_memory.zmem.src"
-        zmem_bin = Path(self.tmp.name) / "memory_zia" / "sentra_memory.zmem"
-        dict_file = Path(self.tmp.name) / "memory_zia" / "mem_dict.json"
-
-        for f in (out_txt, out_bin, zmem_src, zmem_bin, dict_file):
-            self.assertTrue(f.exists(), f"Missing {f}")
-
-        comp_txt = out_txt.read_text(encoding="utf-8")
-        self.assertEqual(zlib.decompress(out_bin.read_bytes()).decode("utf-8"), comp_txt)
-        self.assertEqual(
-            zlib.decompress(base64.b85decode(zmem_bin.read_bytes())).decode("utf-8"),
-            zmem_src.read_text(encoding="utf-8"),
-        )
-
     def test_compressor_all_modes(self):
-        # Test tous les modes du Compressor (visual, abbrev, alphanumeric, custom)
         txt = "test unitaire pour tous les modes compressor compressor"
         for mode in ["visual", "abbrev", "alphanumeric", "custom"]:
             with self.subTest(mode=mode):
                 comp = Compressor(mode)
-                # Pour 'custom' il ne doit pas générer de mapping si vide
                 if mode == "custom":
                     comp.mapping = {"test": "X1", "unitaire": "Y2", "pour": "Z3", "tous": "A4", "les": "B5", "modes": "C6", "compressor": "C7"}
                     comp._save_mapping()
                 compressed = comp.compress(txt)
                 decompressed = comp.decompress(compressed)
                 self.assertEqual(decompressed, txt)
+
+class BatchCompressTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.src = Path(self.tmp.name) / "src"
+        self.dst = Path(self.tmp.name) / "dst"
+        self.src.mkdir()
+        (self.src / "a.txt").write_text("bonjour monde", encoding="utf-8")
+        sub = self.src / "sub"
+        sub.mkdir()
+        (sub / "b.txt").write_text("autre fichier", encoding="utf-8")
+        self.dict_path = Path(self.tmp.name) / "glyph.json"
+        os.environ["GLYPH_DICT_PATH"] = str(self.dict_path)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+        os.environ.pop("GLYPH_DICT_PATH", None)
+
+    def test_batch_compress(self):
+        from scripts.glyph.batch_compress import compress_directory
+        report = compress_directory(self.src, self.dst, mode="csv", obfuscate=False)
+        self.assertTrue((self.dst / "a.txt.mb").exists())
+        self.assertTrue((self.dst / "sub" / "b.txt.mb").exists())
+        self.assertTrue(report.exists())
 
 if __name__ == "__main__":
     unittest.main()

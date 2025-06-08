@@ -90,7 +90,9 @@ def main():
 
     src = args.src
     dst = args.dst
-    report_path = args.report if args.report else dst / ("report.md" if args.mode == "glyph" and args.obfuscate else "report.csv")
+    report_path = args.report if args.report else dst / (
+        "report.md" if args.mode == "glyph" and args.obfuscate else "report.csv"
+    )
 
     entries = []
     for path in iter_text_files(src):
