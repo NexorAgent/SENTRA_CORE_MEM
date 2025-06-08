@@ -60,6 +60,13 @@ python scripts/zmem_encoder.py -i docs/mon_texte.txt -n TEST/MEM
 python scripts/compose_prompt.py TEST/MEM
 ```
 
+### Démarrer l'API FastAPI
+Pour tester localement l'API (plugin ChatGPT), lancez :
+
+```bash
+uvicorn scripts.api_sentra:app --reload --port 5000
+```
+
 ## 📁 Structure
 
 ```
