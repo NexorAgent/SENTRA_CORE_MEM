@@ -1,9 +1,6 @@
-"""Generic text compressor using various mapping dictionaries."""
-
-import argparse
 import json
-import pathlib
 import re
+import pathlib
 from typing import Dict
 
 from .glyph_generator import (
@@ -33,7 +30,7 @@ class Compressor:
         if self.dict_path.exists():
             try:
                 return json.loads(self.dict_path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+            except Exception:
                 return {}
         return {}
 
@@ -80,6 +77,8 @@ class Compressor:
         return text
 
 def main(argv=None) -> None:
+    import argparse
+
     parser = argparse.ArgumentParser(
         description="Compress or decompress a text file using the selected mapping mode"
     )
