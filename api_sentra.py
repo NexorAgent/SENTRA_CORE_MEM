@@ -68,8 +68,6 @@ class RepriseResponse(BaseModel):
 
 class WriteNoteRequest(BaseModel):
     text: str
-    project: str | None = None
-
 
 class WriteFileRequest(BaseModel):
     project: str
@@ -205,8 +203,6 @@ async def write_note(req: WriteNoteRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
-    project_slug = req.project.strip().lower().replace(" ", "_") or "sentra_core"
-
     # 1) Chemin vers la racine du projet
     script_dir   = Path(__file__).resolve().parent   # …/scripts
     project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
@@ -239,12 +235,9 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     # 4) Journal mimétique Z_MEMORIAL.md
-
-        project_slug = req.project.strip().lower().replace(" ", "_")or "sentra_core"
-
+    project_slug  = "sentra_core"
     memorial_dir  = project_root / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
-
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
     timestamp_md  = time.strftime("## %Y-%m-%d %H:%M:%S\n- ", time.localtime())
 
@@ -254,22 +247,8 @@ async def write_note(req: WriteNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
 
-    # 5) Mémoire markdown spécifique au projet si project fourni
-    extra_files = [memory_file, memorial_file]
-    if req.project:
-        memoire_file = memorial_dir / f"memoire_{project_slug}.md"
-        if not memoire_file.exists():
-            memoire_file.touch()
-        try:
-            with memoire_file.open("a", encoding="utf-8") as mf:
-                mf.write(f"{timestamp_md}{text}\n\n")
-            extra_files.append(memoire_file)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Échec écriture memoire_{project_slug}.md : {repr(e)}")
-
     try:
-    git_commit_push(extra_files, f"GPT note ({project_slug}): {text[:50]}")
-
+        git_commit_push([memory_file, memorial_file], f"GPT note: {text[:50]}")
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -316,13 +295,13 @@ async def read_note(term: str = "", limit: int = 5):
 #  GET /get_memorial  (affichage de Z_MEMORIAL.md)
 # ------------------------------------
 @app.get("/get_memorial")
-async def get_memorial(project: str = "sentra_core"):
+async def get_memorial():
     """
-    Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.
+    Renvoie en texte brut le contenu de projects/SENTRA_CORE/fichiers/Z_MEMORIAL.md.
     """
     script_dir   = Path(__file__).resolve().parent   # …/scripts
     project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
-    project_slug = project.strip().lower().replace(" ", "_") or "sentra_core"
+    project_slug = "sentra_core"
     memorial_file = project_root / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
 
     if not memorial_file.exists():
@@ -363,7 +342,7 @@ async def write_file(req: WriteFileRequest):
         return WriteResponse(status="error", detail=f"Erreur écriture du fichier {file_path} : {e}")
 
     try:
-        git_commit_push([file_path], f"GPT file update ({project_slug}): {filename}")
+        git_commit_push([file_path], f"GPT file update: {filename}")
     except RuntimeError as e:
         return WriteResponse(status="error", detail=str(e))
 
