@@ -103,3 +103,29 @@ def decompress_with_dict(text: str, glyphs: Dict[str, str]) -> str:
 def export_dict() -> Dict[str, str]:
     """Return the current glyph dictionary."""
     return _load_dict()
+
+
+def compress_with_dict(text: str, mapping: Dict[str, str]) -> str:
+    """Compress text using a provided mapping without touching the main dictionary."""
+    used = set(mapping.values())
+    words = re.findall(r"\b\w+\b", text)
+    for w in set(words):
+        if w not in mapping:
+            glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            while glyph in used:
+                glyph = random.choice(GLYPH_POOL) + random.choice("0123456789abcdef")
+            mapping[w] = glyph
+            used.add(glyph)
+    for term, glyph in mapping.items():
+        pattern = rf"\b{re.escape(term)}\b"
+        text = re.sub(pattern, glyph, text)
+    return text
+
+
+def randomize_mapping(mapping: Dict[str, str]) -> Dict[str, str]:
+    """Return a copy of mapping with values shuffled."""
+    items = list(mapping.items())
+    keys = [k for k, _ in items]
+    values = [v for _, v in items]
+    random.shuffle(values)
+    return dict(zip(keys, values))
