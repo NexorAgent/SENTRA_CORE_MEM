@@ -53,8 +53,7 @@ class GlyphRoundTripTest(unittest.TestCase):
     def test_mem_block_no_mapping(self):
         text = "cycle sans mapping"
         fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
-        # ensure glyphs exist in dictionary
-        gg.compress_text(text)
+        gg.compress_text(text)  # ensure glyphs exist in dictionary
         block = make_mem_block(fields, text, include_mapping=False)
         restored = decode_mem_block(block)
         self.assertEqual(restored, text)
@@ -65,6 +64,14 @@ class GlyphRoundTripTest(unittest.TestCase):
         obf_mapping = randomize_mapping(base_mapping)
         compressed = compress_with_dict(text, obf_mapping)
         restored = gg.decompress_with_dict(compressed, obf_mapping)
+        self.assertEqual(restored, text)
+
+    def test_obfuscation_cycle(self):
+        text = "secret message"
+        map_path = Path(self.tmp.name) / "obf.json"
+        compressed = gg.compress_text(text, obfuscate=True, mapping_file=map_path)
+        mapping = json.loads(map_path.read_text(encoding="utf-8"))
+        restored = gg.decompress_with_dict(compressed, mapping)
         self.assertEqual(restored, text)
 
     def test_zmem_cycle(self):
