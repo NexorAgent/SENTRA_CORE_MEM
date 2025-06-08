@@ -7,10 +7,14 @@ import base64
 import zlib
 from pathlib import Path
 
-from scripts.glyph import glyph_generator as gg
-from scripts.glyph import make_mem_block, decode_mem_block
+from scripts.glyph import (
+    glyph_generator as gg,
+    make_mem_block,
+    decode_mem_block,
+    randomize_mapping,
+    compress_with_dict,
+)
 from scripts import zmem_encoder
-
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -42,6 +46,14 @@ class GlyphRoundTripTest(unittest.TestCase):
         fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
         block = make_mem_block(fields, text, include_mapping=True)
         restored = decode_mem_block(block)
+        self.assertEqual(restored, text)
+
+    def test_obfuscate_cycle(self):
+        text = "secret memo"
+        base_mapping = {"secret": "AA", "memo": "BB"}
+        obf_mapping = randomize_mapping(base_mapping)
+        compressed = compress_with_dict(text, obf_mapping)
+        restored = gg.decompress_with_dict(compressed, obf_mapping)
         self.assertEqual(restored, text)
 
     def test_zmem_encoder_cycle(self):
@@ -98,7 +110,6 @@ class GlyphRoundTripTest(unittest.TestCase):
             zlib.decompress(base64.b85decode(zmem_bin.read_bytes())).decode("utf-8"),
             zmem_src.read_text(encoding="utf-8"),
         )
-
 
 if __name__ == "__main__":
     unittest.main()
