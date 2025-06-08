@@ -111,7 +111,12 @@ $ ./sentra_cycle.bat          # Windows
 $ bash sentra_cycle.sh        # Linux/macOS
 ```
 
-Ce script effectue **encode → load → sync → report**, puis pousse sur la branche `dev`.
+Ce script enchaîne :
+1. **encode** – traduit les logs en glyphes et met à jour `glyph_dict.json`.
+2. **load** – insère le résultat compressé dans `sentra_memory.json`.
+3. **sync** – envoie la mémoire vers Notion et Discord.
+4. **report** – crée `reports/YYYY/MM/YYYY-MM-DD_rapport.md`.
+5. Push Git automatique sur la branche `dev`.
 
 ### 5.2  Exemples de commandes manuelles
 
@@ -163,6 +168,78 @@ Le **dispatcher** (dans `orchestrator.py`) mappe automatiquement l’intention d
 
 * Alphabet étendu (unicode privé) + dictionnaire adaptatif.
 * Cible : **×10** de compression.
+
+<<<<<< codex/document-création-de-glyph-sets-et-compression
+### 8.3  Création de nouveaux sets de glyphes
+
+* L’outil `glyph_watcher.py` scanne un dossier de logs et génère un glyphe pour
+  chaque terme trouvé :
+
+```bash
+python scripts/glyph/glyph_watcher.py logs/
+```
+
+* Pour un mot isolé, la fonction `forge_glyph()` du module `GLYPH_FORGER.py`
+  retourne le symbole associé :
+
+```bash
+python -c "from scripts.GLYPH_FORGER import forge_glyph; print(forge_glyph('exemple'))"
+```
+
+Les glyphes produits sont stockés dans `memory/glyph_dict.json`.
+
+### 8.4  Partage du dictionnaire entre agents
+
+Tous les modules glyphiques lisent le chemin depuis la variable d’environnement
+`GLYPH_DICT_PATH` (par défaut `memory/glyph_dict.json`). Pour mutualiser un même
+dictionnaire sur plusieurs machines :
+
+```bash
+export GLYPH_DICT_PATH=/chemin/partage/glyph_dict.json
+```
+
+### 8.5  Compression par lot
+
+Le script `run_auto_translator.py` applique les glyphes puis compresse en `zlib`
+et `base85`. Exemple :
+
+```bash
+python scripts/run_auto_translator.py -i "docs/resume sentra.zlib.txt"
+```
+
+Sur ce fichier d’essai, la taille passe de 11 995 octets à 4 992 octets (×2,4)
+pour la version `.zlib`, puis à 6 379 octets pour le bloc `.zmem` (×1,9). Intégrez
+cette commande dans un script `.bat` ou un `for` shell pour traiter un répertoire
+complet.
+
+### 8.6  Intégration dans un pipeline IA
+
+* Prédécompressez ou compressez vos jeux de données avant de les envoyer à
+  `orchestrator.py` ou à un modèle tiers afin de réduire le nombre de tokens
+  échangés.
+* Partager `GLYPH_DICT_PATH` permet aux agents de décoder tout `MEM.BLOCK` via
+  `mem_block.decode_mem_block()`.
+* `pipeline_traducteur.py` ou `run_auto_translator.py` peuvent être appelés
+  directement dans vos jobs CI/CD pour maintenir une mémoire compressée homogène.
+=======
+### 8.3  Ajouter un jeu de glyphes
+
+1. Créez un fichier JSON dans `memory/` (ex : `glyph_dict_custom.json`).
+2. Définissez la variable `GLYPH_DICT_PATH` pour pointer vers ce fichier.
+3. Les agents l’utiliseront automatiquement pour générer ou lire les glyphes.
+
+### 8.4  Partage et sauvegarde du dictionnaire
+
+* Versionnez `glyph_dict.json` via Git pour tracer l’historique.
+* Effectuez une copie compressée (`gzip glyph_dict.json`) après chaque session.
+* Un dictionnaire propre améliore le taux de compression global.
+
+### 8.5  Obfuscation
+
+La fonction `make_mem_block()` peut exclure la table de correspondance
+(`include_mapping=False`). Le texte compressé reste alors lisible
+uniquement par les agents possédant le dictionnaire.
+>>>>>> main
 
 ---
 
