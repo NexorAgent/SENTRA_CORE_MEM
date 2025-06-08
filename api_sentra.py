@@ -8,9 +8,9 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from .git_utils import git_commit_push
-from .memory_lookup import search_memory
-from .memory_manager import query_memory
+from git_utils import git_commit_push
+from memory_lookup import search_memory
+from memory_manager import query_memory
 
 # ------------------------------------
 #  Création de l’application FastAPI
