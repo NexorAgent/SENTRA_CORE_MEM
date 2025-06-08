@@ -1,3 +1,5 @@
+"""Generic text compressor using various mapping dictionaries."""
+
 import argparse
 import json
 import pathlib
@@ -10,21 +12,22 @@ from .glyph_generator import (
     dict_file,
 )
 
-
 class Compressor:
-    """Generic text compressor supporting multiple modes."""
+    """Compressor supporting multiple mapping modes."""
 
-    def __init__(self, mode: str = "visual"):
+    MODES = {
+        "visual": "glyph_dict.json",
+        "abbrev": "abbreviations_dict.json",
+        "alphanumeric": "alphanumeric_dict.json",
+        "custom": "custom_dict.json",
+    }
+
+    def __init__(self, mode: str = "visual") -> None:
+        if mode not in self.MODES:
+            raise ValueError(f"Unknown mode: {mode}")
         self.mode = mode
-        self.dict_path = self._map_path()
-        self.mapping = self._load_mapping()
-
-    # -------------------------------------------------------------
-    def _map_path(self) -> pathlib.Path:
-        base = dict_file()
-        if self.mode == "visual":
-            return base
-        return base.with_name(f"{self.mode}_dict.json")
+        self.dict_path = dict_file().parent / self.MODES[self.mode]
+        self.mapping: Dict[str, str] = self._load_mapping()
 
     def _load_mapping(self) -> Dict[str, str]:
         if self.dict_path.exists():
@@ -41,7 +44,6 @@ class Compressor:
             encoding="utf-8",
         )
 
-    # -------------------------------------------------------------
     def _generate_token(self, word: str) -> str:
         existing = set(self.mapping.values())
         if self.mode == "abbrev":
@@ -54,10 +56,8 @@ class Compressor:
             return token
         if self.mode == "alphanumeric":
             return f"T{len(self.mapping) + 1}"
-        # custom mode falls back to generic numbering
         return f"C{len(self.mapping) + 1}"
 
-    # -------------------------------------------------------------
     def compress(self, text: str) -> str:
         if self.mode == "visual":
             return glyph_compress(text)
@@ -79,28 +79,23 @@ class Compressor:
             text = text.replace(token, term)
         return text
 
-
-# -------------------------------------------------------------
-
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
-        description="Compress text files using simple glyph mappings"
+        description="Compress or decompress a text file using the selected mapping mode"
     )
-    parser.add_argument(
-        "--mode",
-        default="visual",
-        choices=["visual", "abbrev", "alphanumeric", "custom"],
-        help="Compression mode",
-    )
+    parser.add_argument("--mode", choices=list(Compressor.MODES.keys()), default="visual", help="Compression mode")
     parser.add_argument("input", help="Input text file")
     parser.add_argument("output", help="Output text file")
-    args = parser.parse_args()
+    parser.add_argument("--decompress", action="store_true", help="Decompress instead of compress")
+    args = parser.parse_args(argv)
 
-    content = pathlib.Path(args.input).read_text(encoding="utf-8")
     comp = Compressor(args.mode)
-    compressed = comp.compress(content)
-    pathlib.Path(args.output).write_text(compressed, encoding="utf-8")
-
+    content = pathlib.Path(args.input).read_text(encoding="utf-8")
+    if args.decompress:
+        result = comp.decompress(content)
+    else:
+        result = comp.compress(content)
+    pathlib.Path(args.output).write_text(result, encoding="utf-8")
 
 if __name__ == "__main__":
     main()
