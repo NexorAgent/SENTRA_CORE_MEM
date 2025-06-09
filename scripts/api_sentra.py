@@ -587,20 +587,23 @@ async def archive_file(req: ArchiveFileRequest):
 
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
 
-# === SENTRA API CORE — ROUTES PUBLIQUES DE STATUT ===
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+# === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
-# Si l'objet app n'existe pas encore :
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse, PlainTextResponse
+from pathlib import Path
+
+# Assure que l'objet app existe (si pas défini ailleurs)
 try:
     app
 except NameError:
     app = FastAPI()
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 @app.get("/", tags=["monitoring"])
 async def home():
     return JSONResponse(
-        status_code=200,
         content={"message": "✅ API SENTRA_CORE_MEM active. Bienvenue sur le noyau IA local."}
     )
 
@@ -610,10 +613,39 @@ async def status():
         "status": "🟢 OK",
         "project": "SENTRA_CORE_MEM",
         "version": "v0.4",
-        "agents": ["markdown", "notion", "discord", "glyph", "scheduler"],
+        "agents": ["markdown", "notion", "discord", "glyph", "scheduler"]
     }
 
+@app.get("/version", tags=["monitoring"])
+async def get_version():
+    changelog_path = BASE_DIR / "CHANGELOG.md"
+    if changelog_path.exists():
+        with open(changelog_path, "r", encoding="utf-8") as f:
+            return PlainTextResponse(f.read(), media_type="text/plain")
+    return JSONResponse(content={"error": "CHANGELOG.md non trouvé"}, status_code=404)
 
-  
+@app.get("/readme", tags=["monitoring"])
+async def get_readme():
+    readme_path = BASE_DIR / "README.md"
+    if readme_path.exists():
+        with open(readme_path, "r", encoding="utf-8") as f:
+            return PlainTextResponse(f.read(), media_type="text/plain")
+    return JSONResponse(content={"error": "README.md non trouvé"}, status_code=404)
 
- 
+@app.get("/logs/latest", tags=["logs"])
+async def get_latest_logs():
+    log_path = BASE_DIR / "logs" / "execution_log.txt"
+    if log_path.exists():
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return {"latest": lines[-10:]}
+    return JSONResponse(content={"error": "Aucun log trouvé"}, status_code=404)
+
+@app.get("/agents", tags=["monitoring"])
+async def list_agents():
+    return {
+        "active_agents": [
+            "markdown", "notion", "discord", "glyph", "scheduler"
+        ],
+        "status": "🟢 tous actifs (dans le code)"
+    }
