@@ -8,9 +8,10 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from git_utils import git_commit_push
-from memory_lookup import search_memory
-from memory_manager import query_memory
+from scripts.git_utils import git_commit_push
+from scripts.memory_lookup import search_memory
+from scripts.memory_manager import query_memory
+
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -205,14 +206,15 @@ async def write_note(req: WriteNoteRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
+    # Calcul une seule fois du slug projet/clone
     project_slug = req.project.strip().lower().replace(" ", "_") or "sentra_core"
 
     # 1) Chemin vers la racine du projet
-    script_dir   = Path(__file__).resolve().parent   # …/scripts
-    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
-    memory_dir   = project_root / "memory"            # …/memory
-    memory_dir.mkdir(parents=True, exist_ok=True)     # crée le dossier si nécessaire
-    memory_file  = memory_dir / "sentra_memory.json"  # …/memory/sentra_memory.json
+    script_dir   = Path(__file__).resolve().parent
+    project_root = script_dir.parent
+    memory_dir   = project_root / "memory"
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    memory_file  = memory_dir / "sentra_memory.json"
 
     # 2) Préparer l'entrée JSON pour sentra_memory.json
     entry = {
@@ -222,7 +224,6 @@ async def write_note(req: WriteNoteRequest):
     }
 
     try:
-        # 3) Charger la mémoire existante (liste JSON)
         if memory_file.exists():
             try:
                 memory = json.loads(memory_file.read_text(encoding="utf-8"))
@@ -232,16 +233,12 @@ async def write_note(req: WriteNoteRequest):
                 memory = []
         else:
             memory = []
-        # 4) Ajouter l'entrée puis réécrire complètement
         memory.append(entry)
         memory_file.write_text(json.dumps(memory, indent=2, ensure_ascii=False), encoding="utf-8")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
-    # 4) Journal mimétique Z_MEMORIAL.md
-
-        project_slug = req.project.strip().lower().replace(" ", "_")or "sentra_core"
-
+    # 3) Journal mimétique Z_MEMORIAL.md
     memorial_dir  = project_root / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
 
@@ -254,7 +251,7 @@ async def write_note(req: WriteNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Note ajoutée au JSON, mais échec du journal Markdown : {repr(e)}")
 
-    # 5) Mémoire markdown spécifique au projet si project fourni
+    # 4) Mémoire markdown spécifique au projet si project fourni
     extra_files = [memory_file, memorial_file]
     if req.project:
         memoire_file = memorial_dir / f"memoire_{project_slug}.md"
@@ -268,12 +265,12 @@ async def write_note(req: WriteNoteRequest):
             raise HTTPException(status_code=500, detail=f"Échec écriture memoire_{project_slug}.md : {repr(e)}")
 
     try:
-    git_commit_push(extra_files, f"GPT note ({project_slug}): {text[:50]}")
-
+        git_commit_push(extra_files, f"GPT note ({project_slug}): {text[:50]}")
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
+
 
 # ------------------------------------
 #  GET /get_notes  (affichage de sentra_memory.json)
