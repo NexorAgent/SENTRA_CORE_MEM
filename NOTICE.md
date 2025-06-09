@@ -313,6 +313,7 @@ Toutes les PR sont bienvenues ! Consultez :
 - **Créer/modifier un fichier** :
   “Crée un fichier ‘reports/2025/ALPHA.md’ et écris ‘Résumé du sprint’”
 - **Organisation personnalisée** :
+- **Supprimer ou archiver un fichier** : via `/delete_file` ou `/archive_file`
   “Déplace tous les logs de 2024 dans ‘archives/2024’”
 - **Backup/récupération** :
   “Exporte la mémoire complète du projet ZENITH en markdown”
