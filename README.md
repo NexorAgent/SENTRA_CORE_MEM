@@ -86,6 +86,7 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
 - `POST /reprise` – résume un canal Discord
 - `GET /check_env` – vérifie la clé API (debug)
+- `GET /legal` – affiche la notice légale ou la licence du projet
 
 ### Exemples `curl`
 
@@ -199,6 +200,7 @@ Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent 
 | /write_file    | POST    | Créer/éditer un fichier mémoire  |
 | /get_memorial  | GET     | Lire la mémoire (markdown)       |
 | /get_notes     | GET     | Lire tout le JSON mémoire        |
+| /legal         | GET     | Notice légale / licence          |
 | (à venir…)     | POST    | delete/move/orchestrate…         |
 
 ## Exemples d’utilisation
@@ -225,6 +227,23 @@ Arborescence de référence
 /projects/<slug>/fichiers/ — markdown, logs, rapports par projet/clone
 /scripts/                — agents, modules API, outils
 /docs/                   — documentation, guide utilisateur
+
+## Tableau de bord des actions
+Un fichier `logs/actions.log` conserve les actions effectuées.
+Le script `scripts/actions_dashboard.py` produit un résumé Markdown dans `logs/actions_report.md`.
+
+### Exécution manuelle
+```bash
+python -m scripts.actions_dashboard
+```
+
+### Planification
+Exemple cron quotidien :
+```bash
+0 2 * * * cd /chemin/vers/SENTRA_CORE_MEM && python -m scripts.actions_dashboard
+```
+(ou adapter un workflow GitHub Actions sur le modèle de `.github/workflows/zsync.yml`).
+
 
 Sécurité et bonnes pratiques
 Les agents sont puissants : active le log ou le versionning git pour tout changement critique.
