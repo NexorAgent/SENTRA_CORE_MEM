@@ -1,0 +1,17 @@
+[
+  {
+    "type": "note",
+    "text": "note ceci est un test memoire",
+    "timestamp": "2025-06-01T08:12:52"
+  },
+  {
+    "type": "note",
+    "text": "Première note test CLI",
+    "timestamp": "2025-06-01T08:26:52"
+  },
+  {
+    "type": "note",
+    "text": "première mémoire automatique par GPT pour sentra core",
+    "timestamp": "2025-06-09T07:27:58"
+  }
+]
