@@ -8,3 +8,8 @@ venv/
 
 # Ignorer dossier de rapports (si tu ne veux pas le versionner)
 reports/
+# Test-generated dictionary files
+memory/abbr_dict.json
+memory/alphanum_dict.json
+memory/custom_dict.json
+obfuscated_map.json
