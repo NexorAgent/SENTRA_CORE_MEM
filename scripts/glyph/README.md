@@ -12,11 +12,15 @@ representations. It can be integrated in a larger IA project such as
   terms automatically.
 - `extract_glyph_dict.py` – print the current dictionary.
 - `clean_glyph_dict.py` – remove duplicated glyph entries.
+<<<<<<< HEAD
 - `mem_block.py` – build and decode universal MEM.BLOCK strings.
+=======
+>>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 A persistent dictionary file `memory/glyph_dict.json` is required. The path
 can be overridden via the `GLYPH_DICT_PATH` environment variable.
 
+<<<<<<< HEAD
 ## Multi‑mode Compression
 
 The compression pipeline works in two stages:
@@ -65,6 +69,8 @@ When multiple agents share memory, copy `glyph_dict.json` between instances so
 that compression and decompression remain consistent.  The dictionary path can
 be configured on each agent via the `GLYPH_DICT_PATH` environment variable.
 
+=======
+>>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 ## Usage Example
 
 ```python
@@ -76,6 +82,7 @@ print(compressed)
 print(decompress_text(compressed))
 ```
 
+<<<<<<< HEAD
 ## Adding New Glyph Sets
 
 1. Create a new JSON dictionary such as `memory/glyph_dict_custom.json`.
@@ -99,10 +106,13 @@ evolution and can slightly improve compression over time.
 Pass `include_mapping=False` to `make_mem_block()` to omit the glyph table.
 Only agents with the dictionary will be able to decode the block.
 
+=======
+>>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 ## Tests
 
 A suite `tests_glyph.py` uses `unittest` to verify that compressing then
  decompressing strings yields the original text.
+<<<<<<< HEAD
 
 ## MEM.BLOCK Workflow
 
@@ -137,3 +147,5 @@ This feature only obscures content. It is *not* strong encryption—frequency
 analysis of the glyphs could reveal common terms—so keep the mapping file safe
 if confidentiality matters.
 
+=======
+>>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
