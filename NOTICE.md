@@ -298,6 +298,60 @@ Toutes les PR sont bienvenues ! Consultez :
 > **Q :** Quelle licence couvre le projet ?
 > **R :** MIT – usage privé ou académique encouragé.
 
+
+---
+
+### 📄 **NOTICE.md** 09/06/2025
+
+```markdown
+# NOTICE — Mode d’emploi SENTRA_CORE_MEM
+
+## Utilisation côté agent (GPT, Discord…)
+
+- **Ajouter une note mémoire** :
+  “Ajoute à la mémoire du projet ALPHA : ‘Idée IA compressée à archiver’”
+- **Créer/modifier un fichier** :
+  “Crée un fichier ‘reports/2025/ALPHA.md’ et écris ‘Résumé du sprint’”
+- **Organisation personnalisée** :
+  “Déplace tous les logs de 2024 dans ‘archives/2024’”
+- **Backup/récupération** :
+  “Exporte la mémoire complète du projet ZENITH en markdown”
+- **Fine tuning possible** :
+  “Prépare une base d’exemples pour réentrainer le modèle GPT”
+
+## Extension API à venir
+
+- Suppression/suppression en masse de fichiers
+- Orchestration multi-action (envoi JSON pour batch de modifications)
+- Dashboard et audit des actions agents (logging centralisé)
+
+## Rappel de philosophie
+
+SENTRA_CORE_MEM permet de :
+- centraliser la connaissance de chaque agent/clone GPT
+- garantir la traçabilité de chaque action mémoire (logs, backups…)
+- ouvrir la voie à une IA auto-structurante (full autonomie projet, logs, fine-tuning)
+
+---
+
+## FAQ (raccourci)
+
+- **Que se passe-t-il si git/push échoue sur Render ?**  
+  La mémoire est TOUJOURS écrite, le commit est juste loggé en warning.
+
+- **Est-ce qu’un agent peut vraiment tout organiser ?**  
+  OUI, via les endpoints API, tout GPT peut réagencer la mémoire à sa guise.
+
+- **Que faut-il pour un contrôle total ?**  
+  Ajouter les endpoints `/delete_file`, `/move_file` (cf. README), configurer le push git avec une clé/token si besoin.
+
+---
+
+## Licence
+
+MIT License
+
+
 ---
 
 © 2025 **SENTRA CORE** – Licence MIT
