@@ -1,3 +1,7 @@
+ codex/consolider-emplacement-api-dans-scripts/api_sentra.py
+"""Backward compatibility wrapper for the FastAPI app."""
+from scripts.api_sentra import app
+
 import os
 import subprocess
 import json
@@ -42,6 +46,16 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
+#  Route statique pour servir NOTICE.md (/legal)
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def get_legal():
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        return FileResponse(path=str(notice_path), media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="NOTICE.md non trouvé")
+
+# ------------------------------------
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
@@ -53,6 +67,24 @@ async def check_env():
     if not api_key:
         return {"env_OK": False, "detail": "OPENAI_API_KEY n'est pas défini."}
     return {"env_OK": True, "OPENAI_API_KEY_prefix": api_key[:6] + "..."}
+
+# ------------------------------------
+#  Notice légale / licence
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def legal_notice():
+    """Retourne un court texte légal ou la licence du projet."""
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        try:
+            content = notice_path.read_text(encoding="utf-8")
+            return Response(content=content, media_type="text/markdown")
+        except Exception:
+            pass
+    return Response(
+        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
+        media_type="text/plain",
+    )
 
 # ------------------------------------
 #  Modèles de requête / réponse
@@ -364,6 +396,7 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+codex/ajouter-des-tests-pour-les-nouvelles-routes
 
 # ------------------------------------
 #  POST /delete_file
@@ -460,3 +493,6 @@ async def archive_file(req: ArchiveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
+
+main
+ main
