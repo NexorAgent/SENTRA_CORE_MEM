@@ -49,4 +49,16 @@
 ### Fixed
 - Correction indentation, bug project=None (plus de 500 sur /write_note)
 
+## [v0.4] – 2025-06-11
+
+### Added
+- Endpoint `/write_file` pour la création et la modification de fichiers
+- Endpoint `/legal` servant `NOTICE.md` et la licence
+
+### Changed
+- Documentation complète de l’API avec exemples curl actualisés
+
+### Fixed
+- Divers correctifs mineurs sur l’API et la gestion git
+
 
