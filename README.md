@@ -90,11 +90,9 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `POST /archive_file` – archiver un fichier
 - `POST /reprise` – résume un canal Discord
 - `GET /check_env` – vérifie la clé API (debug)
- codex/mettre-à-jour-readme,-notice-et-changelog
 - `GET /legal` – affiche le contenu de NOTICE.md
 
 - `GET /legal` – affiche la notice légale ou la licence du projet
-main
 
 ### Exemples `curl`
 
@@ -221,7 +219,6 @@ Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent 
 
 ## Endpoints principaux
 
-codex/mettre-à-jour-readme,-notice-et-changelog
 | Endpoint      | Méthode | Usage                              |
 |---------------|---------|-----------------------------------|
 | /write_note   | POST    | Ajouter une note mémoire           |
@@ -241,7 +238,6 @@ codex/mettre-à-jour-readme,-notice-et-changelog
 | /get_notes     | GET     | Lire tout le JSON mémoire        |
 | /legal         | GET     | Notice légale / licence          |
 | (à venir…)     | POST    | delete/move/orchestrate…         |
-main
 
 ## Exemples d’utilisation
 
