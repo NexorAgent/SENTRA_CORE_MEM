@@ -586,4 +586,17 @@ async def archive_file(req: ArchiveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
+
+    from fastapi import FastAPI
+
+    app = FastAPI()
+
+    @app.get("/")
+    def read_root():
+         return {"message": "✅ SENTRA CORE MEM API opérationnelle"}
+
+    @app.get("/status")
+    def get_status():
+         return {"status": "🟢 OK", "version": "v0.4"}
+
  
