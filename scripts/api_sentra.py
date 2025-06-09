@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
+from .file_manager import delete_file, move_file, archive_file
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -42,6 +43,16 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
+#  Route statique pour servir NOTICE.md (/legal)
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def get_legal():
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        return FileResponse(path=str(notice_path), media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="NOTICE.md non trouvé")
+
+# ------------------------------------
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
@@ -53,6 +64,24 @@ async def check_env():
     if not api_key:
         return {"env_OK": False, "detail": "OPENAI_API_KEY n'est pas défini."}
     return {"env_OK": True, "OPENAI_API_KEY_prefix": api_key[:6] + "..."}
+
+# ------------------------------------
+#  Notice légale / licence
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def legal_notice():
+    """Retourne un court texte légal ou la licence du projet."""
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        try:
+            content = notice_path.read_text(encoding="utf-8")
+            return Response(content=content, media_type="text/markdown")
+        except Exception:
+            pass
+    return Response(
+        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
+        media_type="text/plain",
+    )
 
 # ------------------------------------
 #  Modèles de requête / réponse
@@ -76,6 +105,23 @@ class WriteFileRequest(BaseModel):
     filename: str
     content: str
 
+class DeleteFileRequest(BaseModel):
+    path: str
+    validate_before_delete: bool = True
+
+class MoveFileRequest(BaseModel):
+    src: str
+    dst: str
+
+class ArchiveFileRequest(BaseModel):
+    path: str
+    archive_dir: str
+
+class FileActionResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    path: str | None = None
+
 class WriteResponse(BaseModel):
     status: str
     detail: str | None = None
@@ -84,6 +130,20 @@ class WriteResponse(BaseModel):
 class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
+
+# Requests pour la gestion de fichiers existants
+class DeleteFileRequest(BaseModel):
+    project: str
+    filename: str
+
+class MoveFileRequest(BaseModel):
+    project: str
+    src: str
+    dst: str
+
+class ArchiveFileRequest(BaseModel):
+    project: str
+    filename: str
 
 # ------------------------------------
 #  POST /reprise  (DISCORD → Résumé Brut → Résumé GPT)
@@ -369,3 +429,161 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+
+# ------------------------------------
+#  POST /delete_file
+# ------------------------------------
+
+@app.post("/delete_file", response_model=FileActionResponse)
+async def api_delete_file(req: DeleteFileRequest):
+    try:
+        ok = delete_file(req.path, validate_before_delete=req.validate_before_delete)
+        if not ok:
+            raise HTTPException(status_code=404, detail="File not found")
+        return FileActionResponse(status="success", detail="deleted", path=req.path)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/delete_file", response_model=WriteResponse)
+async def delete_file(req: DeleteFileRequest):
+    project = req.project.strip()
+    filename = req.filename.strip()
+    if not project or not filename:
+        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    file_path = base_path / "projects" / project_slug / "fichiers" / filename
+
+    try:
+        file_path.unlink()
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {file_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur suppression du fichier {file_path} : {e}")
+
+    try:
+        git_commit_push([file_path], f"GPT delete ({project_slug}): {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
+ 
+
+# ------------------------------------
+#  POST /move_file
+# ------------------------------------
+ 
+@app.post("/move_file", response_model=FileActionResponse)
+async def api_move_file(req: MoveFileRequest):
+    try:
+        move_file(req.src, req.dst)
+        return FileActionResponse(status="success", detail="moved", path=req.dst)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/move_file", response_model=WriteResponse)
+async def move_file(req: MoveFileRequest):
+    project = req.project.strip()
+    src = req.src.strip()
+    dst = req.dst.strip()
+    if not project or not src or not dst:
+        raise HTTPException(status_code=400, detail="Les champs 'project', 'src' et 'dst' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    dossier = base_path / "projects" / project_slug / "fichiers"
+    src_path = dossier / src
+    dst_path = dossier / dst
+
+    try:
+        src_path.rename(dst_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier source introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dst_path], f"GPT move ({project_slug}): {src} -> {dst}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
+ 
+
+# ------------------------------------
+#  POST /archive_file
+# ------------------------------------
+ 
+@app.post("/archive_file", response_model=FileActionResponse)
+async def api_archive_file(req: ArchiveFileRequest):
+    try:
+        archive_file(req.path, req.archive_dir)
+        return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------------
+#  GET /list_files
+# ------------------------------------
+@app.get("/list_files")
+async def list_files(dir: str, pattern: str = "*"):
+    p = Path(dir)
+    files = [str(f) for f in p.glob(pattern)]
+    return {"files": files}
+
+# ------------------------------------
+#  GET /search
+# ------------------------------------
+@app.get("/search")
+async def search_files(term: str, dir: str):
+    base = Path(dir)
+    results = []
+    for f in base.rglob("*"):
+        if f.is_file():
+            try:
+                if term.lower() in f.read_text(encoding="utf-8", errors="ignore").lower():
+                    results.append(str(f))
+            except Exception:
+                continue
+    return {"matches": results}
+
+@app.post("/archive_file", response_model=WriteResponse)
+async def archive_file(req: ArchiveFileRequest):
+    project = req.project.strip()
+    filename = req.filename.strip()
+    if not project or not filename:
+        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    src_path = base_path / "projects" / project_slug / "fichiers" / filename
+    archive_dir = base_path / "archive" / project_slug
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
+    dest_path = archive_dir / filename
+
+    try:
+        src_path.rename(dest_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dest_path], f"GPT archive ({project_slug}): {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
+ 
