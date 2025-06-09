@@ -1,3 +1,7 @@
+ codex/consolider-emplacement-api-dans-scripts/api_sentra.py
+"""Backward compatibility wrapper for the FastAPI app."""
+from scripts.api_sentra import app
+
 import os
 import subprocess
 import json
@@ -369,3 +373,4 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+main
