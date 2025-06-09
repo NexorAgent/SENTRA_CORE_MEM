@@ -315,6 +315,7 @@ Toutes les PR sont bienvenues ! Consultez :
 - **Consulter la notice** :
   “Appelle l’endpoint `/legal` pour lire NOTICE.md et la licence”
 - **Organisation personnalisée** :
+- **Supprimer ou archiver un fichier** : via `/delete_file` ou `/archive_file`
   “Déplace tous les logs de 2024 dans ‘archives/2024’”
 - **Backup/récupération** :
   “Exporte la mémoire complète du projet ZENITH en markdown”

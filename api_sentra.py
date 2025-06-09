@@ -16,6 +16,7 @@ from git_utils import git_commit_push
 from memory_lookup import search_memory
 from memory_manager import query_memory
 
+from file_manager import delete_file, move_file, archive_file
 # ------------------------------------
 #  Création de l’application FastAPI
 # ------------------------------------
@@ -107,6 +108,23 @@ class WriteFileRequest(BaseModel):
     content: str
 
 class WriteResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    path: str | None = None
+
+class DeleteFileRequest(BaseModel):
+    path: str
+    validate_before_delete: bool = True
+
+class MoveFileRequest(BaseModel):
+    src: str
+    dst: str
+
+class ArchiveFileRequest(BaseModel):
+    path: str
+    archive_dir: str
+
+class FileActionResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
@@ -396,11 +414,27 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+  codex/implement-file-management-api-and-functions
+
 codex/ajouter-des-tests-pour-les-nouvelles-routes
+ main
 
 # ------------------------------------
 #  POST /delete_file
 # ------------------------------------
+ codex/implement-file-management-api-and-functions
+@app.post("/delete_file", response_model=FileActionResponse)
+async def api_delete_file(req: DeleteFileRequest):
+    try:
+        ok = delete_file(req.path, validate_before_delete=req.validate_before_delete)
+        if not ok:
+            raise HTTPException(status_code=404, detail="File not found")
+        return FileActionResponse(status="success", detail="deleted", path=req.path)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)
+                            
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
     project = req.project.strip()
@@ -427,10 +461,20 @@ async def delete_file(req: DeleteFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
+ main
 
 # ------------------------------------
 #  POST /move_file
 # ------------------------------------
+ codex/implement-file-management-api-and-functions
+@app.post("/move_file", response_model=FileActionResponse)
+async def api_move_file(req: MoveFileRequest):
+    try:
+        move_file(req.src, req.dst)
+        return FileActionResponse(status="success", detail="moved", path=req.dst)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
     project = req.project.strip()
@@ -460,10 +504,45 @@ async def move_file(req: MoveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
+ main
 
 # ------------------------------------
 #  POST /archive_file
 # ------------------------------------
+codex/implement-file-management-api-and-functions
+@app.post("/archive_file", response_model=FileActionResponse)
+async def api_archive_file(req: ArchiveFileRequest):
+    try:
+        archive_file(req.path, req.archive_dir)
+        return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------------
+#  GET /list_files
+# ------------------------------------
+@app.get("/list_files")
+async def list_files(dir: str, pattern: str = "*"):
+    p = Path(dir)
+    files = [str(f) for f in p.glob(pattern)]
+    return {"files": files}
+
+# ------------------------------------
+#  GET /search
+# ------------------------------------
+@app.get("/search")
+async def search_files(term: str, dir: str):
+    base = Path(dir)
+    results = []
+    for f in base.rglob("*"):
+        if f.is_file():
+            try:
+                if term.lower() in f.read_text(encoding="utf-8", errors="ignore").lower():
+                    results.append(str(f))
+            except Exception:
+                continue
+    return {"matches": results}
+
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
     project = req.project.strip()
@@ -495,4 +574,5 @@ async def archive_file(req: ArchiveFileRequest):
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
 
 main
+ main
  main

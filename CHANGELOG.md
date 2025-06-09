@@ -62,3 +62,11 @@
 - Divers correctifs mineurs sur l’API et la gestion git
 
 
+
+## [v0.4] – 2025-06-12
+### Added
+- Module `scripts/file_manager.py` (delete/move/archive + logging)
+- Endpoints `/delete_file`, `/move_file`, `/archive_file`, `/list_files`, `/search`
+- Unit tests pour ces fonctions et routes
+### Changed
+- README/NOTICE mis à jour avec des exemples `curl` et Python
