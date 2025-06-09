@@ -65,6 +65,24 @@ async def check_env():
     return {"env_OK": True, "OPENAI_API_KEY_prefix": api_key[:6] + "..."}
 
 # ------------------------------------
+#  Notice légale / licence
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def legal_notice():
+    """Retourne un court texte légal ou la licence du projet."""
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        try:
+            content = notice_path.read_text(encoding="utf-8")
+            return Response(content=content, media_type="text/markdown")
+        except Exception:
+            pass
+    return Response(
+        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
+        media_type="text/plain",
+    )
+
+# ------------------------------------
 #  Modèles de requête / réponse
 # ------------------------------------
 class RepriseRequest(BaseModel):
