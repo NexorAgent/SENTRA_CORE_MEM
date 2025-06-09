@@ -86,7 +86,11 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
 - `POST /reprise` – résume un canal Discord
 - `GET /check_env` – vérifie la clé API (debug)
+ codex/mettre-à-jour-readme,-notice-et-changelog
+- `GET /legal` – affiche le contenu de NOTICE.md
+
 - `GET /legal` – affiche la notice légale ou la licence du projet
+main
 
 ### Exemples `curl`
 
@@ -109,6 +113,9 @@ curl "http://localhost:8000/get_memorial?project=sentra_core"
 curl -X POST http://localhost:8000/write_file \
      -H "Content-Type: application/json" \
      -d '{"project": "sentra_core", "filename": "todo.md", "content": "- [ ] Tâche"}'
+
+# Consulter la notice et la licence
+curl http://localhost:8000/legal
 ```
 
 Chaque écriture déclenche automatiquement un `git commit` suivi d’un `git push`,
@@ -176,7 +183,7 @@ méthode complique simplement la lecture directe et ne constitue pas une
 protection cryptographique : toute personne possédant ce mapping peut retrouver
 le contenu original.
 
-09/06/2025
+11/06/2025
 
 # SENTRA_CORE_MEM — IA mémoire autonome pilotable
 
@@ -194,6 +201,18 @@ Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent 
 
 ## Endpoints principaux
 
+codex/mettre-à-jour-readme,-notice-et-changelog
+| Endpoint      | Méthode | Usage                              |
+|---------------|---------|-----------------------------------|
+| /write_note   | POST    | Ajouter une note mémoire           |
+| /write_file   | POST    | Créer ou modifier un fichier      |
+| /get_memorial | GET     | Lire le journal Markdown d’un projet |
+| /get_notes    | GET     | Lire tout le JSON mémoire          |
+| /read_note    | GET     | Recherche simple dans la mémoire   |
+| /reprise      | POST    | Résumer un canal Discord            |
+| /legal        | GET     | Consulter NOTICE et licence        |
+| /check_env    | GET     | Vérifier la clé API (debug)        |
+
 | Endpoint       | Méthode | Usage                            |
 |----------------|---------|----------------------------------|
 | /write_note    | POST    | Ajouter une note mémoire         |
@@ -202,6 +221,7 @@ Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent 
 | /get_notes     | GET     | Lire tout le JSON mémoire        |
 | /legal         | GET     | Notice légale / licence          |
 | (à venir…)     | POST    | delete/move/orchestrate…         |
+main
 
 ## Exemples d’utilisation
 
