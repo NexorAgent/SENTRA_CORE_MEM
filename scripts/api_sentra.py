@@ -587,16 +587,33 @@ async def archive_file(req: ArchiveFileRequest):
 
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
 
-    from fastapi import FastAPI
+# === SENTRA API CORE — ROUTES PUBLIQUES DE STATUT ===
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
+# Si l'objet app n'existe pas encore :
+try:
+    app
+except NameError:
     app = FastAPI()
 
-    @app.get("/")
-    def read_root():
-         return {"message": "✅ SENTRA CORE MEM API opérationnelle"}
+@app.get("/", tags=["monitoring"])
+async def home():
+    return JSONResponse(
+        status_code=200,
+        content={"message": "✅ API SENTRA_CORE_MEM active. Bienvenue sur le noyau IA local."}
+    )
 
-    @app.get("/status")
-    def get_status():
-         return {"status": "🟢 OK", "version": "v0.4"}
+@app.get("/status", tags=["monitoring"])
+async def status():
+    return {
+        "status": "🟢 OK",
+        "project": "SENTRA_CORE_MEM",
+        "version": "v0.4",
+        "agents": ["markdown", "notion", "discord", "glyph", "scheduler"],
+    }
+
+
+  
 
  
