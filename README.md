@@ -84,6 +84,10 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `GET /read_note` – recherche des notes par mot-clé ou affiche les dernières
 - `GET /get_memorial` – renvoie le journal Markdown du projet choisi
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
+- `GET /list_files` – lister un dossier
+- `POST /delete_file` – supprimer un fichier
+- `POST /move_file` – déplacer un fichier
+- `POST /archive_file` – archiver un fichier
 - `POST /reprise` – résume un canal Discord
 - `GET /check_env` – vérifie la clé API (debug)
 
@@ -110,6 +114,22 @@ curl -X POST http://localhost:8000/write_file \
      -d '{"project": "sentra_core", "filename": "todo.md", "content": "- [ ] Tâche"}'
 ```
 
+```bash
+# Supprimer un fichier
+curl -X POST http://localhost:8000/delete_file \
+     -H "Content-Type: application/json" \
+     -d '{"path": "/tmp/test.txt"}'
+
+# Déplacer un fichier
+curl -X POST http://localhost:8000/move_file \
+     -H "Content-Type: application/json" \
+     -d '{"src": "/tmp/a.txt", "dst": "/tmp/b.txt"}'
+
+# Archiver un fichier
+curl -X POST http://localhost:8000/archive_file \
+     -H "Content-Type: application/json" \
+     -d '{"path": "/tmp/a.log", "archive_dir": "/tmp/archive"}'
+```
 Chaque écriture déclenche automatiquement un `git commit` suivi d’un `git push`,
 assurant la persistance des modifications. Les notes sont sauvegardées dans
 `memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`.

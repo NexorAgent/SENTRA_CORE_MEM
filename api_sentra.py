@@ -12,6 +12,7 @@ from git_utils import git_commit_push
 from memory_lookup import search_memory
 from memory_manager import query_memory
 
+from file_manager import delete_file, move_file, archive_file
 # ------------------------------------
 #  Création de l’application FastAPI
 # ------------------------------------
@@ -75,6 +76,23 @@ class WriteFileRequest(BaseModel):
     content: str
 
 class WriteResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    path: str | None = None
+
+class DeleteFileRequest(BaseModel):
+    path: str
+    validate_before_delete: bool = True
+
+class MoveFileRequest(BaseModel):
+    src: str
+    dst: str
+
+class ArchiveFileRequest(BaseModel):
+    path: str
+    archive_dir: str
+
+class FileActionResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
@@ -351,3 +369,65 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+
+# ------------------------------------
+#  POST /delete_file
+# ------------------------------------
+@app.post("/delete_file", response_model=FileActionResponse)
+async def api_delete_file(req: DeleteFileRequest):
+    try:
+        ok = delete_file(req.path, validate_before_delete=req.validate_before_delete)
+        if not ok:
+            raise HTTPException(status_code=404, detail="File not found")
+        return FileActionResponse(status="success", detail="deleted", path=req.path)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------------
+#  POST /move_file
+# ------------------------------------
+@app.post("/move_file", response_model=FileActionResponse)
+async def api_move_file(req: MoveFileRequest):
+    try:
+        move_file(req.src, req.dst)
+        return FileActionResponse(status="success", detail="moved", path=req.dst)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------------
+#  POST /archive_file
+# ------------------------------------
+@app.post("/archive_file", response_model=FileActionResponse)
+async def api_archive_file(req: ArchiveFileRequest):
+    try:
+        archive_file(req.path, req.archive_dir)
+        return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------------
+#  GET /list_files
+# ------------------------------------
+@app.get("/list_files")
+async def list_files(dir: str, pattern: str = "*"):
+    p = Path(dir)
+    files = [str(f) for f in p.glob(pattern)]
+    return {"files": files}
+
+# ------------------------------------
+#  GET /search
+# ------------------------------------
+@app.get("/search")
+async def search_files(term: str, dir: str):
+    base = Path(dir)
+    results = []
+    for f in base.rglob("*"):
+        if f.is_file():
+            try:
+                if term.lower() in f.read_text(encoding="utf-8", errors="ignore").lower():
+                    results.append(str(f))
+            except Exception:
+                continue
+    return {"matches": results}
