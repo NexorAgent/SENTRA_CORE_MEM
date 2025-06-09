@@ -83,6 +83,19 @@ class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
 
+class DeleteFileRequest(BaseModel):
+    project: str
+    filename: str
+
+class MoveFileRequest(BaseModel):
+    project: str
+    src: str
+    dst: str
+
+class ArchiveFileRequest(BaseModel):
+    project: str
+    filename: str
+
 # ------------------------------------
 #  POST /reprise  (DISCORD → Résumé Brut → Résumé GPT)
 # ------------------------------------
@@ -351,3 +364,99 @@ async def write_file(req: WriteFileRequest):
         detail=f"Fichier créé/modifié : {file_path}",
         path=str(file_path)
     )
+
+# ------------------------------------
+#  POST /delete_file
+# ------------------------------------
+@app.post("/delete_file", response_model=WriteResponse)
+async def delete_file(req: DeleteFileRequest):
+    project = req.project.strip()
+    filename = req.filename.strip()
+    if not project or not filename:
+        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    file_path = base_path / "projects" / project_slug / "fichiers" / filename
+
+    try:
+        file_path.unlink()
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {file_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur suppression du fichier {file_path} : {e}")
+
+    try:
+        git_commit_push([file_path], f"GPT delete: {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
+
+# ------------------------------------
+#  POST /move_file
+# ------------------------------------
+@app.post("/move_file", response_model=WriteResponse)
+async def move_file(req: MoveFileRequest):
+    project = req.project.strip()
+    src = req.src.strip()
+    dst = req.dst.strip()
+    if not project or not src or not dst:
+        raise HTTPException(status_code=400, detail="Les champs 'project', 'src' et 'dst' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    dossier = base_path / "projects" / project_slug / "fichiers"
+    src_path = dossier / src
+    dst_path = dossier / dst
+
+    try:
+        src_path.rename(dst_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier source introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dst_path], f"GPT move: {src} -> {dst}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
+
+# ------------------------------------
+#  POST /archive_file
+# ------------------------------------
+@app.post("/archive_file", response_model=WriteResponse)
+async def archive_file(req: ArchiveFileRequest):
+    project = req.project.strip()
+    filename = req.filename.strip()
+    if not project or not filename:
+        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
+
+    base_path = Path(__file__).parent.parent
+    project_slug = project.lower().replace(" ", "_")
+    src_path = base_path / "projects" / project_slug / "fichiers" / filename
+    archive_dir = base_path / "archive" / project_slug
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = archive_dir / filename
+
+    try:
+        src_path.rename(dest_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dest_path], f"GPT archive: {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
