@@ -206,7 +206,10 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
     # Calcul une seule fois du slug projet/clone
-    project_slug = req.project.strip().lower().replace(" ", "_") or "sentra_core"
+   # Patch robuste pour accepter project absent, null ou vide
+project_val = getattr(req, "project", None) or "sentra_core"
+project_slug = project_val.strip().lower().replace(" ", "_")
+
 
     # 1) Chemin vers la racine du projet
     script_dir   = Path(__file__).resolve().parent
