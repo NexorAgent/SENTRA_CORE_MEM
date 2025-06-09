@@ -86,6 +86,7 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
 - `POST /reprise` – résume un canal Discord
 - `GET /check_env` – vérifie la clé API (debug)
+- `GET /legal` – affiche la notice légale ou la licence du projet
 
 ### Exemples `curl`
 
@@ -199,6 +200,7 @@ Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent 
 | /write_file    | POST    | Créer/éditer un fichier mémoire  |
 | /get_memorial  | GET     | Lire la mémoire (markdown)       |
 | /get_notes     | GET     | Lire tout le JSON mémoire        |
+| /legal         | GET     | Notice légale / licence          |
 | (à venir…)     | POST    | delete/move/orchestrate…         |
 
 ## Exemples d’utilisation
