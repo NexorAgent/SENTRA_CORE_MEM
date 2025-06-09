@@ -1,6 +1,6 @@
 # NOTICE.md – Manuel d’utilisation **SENTRA\_CORE\_MEM**
 
-> **Version : v0.2 – 01 juin 2025**
+> **Version : v0.4 – 11 juin 2025**
 > *Révision majeure : enrichissement complet du manuel (installation détaillée, cycles d’usage, FAQ).*
 > **Mainteneur :** Laurent / SENTRA CORE
 
@@ -301,7 +301,7 @@ Toutes les PR sont bienvenues ! Consultez :
 
 ---
 
-### 📄 **NOTICE.md** 09/06/2025
+### 📄 **NOTICE.md** 11/06/2025
 
 ```markdown
 # NOTICE — Mode d’emploi SENTRA_CORE_MEM
@@ -312,6 +312,8 @@ Toutes les PR sont bienvenues ! Consultez :
   “Ajoute à la mémoire du projet ALPHA : ‘Idée IA compressée à archiver’”
 - **Créer/modifier un fichier** :
   “Crée un fichier ‘reports/2025/ALPHA.md’ et écris ‘Résumé du sprint’”
+- **Consulter la notice** :
+  “Appelle l’endpoint `/legal` pour lire NOTICE.md et la licence”
 - **Organisation personnalisée** :
   “Déplace tous les logs de 2024 dans ‘archives/2024’”
 - **Backup/récupération** :
