@@ -46,6 +46,16 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
+#  Route statique pour servir NOTICE.md (/legal)
+# ------------------------------------
+@app.get("/legal", include_in_schema=False)
+async def get_legal():
+    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    if notice_path.exists():
+        return FileResponse(path=str(notice_path), media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="NOTICE.md non trouvé")
+
+# ------------------------------------
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
