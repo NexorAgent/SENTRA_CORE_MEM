@@ -175,6 +175,68 @@ méthode complique simplement la lecture directe et ne constitue pas une
 protection cryptographique : toute personne possédant ce mapping peut retrouver
 le contenu original.
 
+09/06/2025
+
+# SENTRA_CORE_MEM — IA mémoire autonome pilotable
+
+## Objectif
+Fournir une brique mémoire compressée, évolutive et 100% pilotable par agent (GPT, Discord, Notion…) — compatible multi-clone, multi-agent, et compression glyphique.
+
+## Fonctionnalités clés
+- Écriture/lecture mémoire via API REST (FastAPI/Swagger)
+- Gestion multi-projets (project = slug agent/clone)
+- Compression glyphique (token et stockage réduits)
+- Contrôle total par agent (création, modification, auto-organisation mémoire)
+- Robustesse prod (erreur git tolérée, commit facultatif, mémoire toujours écrite)
+- Prêt à l’intégration Discord, Notion, LinkedIn, Outlook…
+- API facilement extensible (delete, move, orchestrateur…)
+
+## Endpoints principaux
+
+| Endpoint       | Méthode | Usage                            |
+|----------------|---------|----------------------------------|
+| /write_note    | POST    | Ajouter une note mémoire         |
+| /write_file    | POST    | Créer/éditer un fichier mémoire  |
+| /get_memorial  | GET     | Lire la mémoire (markdown)       |
+| /get_notes     | GET     | Lire tout le JSON mémoire        |
+| (à venir…)     | POST    | delete/move/orchestrate…         |
+
+## Exemples d’utilisation
+
+**Écrire une note mémoire (curl, Swagger, ou GPT plugin)** :
+```bash
+curl -X POST https://sentra-core-mem.onrender.com/write_note \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Nouvelle idée IA !","project":"ALPHA"}'
+
+Contrôle mémoire par agent/GPT
+Tout agent GPT ou humain peut piloter :
+
+la création et l’organisation mémoire
+
+l’édition ou l’archivage de tout fichier
+
+la structuration “vivante” des projets (logs, reports, backup…)
+
+🧠 “SENTRA_CORE_MEM n’est pas une simple brique mémoire : c’est une base de savoir auto-organisée, prête à accueillir toute IA évolutive.”
+
+Arborescence de référence
+/memory/                 — stockage compressé (JSON, glyphique…)
+/projects/<slug>/fichiers/ — markdown, logs, rapports par projet/clone
+/scripts/                — agents, modules API, outils
+/docs/                   — documentation, guide utilisateur
+
+Sécurité et bonnes pratiques
+Les agents sont puissants : active le log ou le versionning git pour tout changement critique.
+
+En mode Render/cloud, le push git effectif nécessite un token/clé SSH configuré.
+
+Les endpoints sont sécurisés par obscurité (non publics) mais peuvent être protégés (bearer token, etc.).
+
+Notice rapide
+Voir NOTICE.md pour le détail des cycles, agents, extensions, FAQ.
+
+
 ---
 
 © 2025 — Projet open-source modulable ✨
