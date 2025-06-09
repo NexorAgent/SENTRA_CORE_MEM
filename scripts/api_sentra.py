@@ -11,7 +11,11 @@ from pydantic import BaseModel
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
-from .file_manager import delete_file, move_file, archive_file
+from .file_manager import (
+    delete_file as fm_delete_file,
+    move_file as fm_move_file,
+    archive_file as fm_archive_file,
+)
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -132,18 +136,6 @@ class ReadNoteResponse(BaseModel):
     results: list[str]
 
 # Requests pour la gestion de fichiers existants
-class DeleteFileRequest(BaseModel):
-    project: str
-    filename: str
-
-class MoveFileRequest(BaseModel):
-    project: str
-    src: str
-    dst: str
-
-class ArchiveFileRequest(BaseModel):
-    project: str
-    filename: str
 
 # ------------------------------------
 #  POST /reprise  (DISCORD → Résumé Brut → Résumé GPT)
@@ -437,7 +429,7 @@ async def write_file(req: WriteFileRequest):
 @app.post("/delete_file", response_model=FileActionResponse)
 async def api_delete_file(req: DeleteFileRequest):
     try:
-        ok = delete_file(req.path, validate_before_delete=req.validate_before_delete)
+        ok = fm_delete_file(req.path, validate_before_delete=req.validate_before_delete)
         if not ok:
             raise HTTPException(status_code=404, detail="File not found")
         return FileActionResponse(status="success", detail="deleted", path=req.path)
@@ -448,15 +440,7 @@ async def api_delete_file(req: DeleteFileRequest):
 
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
-    project = req.project.strip()
-    filename = req.filename.strip()
-    if not project or not filename:
-        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
-
-    base_path = Path(__file__).parent.parent
-    project_slug = project.lower().replace(" ", "_")
-    file_path = base_path / "projects" / project_slug / "fichiers" / filename
-
+    file_path = Path(req.path)
     try:
         file_path.unlink()
     except FileNotFoundError:
@@ -467,7 +451,7 @@ async def delete_file(req: DeleteFileRequest):
         return WriteResponse(status="error", detail=f"Erreur suppression du fichier {file_path} : {e}")
 
     try:
-        git_commit_push([file_path], f"GPT delete ({project_slug}): {filename}")
+        git_commit_push([file_path], f"GPT delete: {file_path.name}")
     except RuntimeError as e:
         return WriteResponse(status="error", detail=str(e))
 
@@ -481,26 +465,18 @@ async def delete_file(req: DeleteFileRequest):
 @app.post("/move_file", response_model=FileActionResponse)
 async def api_move_file(req: MoveFileRequest):
     try:
-        move_file(req.src, req.dst)
+        fm_move_file(req.src, req.dst)
         return FileActionResponse(status="success", detail="moved", path=req.dst)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
-    project = req.project.strip()
-    src = req.src.strip()
-    dst = req.dst.strip()
-    if not project or not src or not dst:
-        raise HTTPException(status_code=400, detail="Les champs 'project', 'src' et 'dst' sont requis.")
-
-    base_path = Path(__file__).parent.parent
-    project_slug = project.lower().replace(" ", "_")
-    dossier = base_path / "projects" / project_slug / "fichiers"
-    src_path = dossier / src
-    dst_path = dossier / dst
+    src_path = Path(req.src)
+    dst_path = Path(req.dst)
 
     try:
+        dst_path.parent.mkdir(parents=True, exist_ok=True)
         src_path.rename(dst_path)
     except FileNotFoundError:
         return WriteResponse(status="error", detail=f"Fichier source introuvable : {src_path}")
@@ -510,7 +486,7 @@ async def move_file(req: MoveFileRequest):
         return WriteResponse(status="error", detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}")
 
     try:
-        git_commit_push([src_path, dst_path], f"GPT move ({project_slug}): {src} -> {dst}")
+        git_commit_push([src_path, dst_path], f"GPT move: {src_path} -> {dst_path}")
     except RuntimeError as e:
         return WriteResponse(status="error", detail=str(e))
 
@@ -524,7 +500,7 @@ async def move_file(req: MoveFileRequest):
 @app.post("/archive_file", response_model=FileActionResponse)
 async def api_archive_file(req: ArchiveFileRequest):
     try:
-        archive_file(req.path, req.archive_dir)
+        fm_archive_file(req.path, req.archive_dir)
         return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -556,20 +532,13 @@ async def search_files(term: str, dir: str):
 
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
-    project = req.project.strip()
-    filename = req.filename.strip()
-    if not project or not filename:
-        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
-
-    base_path = Path(__file__).parent.parent
-    project_slug = project.lower().replace(" ", "_")
-    src_path = base_path / "projects" / project_slug / "fichiers" / filename
-    archive_dir = base_path / "archive" / project_slug
+    src_path = Path(req.path)
+    archive_dir = Path(req.archive_dir)
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
-    dest_path = archive_dir / filename
+    dest_path = archive_dir / src_path.name
 
     try:
         src_path.rename(dest_path)
@@ -581,7 +550,7 @@ async def archive_file(req: ArchiveFileRequest):
         return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
 
     try:
-        git_commit_push([src_path, dest_path], f"GPT archive ({project_slug}): {filename}")
+        git_commit_push([src_path, dest_path], f"GPT archive: {src_path.name}")
     except RuntimeError as e:
         return WriteResponse(status="error", detail=str(e))
 
