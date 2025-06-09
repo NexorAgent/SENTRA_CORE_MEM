@@ -226,6 +226,23 @@ Arborescence de référence
 /scripts/                — agents, modules API, outils
 /docs/                   — documentation, guide utilisateur
 
+## Tableau de bord des actions
+Un fichier `logs/actions.log` conserve les actions effectuées.
+Le script `scripts/actions_dashboard.py` produit un résumé Markdown dans `logs/actions_report.md`.
+
+### Exécution manuelle
+```bash
+python -m scripts.actions_dashboard
+```
+
+### Planification
+Exemple cron quotidien :
+```bash
+0 2 * * * cd /chemin/vers/SENTRA_CORE_MEM && python -m scripts.actions_dashboard
+```
+(ou adapter un workflow GitHub Actions sur le modèle de `.github/workflows/zsync.yml`).
+
+
 Sécurité et bonnes pratiques
 Les agents sont puissants : active le log ou le versionning git pour tout changement critique.
 
