@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """scripts/clean_glyph_dict.py
 Scinde `memory/glyph_dict.json` en deux :
 - Sauvegarde l’ancien dict complet sous `memory/glyph_dict_meta.json`
@@ -6,16 +5,15 @@ Scinde `memory/glyph_dict.json` en deux :
 
 Maintient la compatibilité UTF-8 et évite les doublons.
 """
-
 from __future__ import annotations
 import json
 from pathlib import Path
 
 # Chemins
-ROOT_DIR     = Path(__file__).resolve().parents[2]
-MEMORY_DIR   = ROOT_DIR / "memory"
-GLYPH_PATH   = MEMORY_DIR / "glyph_dict.json"
-META_PATH    = MEMORY_DIR / "glyph_dict_meta.json"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+MEMORY_DIR = ROOT_DIR / "memory"
+GLYPH_PATH = MEMORY_DIR / "glyph_dict.json"
+META_PATH = MEMORY_DIR / "glyph_dict_meta.json"
 
 # 1) Charger l'ancien dict
 full = {}
@@ -32,28 +30,8 @@ GLYPH_PATH.rename(META_PATH)
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 GLYPH_PATH.write_text(
     json.dumps(clean, ensure_ascii=False, indent=2),
-    encoding="utf-8"
+    encoding="utf-8",
 )
 
 print(f"[clean_glyph_dict] dict épuré écrit dans : {GLYPH_PATH}")
 print(f"[clean_glyph_dict] ancien dict sauvegardé dans : {META_PATH}")
-=======
-from .glyph_generator import _load_dict, _save_dict
-
-if __name__ == "__main__":
-    data = _load_dict()
-    reverse = {}
-    duplicates = []
-    for term, glyph in data.items():
-        if glyph in reverse:
-            duplicates.append(term)
-        else:
-            reverse[glyph] = term
-    for term in duplicates:
-        del data[term]
-    if duplicates:
-        print("Removed duplicates:", duplicates)
-        _save_dict(data)
-    else:
-        print("No duplicates found")
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
