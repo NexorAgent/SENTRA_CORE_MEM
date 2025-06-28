@@ -24,17 +24,15 @@ headers = {
     "Notion-Version": "2022-06-28"
 }
 
-def send_to_notion(name: str,
-                   titre: str,
-                   categorie: str = "mémoire",
-                   statut: str = "À valider",
-                   validation: str = "auto",
-                   utilisation: str = "pro",
-                   url: str = ""):
-    """
-    Crée une page dans la base Notion indiquée par DATABASE_ID.
-    Les propriétés correspondent à votre schéma : Name, Titre, Date, Catégorie, Statut, Validation ZORAN, Utilisation, URL.
-    """
+def send_to_notion(
+    name: str,
+    titre: str,
+    categorie: str = "mémoire",
+    statut: str = "À valider",
+    validation: str = "auto",
+    utilisation: str = "pro",
+    url: str = ""
+):
     if not NOTION_TOKEN or not DATABASE_ID:
         print("❌ Erreur : NOTION_TOKEN ou NOTION_DB_ID non défini.e.s.")
         return {"réponse": "Échec synchronisation : variables d'environnement manquantes", "glyph": "❌"}
@@ -52,7 +50,7 @@ def send_to_notion(name: str,
             "Statut": {"multi_select": [{"name": statut}]},
             "Validation ZORAN": {"multi_select": [{"name": validation}]},
             "Utilisation": {"rich_text": [{"text": {"content": utilisation}}]},
-            "URL": {"url": url}
+            "URL": {"url": url if url else None}
         }
     }
 

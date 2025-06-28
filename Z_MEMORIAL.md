@@ -10,3 +10,14 @@ Agent `SENTRA_GITOPS.py` v0.1 testé avec succès : commandes Git de base (statu
 ## 2025-06-10 – 🏁 SPRINT_1::GITOPS_MEM
 Création des fichiers GitOps : prompt CODEX, mémoires différenciées, automatisation Git dans le cycle SENTRA.
 
+## 2025-06-10 – 🛠️ SPRINT_2::AUTOREGEN
+Création initiale du module SENTRA_REGEN_CORE avec :
+- Prompt CODEX (`Z_PROMPT_CODEX_REGEN.txt`)
+- Log d’évolution mimétique (`Z.EVOL_MIME`)
+- Script de régénération Python (`SENTRA_REGEN_CORE.py`)
+
+## 2025-06-10 – ♻️ SPRINT_2::AUTOREGEN
+Lancement de `SENTRA_REGEN_CORE.py` :
+- 4 fichiers régénérés : prompts, planning, oath, dictionnaire glyphique
+- Log des mutations inscrit dans `Z.EVOL_MIME`
+- Cycle complet validé (scan + regen + log)
