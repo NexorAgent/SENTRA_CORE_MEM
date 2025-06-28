@@ -41,7 +41,6 @@ $ python -m venv .venv && source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-<<<<<<< HEAD
 ### Démarrer l'API FastAPI
 Pour tester localement l'API (plugin ChatGPT), lancez :
 
@@ -50,24 +49,12 @@ uvicorn scripts.api_sentra:app --reload --port 5000
 ```
 
 ## 📁 Structure
-=======
-### Configuration initiale
-1. Copier `.env.example` en `.env` puis renseigner :
-   ```ini
-   OPENAI_API_KEY=sk-...
-   NOTION_TOKEN=secret_...
-   NOTION_DB_ID=abcd1234...
-   DISCORD_BOT_TOKEN=MTA...
-   ```
-2. Vérifier `configs/config.json` (modèle, température…).
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 ### Vérification
 ```bash
 $ python scripts/sentra_check.py
 ```
 
-<<<<<<< HEAD
 ## 🌐 Endpoints API
 
 Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour interagir avec la mémoire :
@@ -154,14 +141,6 @@ plain = decompress_with_dict(glyph_text, mapping)
 ```
 
 ## 🔐 Configuration
-=======
-## 🔄 Vue d'ensemble du workflow
-Un cycle complet peut être exécuté manuellement ou via scheduler :
-```
-encode → load → sync → report
-```
-Le script `sentra/orchestrator.py` centralise ces étapes et gère la distribution vers les agents.
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 ## 📖 Exemples d'utilisation
 
@@ -195,7 +174,6 @@ python scripts/archive.py       # Archiver le projet
 python scripts/main.py          # Test global de l'installation
 ```
 
-<<<<<<< HEAD
 > **Aucun fichier .env n’est fourni dans le repo.**
 > La clé reste privée sur chaque environnement.
 
@@ -306,17 +284,5 @@ Voir NOTICE.md pour le détail des cycles, agents, extensions, FAQ.
 
 
 ---
-=======
-## 📑 Documentation supplémentaire
-- [CHANGELOG](docs/CHANGELOG.md)
-- [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
-
- codex/mettre-à-jour-readme.md
-© 2025 — Projet open‑source modulable ✨
-
-## Licence
-Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 © 2025 — Projet open-source modulable ✨
- dev
