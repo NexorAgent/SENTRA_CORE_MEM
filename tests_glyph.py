@@ -1,7 +1,6 @@
 import os
 import tempfile
 import unittest
-<<<<<<< HEAD
 import subprocess
 import sys
 import base64
@@ -28,12 +27,6 @@ try:
     from scripts.project_resumer_gpt import compress_to_glyph
 except ImportError:
     compress_to_glyph = None
-=======
-from pathlib import Path
-
-from scripts.glyph import glyph_generator as gg
-
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -60,7 +53,6 @@ class GlyphRoundTripTest(unittest.TestCase):
             restored = gg.decompress_text(compressed)
             self.assertEqual(restored, text)
 
-<<<<<<< HEAD
     def test_mem_block_cycle(self):
         text = "memo block universel"
         fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
@@ -200,8 +192,6 @@ class BatchCompressTest(unittest.TestCase):
         self.assertTrue((self.dst / "a.txt.mb").exists())
         self.assertTrue((self.dst / "sub" / "b.txt.mb").exists())
         self.assertTrue(report.exists())
-=======
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 if __name__ == "__main__":
     unittest.main()
