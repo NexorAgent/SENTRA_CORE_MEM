@@ -13,5 +13,10 @@
     "type": "note",
     "text": "première mémoire automatique par GPT pour sentra core",
     "timestamp": "2025-06-09T07:27:58"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-28T11:30:02"
   }
 ]
