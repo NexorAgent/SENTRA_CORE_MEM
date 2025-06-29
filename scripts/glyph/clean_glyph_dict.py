@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """scripts/clean_glyph_dict.py
 Scinde `memory/glyph_dict.json` en deux :
 - Sauvegarde l’ancien dict complet sous `memory/glyph_dict_meta.json`
@@ -37,7 +36,6 @@ GLYPH_PATH.write_text(
 
 print(f"[clean_glyph_dict] dict épuré écrit dans : {GLYPH_PATH}")
 print(f"[clean_glyph_dict] ancien dict sauvegardé dans : {META_PATH}")
-=======
 from .glyph_generator import _load_dict, _save_dict
 
 if __name__ == "__main__":
@@ -56,4 +54,3 @@ if __name__ == "__main__":
         _save_dict(data)
     else:
         print("No duplicates found")
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
