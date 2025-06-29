@@ -23,5 +23,30 @@
     "type": "note",
     "text": "Note de test Git automatique - 2025-06-28T19:36:51.369282",
     "timestamp": "2025-06-28T19:36:51"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:31:33"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:46:28"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:49:52"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:53:34"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:59:11"
   }
 ]
