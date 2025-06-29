@@ -1,6 +1,9 @@
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
  codex/finaliser-scripts-et-tests-de-compression
 """Utility to sanitize the glyph dictionary.
 
+ main
 """scripts/clean_glyph_dict.py
 Scinde `memory/glyph_dict.json` en deux :
 - Sauvegarde l’ancien dict complet sous `memory/glyph_dict_meta.json`
@@ -47,6 +50,8 @@ GLYPH_PATH.write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding=
 
 print(f"[clean_glyph_dict] dict épuré écrit dans : {GLYPH_PATH}")
 print(f"[clean_glyph_dict] ancien dict sauvegardé dans : {META_PATH}")
+codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
  codex/finaliser-scripts-et-tests-de-compression
 if duplicates:
     print("[clean_glyph_dict] doublons supprimés:", duplicates)
@@ -69,4 +74,5 @@ if __name__ == "__main__":
         _save_dict(data)
     else:
         print("No duplicates found")
+ main
  main

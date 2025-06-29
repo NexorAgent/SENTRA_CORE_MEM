@@ -27,7 +27,10 @@ try:
     from scripts.project_resumer_gpt import compress_to_glyph
 except ImportError:
     compress_to_glyph = None
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
 
+
+ main
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

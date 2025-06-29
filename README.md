@@ -46,8 +46,11 @@ sentra_core_mem/
 
 *Aucun fichier `.env` n'est fourni dans le dépôt ; chaque environnement garde ses clés privées.*
 
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
 ## Utilisation de l'API
-=======
+
+ main
 ### Démarrer l'API FastAPI
 Pour tester localement l'API (plugin ChatGPT), lancez :
 
@@ -55,13 +58,27 @@ Pour tester localement l'API (plugin ChatGPT), lancez :
 uvicorn scripts.api_sentra:app --reload --port 5000
 ```
 
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+### Configuration initiale
+1. Copier `.env.example` en `.env` puis renseigner :
+   ```ini
+   OPENAI_API_KEY=sk-...
+   NOTION_TOKEN=secret_...
+   NOTION_DB_ID=abcd1234...
+   DISCORD_BOT_TOKEN=MTA...
+   ```
+2. Vérifier `configs/config.json` (modèle, température…).
+
 ## 📁 Structure
+ main
  main
 
 Démarrer le serveur local :
 ```bash
 uvicorn scripts.api_sentra:app --reload --port 5000
 ```
+
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
 
 codex/réécrire-readme-avec-sections-fusionnées
 ### Endpoints principaux
@@ -71,6 +88,7 @@ codex/réécrire-readme-avec-sections-fusionnées
 - `GET /get_memorial` – journal Markdown d'un projet
 - `POST /write_file` – créer ou modifier un fichier
 
+main
 ## 🌐 Endpoints API
 
 Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour interagir avec la mémoire :
@@ -84,9 +102,15 @@ main
 - `POST /delete_file` – supprimer un fichier
 - `POST /move_file` – déplacer un fichier
 - `POST /archive_file` – archiver un fichier
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+- `POST /reprise` – résume un canal Discord
+- `GET /check_env` – vérifie la clé API (debug)
+    - `GET /legal` – affiche la notice légale ou la licence du projet
+
 - `POST /reprise` – résumer un canal Discord
 - `GET /check_env` – tester la clé API
 - `GET /legal` – consulter la notice légale
+ main
 
 ### Exemples `curl`
 ```bash
@@ -155,6 +179,16 @@ plain = decompress_with_dict(glyph_text, mapping)
 ```
 
 ## 🔐 Configuration
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
+## 🔄 Vue d'ensemble du workflow
+Un cycle complet peut être exécuté manuellement ou via scheduler :
+```
+encode → load → sync → report
+```
+Le script `sentra/orchestrator.py` centralise ces étapes et gère la distribution vers les agents.
+
+ main
 
 ## 📖 Exemples d'utilisation
 
@@ -205,6 +239,8 @@ fichier `.map.json` afin de pouvoir décompresser le texte plus tard. Cette
 méthode complique simplement la lecture directe et ne constitue pas une
 protection cryptographique : toute personne possédant ce mapping peut retrouver
 le contenu original.
+
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
 
 11/06/2025
 
@@ -296,17 +332,27 @@ Chaque écriture déclenche automatiquement un `git commit` suivi d'un `git push
 En mode Render/cloud, le push git effectif nécessite un token/clé SSH configuré.
 
 Les endpoints sont sécurisés par obscurité (non publics) mais peuvent être protégés (bearer token, etc.).
+ main
 
 Notice rapide
 Voir NOTICE.md pour le détail des cycles, agents, extensions, FAQ.
+
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
 
 
 ---
  codex/ajouter-fichier-docker-compose-root
 
+ main
 ## 📑 Documentation supplémentaire
 - [CHANGELOG](docs/CHANGELOG.md)
 - [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
+
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+© 2025 — Projet open‑source modulable ✨
+
+## Licence
+Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
 
  codex/mettre-à-jour-readme.md
 ### Docker Compose
@@ -324,4 +370,5 @@ Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) p
  main
 
 © 2025 — Projet open-source modulable ✨
+ main
  main
