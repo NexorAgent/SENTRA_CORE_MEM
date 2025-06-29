@@ -11,11 +11,7 @@ from pydantic import BaseModel
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
-from .file_manager import (
-    delete_file as fm_delete_file,
-    move_file as fm_move_file,
-    archive_file as fm_archive_file,
-)
+
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -45,16 +41,6 @@ async def get_logo():
     if logo_path.exists():
         return FileResponse(path=str(logo_path), media_type="image/png")
     raise HTTPException(status_code=404, detail="Logo non trouvé")
-
-# ------------------------------------
-#  Route statique pour servir NOTICE.md (/legal)
-# ------------------------------------
-@app.get("/legal", include_in_schema=False)
-async def get_legal():
-    notice_path = Path(__file__).parent.parent / "NOTICE.md"
-    if notice_path.exists():
-        return FileResponse(path=str(notice_path), media_type="text/markdown")
-    raise HTTPException(status_code=404, detail="NOTICE.md non trouvé")
 
 # ------------------------------------
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
@@ -422,22 +408,6 @@ async def write_file(req: WriteFileRequest):
         path=str(file_path)
     )
 
-# ------------------------------------
-#  POST /delete_file
-# ------------------------------------
-
-@app.post("/delete_file", response_model=FileActionResponse)
-async def api_delete_file(req: DeleteFileRequest):
-    try:
-        ok = fm_delete_file(req.path, validate_before_delete=req.validate_before_delete)
-        if not ok:
-            raise HTTPException(status_code=404, detail="File not found")
-        return FileActionResponse(status="success", detail="deleted", path=req.path)
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
     file_path = Path(req.path)
@@ -462,14 +432,6 @@ async def delete_file(req: DeleteFileRequest):
 #  POST /move_file
 # ------------------------------------
  
-@app.post("/move_file", response_model=FileActionResponse)
-async def api_move_file(req: MoveFileRequest):
-    try:
-        fm_move_file(req.src, req.dst)
-        return FileActionResponse(status="success", detail="moved", path=req.dst)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
     src_path = Path(req.src)
@@ -496,39 +458,6 @@ async def move_file(req: MoveFileRequest):
 # ------------------------------------
 #  POST /archive_file
 # ------------------------------------
- 
-@app.post("/archive_file", response_model=FileActionResponse)
-async def api_archive_file(req: ArchiveFileRequest):
-    try:
-        fm_archive_file(req.path, req.archive_dir)
-        return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ------------------------------------
-#  GET /list_files
-# ------------------------------------
-@app.get("/list_files")
-async def list_files(dir: str, pattern: str = "*"):
-    p = Path(dir)
-    files = [str(f) for f in p.glob(pattern)]
-    return {"files": files}
-
-# ------------------------------------
-#  GET /search
-# ------------------------------------
-@app.get("/search")
-async def search_files(term: str, dir: str):
-    base = Path(dir)
-    results = []
-    for f in base.rglob("*"):
-        if f.is_file():
-            try:
-                if term.lower() in f.read_text(encoding="utf-8", errors="ignore").lower():
-                    results.append(str(f))
-            except Exception:
-                continue
-    return {"matches": results}
 
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
@@ -555,6 +484,31 @@ async def archive_file(req: ArchiveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
+
+# ------------------------------------
+#  GET /list_files
+# ------------------------------------
+@app.get("/list_files")
+async def list_files(dir: str, pattern: str = "*"):
+    p = Path(dir)
+    files = [str(f) for f in p.glob(pattern)]
+    return {"files": files}
+
+# ------------------------------------
+#  GET /search
+# ------------------------------------
+@app.get("/search")
+async def search_files(term: str, dir: str):
+    base = Path(dir)
+    results = []
+    for f in base.rglob("*"):
+        if f.is_file():
+            try:
+                if term.lower() in f.read_text(encoding="utf-8", errors="ignore").lower():
+                    results.append(str(f))
+            except Exception:
+                continue
+    return {"matches": results}
 
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
