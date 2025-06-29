@@ -11,11 +11,7 @@ from pydantic import BaseModel
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
-from .file_manager import (
-    delete_file as fm_delete_file,
-    move_file as fm_move_file,
-    archive_file as fm_archive_file,
-)
+
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -47,6 +43,7 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
+ codex/refactor-scripts/api_sentra.py-routes
 #  Notice légale / licence
 # ------------------------------------
 @app.get("/legal", include_in_schema=False)
@@ -61,6 +58,8 @@ async def legal_notice():
     )
 
 # ------------------------------------
+
+ main
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
@@ -409,6 +408,7 @@ async def write_file(req: WriteFileRequest):
         path=str(file_path)
     )
 
+ codex/refactor-scripts/api_sentra.py-routes
 # ------------------------------------
 #  POST /delete_file
 # ------------------------------------
@@ -429,12 +429,33 @@ async def delete_file(req: DeleteFileRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/delete_file", response_model=WriteResponse)
+async def delete_file(req: DeleteFileRequest):
+    file_path = Path(req.path)
+    try:
+        file_path.unlink()
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {file_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur suppression du fichier {file_path} : {e}")
+
+    try:
+        git_commit_push([file_path], f"GPT delete: {file_path.name}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
+main
  
 
 # ------------------------------------
 #  POST /move_file
 # ------------------------------------
  
+ codex/refactor-scripts/api_sentra.py-routes
 @app.post("/move_file", response_model=FileActionResponse)
 async def move_file(req: MoveFileRequest):
     """Déplace un fichier puis commit git."""
@@ -450,11 +471,35 @@ async def move_file(req: MoveFileRequest):
         return FileActionResponse(status="success", detail="moved", path=req.dst)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/move_file", response_model=WriteResponse)
+async def move_file(req: MoveFileRequest):
+    src_path = Path(req.src)
+    dst_path = Path(req.dst)
+
+    try:
+        dst_path.parent.mkdir(parents=True, exist_ok=True)
+        src_path.rename(dst_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier source introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dst_path], f"GPT move: {src_path} -> {dst_path}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
+ main
  
 
 # ------------------------------------
 #  POST /archive_file
 # ------------------------------------
+ codex/refactor-scripts/api_sentra.py-routes
  
 @app.post("/archive_file", response_model=FileActionResponse)
 async def archive_file(req: ArchiveFileRequest):
@@ -467,8 +512,34 @@ async def archive_file(req: ArchiveFileRequest):
         except RuntimeError:
             pass
         return FileActionResponse(status="success", detail="archived", path=str(dest))
+
+
+@app.post("/archive_file", response_model=WriteResponse)
+async def archive_file(req: ArchiveFileRequest):
+    src_path = Path(req.path)
+    archive_dir = Path(req.archive_dir)
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+main
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
+    dest_path = archive_dir / src_path.name
+
+    try:
+        src_path.rename(dest_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dest_path], f"GPT archive: {src_path.name}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
 
 # ------------------------------------
 #  GET /list_files
@@ -495,7 +566,10 @@ async def search_files(term: str, dir: str):
                 continue
     return {"matches": results}
 
+ codex/refactor-scripts/api_sentra.py-routes
 
+
+ main
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
 from fastapi.responses import JSONResponse, PlainTextResponse
