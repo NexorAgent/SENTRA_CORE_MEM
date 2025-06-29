@@ -4,17 +4,19 @@ import pathlib
 import random
 import re
 import string
-<<<<<<< HEAD
 from typing import Dict, Optional, Tuple
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_DICT_PATH = ROOT / "memory" / "glyph_dict.json"
 
+
 def dict_file() -> pathlib.Path:
     """Return the current glyph dictionary path."""
     return pathlib.Path(os.environ.get("GLYPH_DICT_PATH", DEFAULT_DICT_PATH))
 
+
 GLYPH_POOL = list("↯⊚⟴⚡∑¤†⌇⟁⊕⚙⚖🜁🧩🌀⧉♒︎⩾⊗" + string.punctuation)
+
 
 def _load_dict() -> Dict[str, str]:
     f = dict_file()
@@ -22,29 +24,14 @@ def _load_dict() -> Dict[str, str]:
         return json.loads(f.read_text(encoding="utf-8"))
     return {}
 
+
 def _save_dict(d: Dict[str, str]) -> None:
     f = dict_file()
     f.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
-=======
-from typing import Dict
-
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEFAULT_DICT_PATH = ROOT / "memory" / "glyph_dict.json"
-DICT_FILE = pathlib.Path(os.environ.get("GLYPH_DICT_PATH", DEFAULT_DICT_PATH))
-
-GLYPH_POOL = list("↯⊚⟴⚡∑¤†⌇⟁⊕⚙⚖🜁🧩🌀⧉♒︎⩾⊗" + string.punctuation)
+codex/finaliser-scripts-et-tests-de-compression
 
 
-def _load_dict() -> Dict[str, str]:
-    if DICT_FILE.exists():
-        return json.loads(DICT_FILE.read_text(encoding="utf-8"))
-    return {}
-
-
-def _save_dict(d: Dict[str, str]) -> None:
-    DICT_FILE.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
-
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
+ main
 
 def get_glyph(term: str) -> str:
     """Return glyph for term, generating one if needed."""
@@ -58,27 +45,32 @@ def get_glyph(term: str) -> str:
         _save_dict(glyphs)
     return glyphs[term]
 
-<<<<<<< HEAD
-=======
+ codex/finaliser-scripts-et-tests-de-compression
 
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
+
+ main
 def get_term(glyph: str) -> str:
     """Return term associated with glyph, or the glyph itself if unknown."""
     glyphs = _load_dict()
     reverse = {v: k for k, v in glyphs.items()}
     return reverse.get(glyph, glyph)
 
-<<<<<<< HEAD
+ codex/finaliser-scripts-et-tests-de-compression
+
+
+ main
 def compress_text(
     text: str,
     *,
     obfuscate: bool = False,
     mapping_file: Optional[str | pathlib.Path] = None,
-) -> str:
-    """
-    Remplace chaque mot du texte par un glyphe.
-    - Si obfuscate=True, le mapping est aléatoire et exporté dans mapping_file.
-    - Sinon, le mapping global (persistant) est utilisé/complété.
+) -> str | Tuple[str, Dict[str, str]]:
+    """Replace each word with a glyph.
+
+    If ``obfuscate`` is True a temporary mapping is generated. When
+    ``mapping_file`` is provided the mapping is written to this file and only the
+    compressed text is returned, otherwise the function returns ``(text,
+    mapping)``.
     """
     words = re.findall(r"\b\w+\b", text)
     if obfuscate:
@@ -93,40 +85,31 @@ def compress_text(
         for w, glyph in mapping.items():
             pattern = rf"\b{re.escape(w)}\b"
             text = re.sub(pattern, lambda _m, g=glyph: g, text)
-        out_path = pathlib.Path(mapping_file) if mapping_file else None
-        if out_path is None:
-            out_path = pathlib.Path("obfuscated_map.json")
+        out_path = pathlib.Path(mapping_file) if mapping_file else pathlib.Path("obfuscated_map.json")
         out_path.write_text(json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8")
         if mapping_file:
             return text
         return text, mapping
 
     # regular mode using persistent dictionary
-=======
-
-def compress_text(text: str) -> str:
-    """Replace words in text with glyphs."""
-    words = re.findall(r"\b\w+\b", text)
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
     for w in set(words):
         glyph = get_glyph(w)
         pattern = rf"\b{re.escape(w)}\b"
         text = re.sub(pattern, lambda _m, g=glyph: g, text)
     return text
 
-<<<<<<< HEAD
+ codex/finaliser-scripts-et-tests-de-compression
+
+
+ main
 def decompress_text(text: str) -> str:
     """Replace glyphs in text with original terms using the global dictionary."""
-=======
-
-def decompress_text(text: str) -> str:
-    """Replace glyphs in text with original terms."""
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
     glyphs = _load_dict()
     for term, glyph in sorted(glyphs.items(), key=lambda x: len(x[1]), reverse=True):
         text = text.replace(glyph, term)
-    return text
-<<<<<<< HEAD
+    return text codex/finaliser-scripts-et-tests-de-compression
+
+main
 
 def decompress_with_dict(text: str, glyphs: Dict[str, str]) -> str:
     """Decompress text using the provided glyph mapping."""
@@ -134,12 +117,14 @@ def decompress_with_dict(text: str, glyphs: Dict[str, str]) -> str:
         text = text.replace(glyph, term)
     return text
 
+
 def export_dict() -> Dict[str, str]:
     """Return the current glyph dictionary."""
     return _load_dict()
 
+
 def compress_with_dict(text: str, mapping: Dict[str, str]) -> str:
-    """Compress text using a provided mapping without touching the main dictionary."""
+    """Compress text using the provided mapping without touching the main dictionary."""
     used = set(mapping.values())
     words = re.findall(r"\b\w+\b", text)
     for w in set(words):
@@ -154,12 +139,14 @@ def compress_with_dict(text: str, mapping: Dict[str, str]) -> str:
         text = re.sub(pattern, glyph, text)
     return text
 
+
 def randomize_mapping(mapping: Dict[str, str]) -> Dict[str, str]:
-    """Return a copy of mapping with values shuffled."""
+    """Return a copy of ``mapping`` with glyphs shuffled."""
     items = list(mapping.items())
     keys = [k for k, _ in items]
     values = [v for _, v in items]
     random.shuffle(values)
     return dict(zip(keys, values))
-=======
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
+ codex/finaliser-scripts-et-tests-de-compression
+
+main
