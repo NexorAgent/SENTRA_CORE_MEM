@@ -11,11 +11,7 @@ from pydantic import BaseModel
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
-from .file_manager import (
-    delete_file as fm_delete_file,
-    move_file as fm_move_file,
-    archive_file as fm_archive_file,
-)
+
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -47,16 +43,23 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
-#  Route statique pour servir NOTICE.md (/legal)
+ codex/refactor-scripts/api_sentra.py-routes
+#  Notice légale / licence
 # ------------------------------------
 @app.get("/legal", include_in_schema=False)
-async def get_legal():
+async def legal_notice():
+    """Retourne le contenu de NOTICE.md ou un texte de licence."""
     notice_path = Path(__file__).parent.parent / "NOTICE.md"
     if notice_path.exists():
         return FileResponse(path=str(notice_path), media_type="text/markdown")
-    raise HTTPException(status_code=404, detail="NOTICE.md non trouvé")
+    return Response(
+        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
+        media_type="text/plain",
+    )
 
 # ------------------------------------
+
+ main
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
@@ -69,23 +72,6 @@ async def check_env():
         return {"env_OK": False, "detail": "OPENAI_API_KEY n'est pas défini."}
     return {"env_OK": True, "OPENAI_API_KEY_prefix": api_key[:6] + "..."}
 
-# ------------------------------------
-#  Notice légale / licence
-# ------------------------------------
-@app.get("/legal", include_in_schema=False)
-async def legal_notice():
-    """Retourne un court texte légal ou la licence du projet."""
-    notice_path = Path(__file__).parent.parent / "NOTICE.md"
-    if notice_path.exists():
-        try:
-            content = notice_path.read_text(encoding="utf-8")
-            return Response(content=content, media_type="text/markdown")
-        except Exception:
-            pass
-    return Response(
-        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
-        media_type="text/plain",
-    )
 
 # ------------------------------------
 #  Modèles de requête / réponse
@@ -422,19 +408,25 @@ async def write_file(req: WriteFileRequest):
         path=str(file_path)
     )
 
+ codex/refactor-scripts/api_sentra.py-routes
 # ------------------------------------
 #  POST /delete_file
 # ------------------------------------
 
 @app.post("/delete_file", response_model=FileActionResponse)
-async def api_delete_file(req: DeleteFileRequest):
+async def delete_file(req: DeleteFileRequest):
+    """Supprime un fichier ou dossier puis commit git."""
     try:
         ok = fm_delete_file(req.path, validate_before_delete=req.validate_before_delete)
         if not ok:
             raise HTTPException(status_code=404, detail="File not found")
+        try:
+            git_commit_push([Path(req.path)], f"GPT delete: {Path(req.path).name}")
+        except RuntimeError:
+            pass
         return FileActionResponse(status="success", detail="deleted", path=req.path)
-    except HTTPException as he:
-        raise he
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -456,16 +448,26 @@ async def delete_file(req: DeleteFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
+main
  
 
 # ------------------------------------
 #  POST /move_file
 # ------------------------------------
  
+ codex/refactor-scripts/api_sentra.py-routes
 @app.post("/move_file", response_model=FileActionResponse)
-async def api_move_file(req: MoveFileRequest):
+async def move_file(req: MoveFileRequest):
+    """Déplace un fichier puis commit git."""
     try:
         fm_move_file(req.src, req.dst)
+        try:
+            git_commit_push(
+                [Path(req.src), Path(req.dst)],
+                f"GPT move: {req.src} -> {req.dst}",
+            )
+        except RuntimeError:
+            pass
         return FileActionResponse(status="success", detail="moved", path=req.dst)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -491,19 +493,53 @@ async def move_file(req: MoveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
+ main
  
 
 # ------------------------------------
 #  POST /archive_file
 # ------------------------------------
+ codex/refactor-scripts/api_sentra.py-routes
  
 @app.post("/archive_file", response_model=FileActionResponse)
-async def api_archive_file(req: ArchiveFileRequest):
+async def archive_file(req: ArchiveFileRequest):
+    """Archive un fichier dans un dossier puis commit git."""
     try:
         fm_archive_file(req.path, req.archive_dir)
-        return FileActionResponse(status="success", detail="archived", path=req.archive_dir)
+        dest = Path(req.archive_dir) / Path(req.path).name
+        try:
+            git_commit_push([dest], f"GPT archive: {Path(req.path).name}")
+        except RuntimeError:
+            pass
+        return FileActionResponse(status="success", detail="archived", path=str(dest))
+
+
+@app.post("/archive_file", response_model=WriteResponse)
+async def archive_file(req: ArchiveFileRequest):
+    src_path = Path(req.path)
+    archive_dir = Path(req.archive_dir)
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+main
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
+    dest_path = archive_dir / src_path.name
+
+    try:
+        src_path.rename(dest_path)
+    except FileNotFoundError:
+        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
+    except PermissionError as e:
+        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
+
+    try:
+        git_commit_push([src_path, dest_path], f"GPT archive: {src_path.name}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e))
+
+    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
 
 # ------------------------------------
 #  GET /list_files
@@ -530,43 +566,14 @@ async def search_files(term: str, dir: str):
                 continue
     return {"matches": results}
 
-@app.post("/archive_file", response_model=WriteResponse)
-async def archive_file(req: ArchiveFileRequest):
-    src_path = Path(req.path)
-    archive_dir = Path(req.archive_dir)
-    try:
-        archive_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
-    dest_path = archive_dir / src_path.name
+ codex/refactor-scripts/api_sentra.py-routes
 
-    try:
-        src_path.rename(dest_path)
-    except FileNotFoundError:
-        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
-    except PermissionError as e:
-        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
 
-    try:
-        git_commit_push([src_path, dest_path], f"GPT archive: {src_path.name}")
-    except RuntimeError as e:
-        return WriteResponse(status="error", detail=str(e))
-
-    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
-
+ main
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
-from fastapi import FastAPI
 from fastapi.responses import JSONResponse, PlainTextResponse
-from pathlib import Path
 
-# Assure que l'objet app existe (si pas défini ailleurs)
-try:
-    app
-except NameError:
-    app = FastAPI()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

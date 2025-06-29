@@ -1,47 +1,53 @@
-# SENTRA_CORE_MEM — Mémoire IA/IA Activable 🧠
+# SENTRA_CORE_MEM — Mémoire IA autonome 🧠
 
-**SENTRA_CORE_MEM** est un noyau IA autonome capable de compresser ses souvenirs, d'orchestrer plusieurs agents spécialisés et de fonctionner hors‑SaaS. Le projet reste 100 % open‑source et modulable.
+**SENTRA_CORE_MEM** est un noyau IA capable de compresser ses souvenirs, d'orchestrer plusieurs agents et de fonctionner hors SaaS. Le projet reste entièrement open source et modulable.
 
-## 🔍 Objectif
-- Mémoriser automatiquement chaque interaction utile
-- Résumer en 3 niveaux (humain / hybride / glyphique)
-- Appeler des agents dédiés (Markdown, Notion, Discord…)
-- Agir avec rigueur et économie de tokens
+## Objectif
+- Mémoriser chaque interaction utile
+- Résumer à trois niveaux (humain, hybride, glyphique)
+- Mobiliser des agents dédiés (Markdown, Notion, Discord…)
+- Optimiser l'usage des tokens
 
-## 📂 Structure projet
-```
+## Structure du projet
+```text
 sentra_core_mem/
 ├── memory/            # Mémoire compressée (.json)
-├── scripts/           # Encodeurs, agents, utilitaires
-├── sentra/            # Noyau, orchestrateur & recherche
+├── scripts/           # Encodeurs, agents et utilitaires
+├── sentra/            # Noyau, orchestrateur et recherche
 ├── reports/           # Rapports générés
 ├── logs/              # Journaux d'exécution
-└── docs/              # Documentation (manuel, changelog…)
+└── docs/              # Documentation
 ```
 
-## 🚀 Installation
+ codex/réécrire-readme-avec-sections-fusionnées
+## Installation et configuration
 
-### Pré‑requis
-| Outil | Version minimale | Vérification |
-| ----- | ---------------- | ------------ |
-| **Python** | 3.10 | `python --version` |
-| **Git** | 2.30 | `git --version` |
-| **Make** *(optionnel)* | — | `make --version` |
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/sentra-core/sentra_core_mem.git
+   cd sentra_core_mem
+   ```
+2. Créer un environnement virtuel puis installer les dépendances :
+   ```bash
+   python -m venv .venv && source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. Copier `\.env.example` en `.env` et renseigner les clés :
+   ```ini
+   OPENAI_API_KEY=sk-...
+   NOTION_TOKEN=secret_...
+   NOTION_DB_ID=abcd1234...
+   DISCORD_BOT_TOKEN=MTA...
+   ```
+4. Vérifier `configs/config.json` puis lancer le test rapide :
+   ```bash
+   python scripts/sentra_check.py
+   ```
 
-### Clonage & dépendances
-```bash
-# Récupérer le dépôt
-$ git clone https://github.com/sentra-core/sentra_core_mem.git
-$ cd sentra_core_mem
+*Aucun fichier `.env` n'est fourni dans le dépôt ; chaque environnement garde ses clés privées.*
 
-# Environnement virtuel (conseillé)
-$ python -m venv .venv && source .venv/bin/activate
-
-# Installer les packages
-$ pip install -r requirements.txt
-```
-
-<<<<<<< HEAD
+## Utilisation de l'API
+=======
 ### Démarrer l'API FastAPI
 Pour tester localement l'API (plugin ChatGPT), lancez :
 
@@ -50,24 +56,21 @@ uvicorn scripts.api_sentra:app --reload --port 5000
 ```
 
 ## 📁 Structure
-=======
-### Configuration initiale
-1. Copier `.env.example` en `.env` puis renseigner :
-   ```ini
-   OPENAI_API_KEY=sk-...
-   NOTION_TOKEN=secret_...
-   NOTION_DB_ID=abcd1234...
-   DISCORD_BOT_TOKEN=MTA...
-   ```
-2. Vérifier `configs/config.json` (modèle, température…).
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
+ main
 
-### Vérification
+Démarrer le serveur local :
 ```bash
-$ python scripts/sentra_check.py
+uvicorn scripts.api_sentra:app --reload --port 5000
 ```
 
-<<<<<<< HEAD
+codex/réécrire-readme-avec-sections-fusionnées
+### Endpoints principaux
+- `POST /write_note` – ajouter une note
+- `GET /get_notes` – lire toute la mémoire JSON
+- `GET /read_note` – rechercher dans la mémoire
+- `GET /get_memorial` – journal Markdown d'un projet
+- `POST /write_file` – créer ou modifier un fichier
+
 ## 🌐 Endpoints API
 
 Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour interagir avec la mémoire :
@@ -77,25 +80,23 @@ Un serveur *FastAPI* (voir `scripts/api_sentra.py`) expose plusieurs routes pour
 - `GET /get_memorial` – renvoie le journal Markdown du projet choisi
 - `POST /write_file` – crée ou met à jour un fichier dans `projects/<projet>/fichiers/`
 - `GET /list_files` – lister un dossier
+main
 - `POST /delete_file` – supprimer un fichier
 - `POST /move_file` – déplacer un fichier
 - `POST /archive_file` – archiver un fichier
-- `POST /reprise` – résume un canal Discord
-- `GET /check_env` – vérifie la clé API (debug)
-- `GET /legal` – affiche le contenu de NOTICE.md
-
-- `GET /legal` – affiche la notice légale ou la licence du projet
+- `POST /reprise` – résumer un canal Discord
+- `GET /check_env` – tester la clé API
+- `GET /legal` – consulter la notice légale
 
 ### Exemples `curl`
-
 ```bash
-# Écrire une note dans le projet "sentra_core"
 curl -X POST http://localhost:8000/write_note \
      -H "Content-Type: application/json" \
-     -d '{"text": "Nouvelle note", "project": "sentra_core"}'
+     -d '{"text":"Nouvelle note","project":"sentra_core"}'
 
-# Lire la mémoire JSON
 curl http://localhost:8000/get_notes
+ codex/réécrire-readme-avec-sections-fusionnées
+
 
 # Rechercher dans la mémoire
 curl "http://localhost:8000/read_note?term=project"
@@ -154,14 +155,6 @@ plain = decompress_with_dict(glyph_text, mapping)
 ```
 
 ## 🔐 Configuration
-=======
-## 🔄 Vue d'ensemble du workflow
-Un cycle complet peut être exécuté manuellement ou via scheduler :
-```
-encode → load → sync → report
-```
-Le script `sentra/orchestrator.py` centralise ces étapes et gère la distribution vers les agents.
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
 
 ## 📖 Exemples d'utilisation
 
@@ -195,7 +188,6 @@ python scripts/archive.py       # Archiver le projet
 python scripts/main.py          # Test global de l'installation
 ```
 
-<<<<<<< HEAD
 > **Aucun fichier .env n’est fourni dans le repo.**
 > La clé reste privée sur chaque environnement.
 
@@ -290,12 +282,16 @@ python -m scripts.actions_dashboard
 Exemple cron quotidien :
 ```bash
 0 2 * * * cd /chemin/vers/SENTRA_CORE_MEM && python -m scripts.actions_dashboard
+ main
 ```
-(ou adapter un workflow GitHub Actions sur le modèle de `.github/workflows/zsync.yml`).
+Chaque écriture déclenche automatiquement un `git commit` suivi d'un `git push`. Les notes sont stockées dans `memory/sentra_memory.json` ainsi que dans `projects/<slug>/fichiers/`.
+ codex/réécrire-readme-avec-sections-fusionnées
+## Documentation complémentaire
+- [CHANGELOG](docs/CHANGELOG.md)
+- [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
 
+© 2025 — Projet open‑source sous licence [MIT](LICENSE).
 
-Sécurité et bonnes pratiques
-Les agents sont puissants : active le log ou le versionning git pour tout changement critique.
 
 En mode Render/cloud, le push git effectif nécessite un token/clé SSH configuré.
 
@@ -306,7 +302,8 @@ Voir NOTICE.md pour le détail des cycles, agents, extensions, FAQ.
 
 
 ---
-=======
+ codex/ajouter-fichier-docker-compose-root
+
 ## 📑 Documentation supplémentaire
 - [CHANGELOG](docs/CHANGELOG.md)
 - [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
@@ -322,7 +319,9 @@ docker compose up -d
 
 ## Licence
 Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
+ 228a3aa670cbfd79800f8695cad5281122fe07c4
+
+ main
 
 © 2025 — Projet open-source modulable ✨
- dev
+ main
