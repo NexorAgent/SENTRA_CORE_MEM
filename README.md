@@ -302,6 +302,26 @@ Voir NOTICE.md pour le détail des cycles, agents, extensions, FAQ.
 
 
 ---
+ codex/ajouter-fichier-docker-compose-root
+
+## 📑 Documentation supplémentaire
+- [CHANGELOG](docs/CHANGELOG.md)
+- [PLANNING](docs/PLANNING_SENTRA_CORE_MEM.md)
+
+ codex/mettre-à-jour-readme.md
+### Docker Compose
+Un fichier `docker-compose.yml` permet de lancer l'API FastAPI, le bot Discord, n8n et l'orchestrateur :
+
+```bash
+docker compose up -d
+```
+© 2025 — Projet open‑source modulable ✨
+
+## Licence
+Ce projet est distribuée sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
+ 228a3aa670cbfd79800f8695cad5281122fe07c4
+
+ main
 
 © 2025 — Projet open-source modulable ✨
  main
