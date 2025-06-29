@@ -1,0 +1,50 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    volumes:
+      - ./memory:/app/memory
+      - ./projects:/app/projects
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  discord:
+    build:
+      context: .
+      dockerfile: docker/discord.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - api
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: docker/orchestrator.Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./memory:/app/memory
+      - ./projects:/app/projects
+    depends_on:
+      - api
+
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=sentra
+      - N8N_BASIC_AUTH_PASSWORD=memcore
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - GENERIC_TIMEZONE=Europe/Paris
+    volumes:
+      - ./n8n/n8n_data:/home/node/.n8n
