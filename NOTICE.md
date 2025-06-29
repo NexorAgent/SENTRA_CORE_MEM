@@ -168,8 +168,6 @@ Le **dispatcher** (dans `orchestrator.py`) mappe automatiquement l’intention d
 
 * Alphabet étendu (unicode privé) + dictionnaire adaptatif.
 * Cible : **×10** de compression.
-
-<<<<<< codex/document-création-de-glyph-sets-et-compression
 ### 8.3  Création de nouveaux sets de glyphes
 
 * L’outil `glyph_watcher.py` scanne un dossier de logs et génère un glyphe pour
