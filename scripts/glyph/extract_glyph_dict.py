@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env python3
 """
 extract_glyph_dict.py
@@ -57,11 +56,9 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     extract(args.input, args.output)
-=======
 from .glyph_generator import _load_dict
 import json
 
 if __name__ == "__main__":
     d = _load_dict()
     print(json.dumps(d, indent=2, ensure_ascii=False))
->>>>>>> 228a3aa670cbfd79800f8695cad5281122fe07c4
