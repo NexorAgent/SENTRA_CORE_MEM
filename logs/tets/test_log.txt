@@ -1,4 +1,0 @@
-synchronisation mémoire
-agent orchestration
-rapport markdown
-compression glyphique
