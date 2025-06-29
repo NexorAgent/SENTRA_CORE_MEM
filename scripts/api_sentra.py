@@ -43,7 +43,6 @@ async def get_logo():
     raise HTTPException(status_code=404, detail="Logo non trouvé")
 
 # ------------------------------------
- codex/refactor-scripts/api_sentra.py-routes
 #  Notice légale / licence
 # ------------------------------------
 @app.get("/legal", include_in_schema=False)
@@ -59,7 +58,6 @@ async def legal_notice():
 
 # ------------------------------------
 
- main
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
 @app.get("/check_env")
@@ -408,27 +406,6 @@ async def write_file(req: WriteFileRequest):
         path=str(file_path)
     )
 
- codex/refactor-scripts/api_sentra.py-routes
-# ------------------------------------
-#  POST /delete_file
-# ------------------------------------
-
-@app.post("/delete_file", response_model=FileActionResponse)
-async def delete_file(req: DeleteFileRequest):
-    """Supprime un fichier ou dossier puis commit git."""
-    try:
-        ok = fm_delete_file(req.path, validate_before_delete=req.validate_before_delete)
-        if not ok:
-            raise HTTPException(status_code=404, detail="File not found")
-        try:
-            git_commit_push([Path(req.path)], f"GPT delete: {Path(req.path).name}")
-        except RuntimeError:
-            pass
-        return FileActionResponse(status="success", detail="deleted", path=req.path)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
@@ -448,29 +425,10 @@ async def delete_file(req: DeleteFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
-main
- 
 
 # ------------------------------------
 #  POST /move_file
 # ------------------------------------
- 
- codex/refactor-scripts/api_sentra.py-routes
-@app.post("/move_file", response_model=FileActionResponse)
-async def move_file(req: MoveFileRequest):
-    """Déplace un fichier puis commit git."""
-    try:
-        fm_move_file(req.src, req.dst)
-        try:
-            git_commit_push(
-                [Path(req.src), Path(req.dst)],
-                f"GPT move: {req.src} -> {req.dst}",
-            )
-        except RuntimeError:
-            pass
-        return FileActionResponse(status="success", detail="moved", path=req.dst)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
@@ -493,34 +451,18 @@ async def move_file(req: MoveFileRequest):
         return WriteResponse(status="error", detail=str(e))
 
     return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
- main
- 
+
 
 # ------------------------------------
 #  POST /archive_file
 # ------------------------------------
- codex/refactor-scripts/api_sentra.py-routes
  
-@app.post("/archive_file", response_model=FileActionResponse)
-async def archive_file(req: ArchiveFileRequest):
-    """Archive un fichier dans un dossier puis commit git."""
-    try:
-        fm_archive_file(req.path, req.archive_dir)
-        dest = Path(req.archive_dir) / Path(req.path).name
-        try:
-            git_commit_push([dest], f"GPT archive: {Path(req.path).name}")
-        except RuntimeError:
-            pass
-        return FileActionResponse(status="success", detail="archived", path=str(dest))
-
-
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
     src_path = Path(req.path)
     archive_dir = Path(req.archive_dir)
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
-main
     except Exception as e:
         return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
     dest_path = archive_dir / src_path.name
@@ -566,10 +508,6 @@ async def search_files(term: str, dir: str):
                 continue
     return {"matches": results}
 
- codex/refactor-scripts/api_sentra.py-routes
-
-
- main
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
 from fastapi.responses import JSONResponse, PlainTextResponse
