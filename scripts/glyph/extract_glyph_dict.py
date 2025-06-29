@@ -41,3 +41,12 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', default='glyph_dict_simple.json', help='Chemin de sortie pour le mapping simple')
     args = parser.parse_args()
     extract(args.input, args.output)
+codex/finaliser-scripts-et-tests-de-compression
+
+from .glyph_generator import _load_dict
+import json
+
+if __name__ == "__main__":
+    d = _load_dict()
+    print(json.dumps(d, indent=2, ensure_ascii=False))
+ main

@@ -28,7 +28,10 @@ def _load_dict() -> Dict[str, str]:
 def _save_dict(d: Dict[str, str]) -> None:
     f = dict_file()
     f.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+codex/finaliser-scripts-et-tests-de-compression
 
+
+ main
 
 def get_glyph(term: str) -> str:
     """Return glyph for term, generating one if needed."""
@@ -42,14 +45,20 @@ def get_glyph(term: str) -> str:
         _save_dict(glyphs)
     return glyphs[term]
 
+ codex/finaliser-scripts-et-tests-de-compression
 
+
+ main
 def get_term(glyph: str) -> str:
     """Return term associated with glyph, or the glyph itself if unknown."""
     glyphs = _load_dict()
     reverse = {v: k for k, v in glyphs.items()}
     return reverse.get(glyph, glyph)
 
+ codex/finaliser-scripts-et-tests-de-compression
 
+
+ main
 def compress_text(
     text: str,
     *,
@@ -89,14 +98,18 @@ def compress_text(
         text = re.sub(pattern, lambda _m, g=glyph: g, text)
     return text
 
+ codex/finaliser-scripts-et-tests-de-compression
 
+
+ main
 def decompress_text(text: str) -> str:
     """Replace glyphs in text with original terms using the global dictionary."""
     glyphs = _load_dict()
     for term, glyph in sorted(glyphs.items(), key=lambda x: len(x[1]), reverse=True):
         text = text.replace(glyph, term)
-    return text
+    return text codex/finaliser-scripts-et-tests-de-compression
 
+main
 
 def decompress_with_dict(text: str, glyphs: Dict[str, str]) -> str:
     """Decompress text using the provided glyph mapping."""
@@ -134,4 +147,6 @@ def randomize_mapping(mapping: Dict[str, str]) -> Dict[str, str]:
     values = [v for _, v in items]
     random.shuffle(values)
     return dict(zip(keys, values))
+ codex/finaliser-scripts-et-tests-de-compression
 
+main
