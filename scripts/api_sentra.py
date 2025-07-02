@@ -4,6 +4,9 @@ import json
 import time
 from pathlib import Path
 
+# Base directory of the project
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -27,7 +30,7 @@ app = FastAPI(
 # ------------------------------------
 @app.get("/ai-plugin.json", include_in_schema=False)
 async def get_ai_plugin():
-    manifest_path = Path(__file__).parent.parent / "ai-plugin.json"
+    manifest_path = BASE_DIR / "ai-plugin.json"
     if not manifest_path.exists():
         raise HTTPException(status_code=404, detail="ai-plugin.json introuvable")
     return FileResponse(path=str(manifest_path), media_type="application/json")
@@ -37,7 +40,7 @@ async def get_ai_plugin():
 # ------------------------------------
 @app.get("/logo.png", include_in_schema=False)
 async def get_logo():
-    logo_path = Path(__file__).parent.parent / "logo.png"
+    logo_path = BASE_DIR / "logo.png"
     if logo_path.exists():
         return FileResponse(path=str(logo_path), media_type="image/png")
     raise HTTPException(status_code=404, detail="Logo non trouvé")
@@ -48,7 +51,7 @@ async def get_logo():
 @app.get("/legal", include_in_schema=False)
 async def legal_notice():
     """Retourne le contenu de NOTICE.md ou un texte de licence."""
-    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    notice_path = BASE_DIR / "NOTICE.md"
     if notice_path.exists():
         return FileResponse(path=str(notice_path), media_type="text/markdown")
     return Response(
@@ -131,7 +134,7 @@ async def reprise_projet(req: RepriseRequest):
         raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
 
     # 1) Déterminer la racine du projet
-    base_path = Path(__file__).parent.parent
+    base_path = BASE_DIR
 
     # 2) Chemins vers les scripts Python
     discord_fetcher_script     = base_path / "scripts" / "discord_fetcher.py"
@@ -246,9 +249,7 @@ async def write_note(req: WriteNoteRequest):
     # Calcul une seule fois du slug projet/clone
    
     # 1) Chemin vers la racine du projet
-    script_dir   = Path(__file__).resolve().parent
-    project_root = script_dir.parent
-    memory_dir   = project_root / "memory"
+    memory_dir   = BASE_DIR / "memory"
     memory_dir.mkdir(parents=True, exist_ok=True)
     memory_file  = memory_dir / "sentra_memory.json"
 
@@ -275,7 +276,7 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     # 3) Journal mimétique Z_MEMORIAL.md
-    memorial_dir  = project_root / "projects" / project_slug / "fichiers"
+    memorial_dir  = BASE_DIR / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
 
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
@@ -316,9 +317,7 @@ async def get_notes():
     """
     Renvoie en texte brut le contenu complet de memory/sentra_memory.json.
     """
-    script_dir   = Path(__file__).resolve().parent   # …/scripts
-    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
-    memory_file  = project_root / "memory" / "sentra_memory.json"
+    memory_file  = BASE_DIR / "memory" / "sentra_memory.json"
 
     if not memory_file.exists():
         return Response(content="", media_type="text/plain")
@@ -353,10 +352,8 @@ async def get_memorial(project: str = "sentra_core"):
     """
     Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.
     """
-    script_dir   = Path(__file__).resolve().parent   # …/scripts
-    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
     project_slug = project.strip().lower().replace(" ", "_") or "sentra_core"
-    memorial_file = project_root / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
+    memorial_file = BASE_DIR / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
 
     if not memorial_file.exists():
         return Response(content="Z_MEMORIAL.md non trouvé", media_type="text/plain")
@@ -380,7 +377,7 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
-    base_path        = Path(__file__).parent.parent
+    base_path        = BASE_DIR
     project_slug     = projet.lower().replace(" ", "_")
     dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
 
@@ -511,9 +508,6 @@ async def search_files(term: str, dir: str):
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
 from fastapi.responses import JSONResponse, PlainTextResponse
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 @app.get("/", tags=["monitoring"])
 async def home():
