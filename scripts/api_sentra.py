@@ -122,6 +122,16 @@ class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
 
+class ListFilesResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    files: list[str]
+
+class SearchResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    matches: list[str]
+
 # Requests pour la gestion de fichiers existants
 
 # ------------------------------------
@@ -489,18 +499,31 @@ async def archive_file(req: ArchiveFileRequest):
 # ------------------------------------
 #  GET /list_files
 # ------------------------------------
-@app.get("/list_files")
+@app.get("/list_files", response_model=ListFilesResponse)
 async def list_files(dir: str, pattern: str = "*"):
+ codex/créer-modèles-de-réponse-dédiés-pour-/list_files-et-/search
+    p = Path(dir)
+    try:
+        files = [str(f) for f in p.glob(pattern)]
+        return ListFilesResponse(
+            status="success",
+            detail=f"{len(files)} file(s) found",
+            files=files,
+        )
+    except Exception as e:
+        return ListFilesResponse(status="error", detail=str(e), files=[])
+
     if ".." in dir:
         raise HTTPException(status_code=400, detail="Invalid path")
     p = BASE_DIR / dir
     files = [str(f) for f in p.glob(pattern)]
     return {"files": files}
+ main
 
 # ------------------------------------
 #  GET /search
 # ------------------------------------
-@app.get("/search")
+@app.get("/search", response_model=SearchResponse)
 async def search_files(term: str, dir: str):
     if ".." in dir:
         raise HTTPException(status_code=400, detail="Invalid path")
@@ -513,7 +536,11 @@ async def search_files(term: str, dir: str):
                     results.append(str(f))
             except Exception:
                 continue
-    return {"matches": results}
+    return SearchResponse(
+        status="success",
+        detail=f"{len(results)} match(es)",
+        matches=results,
+    )
 
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
