@@ -198,7 +198,7 @@ HEAD
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {"$ref": "#/components/schemas/ListFilesResponse"}
               }
             }
           },
@@ -397,7 +397,7 @@ HEAD
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {"$ref": "#/components/schemas/SearchResponse"}
               }
             }
           },
@@ -745,6 +745,40 @@ HEAD
               { "type": "null" }
             ],
             "title": "Path"
+          }
+        }
+      },
+      "ListFilesResponse": {
+        "type": "object",
+        "title": "ListFilesResponse",
+        "required": ["status", "files"],
+        "properties": {
+          "status": {"type": "string", "title": "Status"},
+          "detail": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Detail"
+          },
+          "files": {
+            "type": "array",
+            "title": "Files",
+            "items": {"type": "string"}
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "title": "SearchResponse",
+        "required": ["status", "matches"],
+        "properties": {
+          "status": {"type": "string", "title": "Status"},
+          "detail": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Detail"
+          },
+          "matches": {
+            "type": "array",
+            "title": "Matches",
+            "items": {"type": "string"}
           }
         }
       }

@@ -4,6 +4,9 @@ import json
 import time
 from pathlib import Path
 
+# Base directory of the project
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -27,7 +30,7 @@ app = FastAPI(
 # ------------------------------------
 @app.get("/ai-plugin.json", include_in_schema=False)
 async def get_ai_plugin():
-    manifest_path = Path(__file__).parent.parent / "ai-plugin.json"
+    manifest_path = BASE_DIR / "ai-plugin.json"
     if not manifest_path.exists():
         raise HTTPException(status_code=404, detail="ai-plugin.json introuvable")
     return FileResponse(path=str(manifest_path), media_type="application/json")
@@ -37,7 +40,7 @@ async def get_ai_plugin():
 # ------------------------------------
 @app.get("/logo.png", include_in_schema=False)
 async def get_logo():
-    logo_path = Path(__file__).parent.parent / "logo.png"
+    logo_path = BASE_DIR / "logo.png"
     if logo_path.exists():
         return FileResponse(path=str(logo_path), media_type="image/png")
     raise HTTPException(status_code=404, detail="Logo non trouvé")
@@ -48,7 +51,7 @@ async def get_logo():
 @app.get("/legal", include_in_schema=False)
 async def legal_notice():
     """Retourne le contenu de NOTICE.md ou un texte de licence."""
-    notice_path = Path(__file__).parent.parent / "NOTICE.md"
+    notice_path = BASE_DIR / "NOTICE.md"
     if notice_path.exists():
         return FileResponse(path=str(notice_path), media_type="text/markdown")
     return Response(
@@ -119,6 +122,16 @@ class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
 
+class ListFilesResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    files: list[str]
+
+class SearchResponse(BaseModel):
+    status: str
+    detail: str | None = None
+    matches: list[str]
+
 # Requests pour la gestion de fichiers existants
 
 # ------------------------------------
@@ -131,7 +144,7 @@ async def reprise_projet(req: RepriseRequest):
         raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
 
     # 1) Déterminer la racine du projet
-    base_path = Path(__file__).parent.parent
+    base_path = BASE_DIR
 
     # 2) Chemins vers les scripts Python
     discord_fetcher_script     = base_path / "scripts" / "discord_fetcher.py"
@@ -246,9 +259,7 @@ async def write_note(req: WriteNoteRequest):
     # Calcul une seule fois du slug projet/clone
    
     # 1) Chemin vers la racine du projet
-    script_dir   = Path(__file__).resolve().parent
-    project_root = script_dir.parent
-    memory_dir   = project_root / "memory"
+    memory_dir   = BASE_DIR / "memory"
     memory_dir.mkdir(parents=True, exist_ok=True)
     memory_file  = memory_dir / "sentra_memory.json"
 
@@ -275,7 +286,7 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     # 3) Journal mimétique Z_MEMORIAL.md
-    memorial_dir  = project_root / "projects" / project_slug / "fichiers"
+    memorial_dir  = BASE_DIR / "projects" / project_slug / "fichiers"
     memorial_dir.mkdir(parents=True, exist_ok=True)
 
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
@@ -316,9 +327,7 @@ async def get_notes():
     """
     Renvoie en texte brut le contenu complet de memory/sentra_memory.json.
     """
-    script_dir   = Path(__file__).resolve().parent   # …/scripts
-    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
-    memory_file  = project_root / "memory" / "sentra_memory.json"
+    memory_file  = BASE_DIR / "memory" / "sentra_memory.json"
 
     if not memory_file.exists():
         return Response(content="", media_type="text/plain")
@@ -353,10 +362,8 @@ async def get_memorial(project: str = "sentra_core"):
     """
     Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.
     """
-    script_dir   = Path(__file__).resolve().parent   # …/scripts
-    project_root = script_dir.parent                  # …/SENTRA_CORE_MEM_merged
     project_slug = project.strip().lower().replace(" ", "_") or "sentra_core"
-    memorial_file = project_root / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
+    memorial_file = BASE_DIR / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
 
     if not memorial_file.exists():
         return Response(content="Z_MEMORIAL.md non trouvé", media_type="text/plain")
@@ -380,11 +387,17 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
+ codex/modifier-vérification-de-chemin-dans-/write_file
     if ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
 
     project_slug = projet.lower().replace(" ", "_")
     file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
+
+    base_path        = BASE_DIR
+    project_slug     = projet.lower().replace(" ", "_")
+    dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
+ main
 
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -409,7 +422,9 @@ async def write_file(req: WriteFileRequest):
 
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
-    file_path = Path(req.path)
+    if ".." in req.path:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    file_path = BASE_DIR / req.path
     try:
         file_path.unlink()
     except FileNotFoundError:
@@ -432,8 +447,10 @@ async def delete_file(req: DeleteFileRequest):
 
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
-    src_path = Path(req.src)
-    dst_path = Path(req.dst)
+    if ".." in req.src or ".." in req.dst:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    src_path = BASE_DIR / req.src
+    dst_path = BASE_DIR / req.dst
 
     try:
         dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -459,8 +476,10 @@ async def move_file(req: MoveFileRequest):
  
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
-    src_path = Path(req.path)
-    archive_dir = Path(req.archive_dir)
+    if ".." in req.path or ".." in req.archive_dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    src_path = BASE_DIR / req.path
+    archive_dir = BASE_DIR / req.archive_dir
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
@@ -486,18 +505,35 @@ async def archive_file(req: ArchiveFileRequest):
 # ------------------------------------
 #  GET /list_files
 # ------------------------------------
-@app.get("/list_files")
+@app.get("/list_files", response_model=ListFilesResponse)
 async def list_files(dir: str, pattern: str = "*"):
+ codex/créer-modèles-de-réponse-dédiés-pour-/list_files-et-/search
     p = Path(dir)
+    try:
+        files = [str(f) for f in p.glob(pattern)]
+        return ListFilesResponse(
+            status="success",
+            detail=f"{len(files)} file(s) found",
+            files=files,
+        )
+    except Exception as e:
+        return ListFilesResponse(status="error", detail=str(e), files=[])
+
+    if ".." in dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    p = BASE_DIR / dir
     files = [str(f) for f in p.glob(pattern)]
     return {"files": files}
+ main
 
 # ------------------------------------
 #  GET /search
 # ------------------------------------
-@app.get("/search")
+@app.get("/search", response_model=SearchResponse)
 async def search_files(term: str, dir: str):
-    base = Path(dir)
+    if ".." in dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    base = BASE_DIR / dir
     results = []
     for f in base.rglob("*"):
         if f.is_file():
@@ -506,14 +542,15 @@ async def search_files(term: str, dir: str):
                     results.append(str(f))
             except Exception:
                 continue
-    return {"matches": results}
+    return SearchResponse(
+        status="success",
+        detail=f"{len(results)} match(es)",
+        matches=results,
+    )
 
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
 from fastapi.responses import JSONResponse, PlainTextResponse
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 @app.get("/", tags=["monitoring"])
 async def home():
