@@ -12,6 +12,7 @@ def client(tmp_path, monkeypatch):
     dummy = tmp_path / "scripts" / "api_sentra.py"
     dummy.parent.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(api, "__file__", str(dummy))
+    monkeypatch.setattr(api, "BASE_DIR", tmp_path)
     monkeypatch.setattr(api, "git_commit_push", lambda *a, **k: None)
     return TestClient(api.app)
 

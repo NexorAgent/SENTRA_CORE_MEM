@@ -387,16 +387,22 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
+ codex/modifier-vérification-de-chemin-dans-/write_file
+    if ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    project_slug = projet.lower().replace(" ", "_")
+    file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
+
     base_path        = BASE_DIR
     project_slug     = projet.lower().replace(" ", "_")
     dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
+ main
 
     try:
-        dossier_fichiers.mkdir(parents=True, exist_ok=True)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {dossier_fichiers} : {e}")
-
-    file_path = dossier_fichiers / filename
+        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {file_path.parent} : {e}")
     try:
         file_path.write_text(contenu, encoding="utf-8")
     except Exception as e:
