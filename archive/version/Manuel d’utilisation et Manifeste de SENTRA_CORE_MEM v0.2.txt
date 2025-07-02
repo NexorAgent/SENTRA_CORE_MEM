@@ -1,0 +1,146 @@
+# Manuel d’utilisation et Manifeste de SENTRA_CORE_MEM v0.2
+
+**Version : v0.2 (2025-05-25)**  
+**Branches Git :**  
+- **dev** : développement automatique quotidien  
+- **main** : version stable, fusion manuelle  
+
+---
+
+## Table des matières
+
+1. [Vue d’ensemble](#vue-densemble)  
+2. [Arborescence du projet](#arborescence-du-projet)  
+3. [Description des fichiers et dossiers](#description-des-fichiers-et-dossiers)  
+4. [Actions possibles & workflows](#actions-possibles--workflows)  
+5. [Notice d’utilisation pas-à-pas](#notice-dutilisation-pas-à-pas)  
+6. [Bonnes pratiques & conseils](#bonnes-pratiques--conseils)  
+
+---
+
+## Vue d’ensemble
+
+SENTRA_CORE_MEM est une plateforme de workflow IA légère, offrant :
+
+- **Gestion de mémoire** compressée et glyphique  
+- **Orchestration** de requêtes (intention → agents)  
+- **Archivage** et **consultation** via Notion  
+- **Génération** de rapports Markdown horodatés  
+- **Cycle Git** automatique vers `dev` + fusion manuelle vers `main`  
+
+Chaque composant s’auto-organise en dossiers dédiés pour garder un dépôt propre et évolutif.
+
+---
+
+## Arborescence du projet
+
+SENTRA_CORE_MEM_v0.1/
+├─ docs/
+│ ├─ SENTRA_OATH.md
+│ └─ glyph_rules.txt
+├─ logs/
+│ └─ execution_log.txt
+├─ memory/
+│ └─ sentra_memory.json
+├─ prompts/
+├─ reports/
+│ └─ YYYY/MM/
+├─ scripts/
+│ └─ memory_manager.py
+├─ sentra/
+│ ├─ agents/
+│ └─ orchestrator.py
+├─ .env
+├─ sentra_config.py
+├─ notion_config.py
+├─ main.py
+├─ main_agents.py
+├─ markdown_generator.py
+├─ sentra_cycle.bat
+├─ merge_to_main.bat
+├─ README.md
+├─ CHANGELOG.md
+└─ requirements.txt
+
+
+
+---
+
+## Description des fichiers et dossiers
+
+- **docs/**  
+  - `SENTRA_OATH.md` : code de conduite IA  
+  - `glyph_rules.txt` : règles de compression glyphique  
+- **logs/**  
+  - `execution_log.txt` : journal append-only des appels IA  
+- **memory/**  
+  - `sentra_memory.json` : historique compressé des échanges  
+- **prompts/** : prompts systèmes  
+- **reports/** : rapports Markdown générés (année/mois)  
+- **scripts/memory_manager.py** : API interne mémoire  
+- **sentra/orchestrator.py** : moteur d’intention → agent → log → mémoire  
+- **markdown_generator.py** : création de rapports `.md`  
+- **sentra/agents/** : agents spécialisés (Notion, réseau…)  
+- **notion_config.py** : clé & ID Notion  
+- **sentra_config.py** : options globales IA  
+- **sentra_cycle.bat** : cycle complet → push `dev`  
+- **merge_to_main.bat** : merge `dev` → `main`  
+- **CHANGELOG.md** : historique de versions  
+- **README.md** : doc d’introduction  
+- **requirements.txt** : dépendances Python  
+
+---
+
+## Actions possibles & workflows
+
+| Action                  | Commande / Script                                 | Résultat                            |
+|-------------------------|---------------------------------------------------|-------------------------------------|
+| Orchestrer IA           | `python -m sentra.orchestrator ["message"]`       | log + mémoire + réponse console     |
+| Archivage Notion        | `python sentra/agents/agent_notion.py`            | page ajoutée dans Notion            |
+| Lecture Notion          | `python sentra/agents/notion_reader.py`           | derniers logs affichés              |
+| Générer rapport MD      | `python markdown_generator.py "sujet"`            | `.md` créé dans `/reports/`         |
+| Cycle complet           | `double-clic sentra_cycle.bat`                    | étapes 1→5 + push `dev`             |
+| Fusion vers prod        | `double-clic merge_to_main.bat`                   | merge `dev`→`main` + push `main`    |
+| Nettoyage local         | `clean_local.bat` (supprime caches & tests)       | dépôt épuré                         |
+
+---
+
+## Notice d’utilisation pas-à-pas
+
+1. **Cloner le dépôt**  
+   ```bash
+   git clone https://github.com/NexorAgent/SENTRA_CORE_MEM.git
+   cd SENTRA_CORE_MEM_v0.1
+
+2.Configurer l’environnement
+
+   .Remplir .env, notion_config.py, sentra_config.py.
+
+3.Installer les dépendances
+
+pip install -r requirements.txt
+
+ 4.Lancer un cycle IA
+
+    .Double-clic sur sentra_cycle.bat
+
+5.Consulter le rapport
+
+    .Ouvre reports/YYYY/MM/*.md
+
+6.Fusionner vers main
+
+    .Double-clic sur merge_to_main.bat
+
+7.Mettre à jour CHANGELOG.md
+
+    .Ajouter section [vX.Y] – date
+
+Bonnes pratiques & conseils
+Pousser automatiquement sur dev, fusionner manuellement sur main.
+
+Ne pas écraser execution_log.txt (mode append).
+
+Conserver anciens rapports pour audit.
+
+Relire SENTRA_OATH.md pour rester aligné.

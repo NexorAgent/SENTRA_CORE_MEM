@@ -1,0 +1,29 @@
+name: ZSYNC Scheduler
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  zsync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloner le repo
+        uses: actions/checkout@v3
+
+      - name: Configurer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Injecter secrets dans l'environnement
+        run: |
+          echo "NOTION_TOKEN=${{ secrets.NOTION_TOKEN }}" >> $GITHUB_ENV
+          echo "NOTION_DB_ID=${{ secrets.NOTION_DB_ID }}" >> $GITHUB_ENV
+
+      - name: Exécuter zsync_scheduler via module
+        run: python -m scripts.zsync_scheduler

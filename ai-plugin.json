@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Sentra Memory Plugin",
+  "name_for_model": "sentra_memory",
+  "description_for_human": "Permet à ChatGPT de gérer la reprise de projet, l’écriture de notes et de fichiers dans SENTRA.",
+  "description_for_model": "Plugin pour exécuter des opérations : /reprise pour relancer l’analyse du projet, /write_note pour ajouter une note dans la mémoire, /write_file pour créer ou mettre à jour un fichier dans un projet.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "http://localhost:5000/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "http://localhost:5000/logo.png",
+  "contact_email": "julien@example.com",
+  "legal_info_url": "http://localhost:5000/legal"
+}
