@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from pathlib import Path
 from datetime import datetime
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 # --------------------------------------
 # Serve plugin manifest and static files
 # --------------------------------------
@@ -164,15 +166,16 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
-    # Créer le dossier projet/fichiers si besoin
-    project_slug = projet.lower().replace(" ", "_")
-    base_path = Path("projects") / project_slug / "fichiers"
-    try:
-        base_path.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Impossible de créer dossier {base_path}: {e}")
+    if ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
 
-    file_path = base_path / filename
+    project_slug = projet.lower().replace(" ", "_")
+    file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
+
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return WriteResponse(status="error", detail=f"Impossible de créer dossier {file_path.parent}: {e}")
     try:
         with file_path.open("w", encoding="utf-8") as f:
             f.write(content)
