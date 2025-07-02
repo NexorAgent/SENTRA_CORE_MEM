@@ -406,7 +406,9 @@ async def write_file(req: WriteFileRequest):
 
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
-    file_path = Path(req.path)
+    if ".." in req.path:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    file_path = BASE_DIR / req.path
     try:
         file_path.unlink()
     except FileNotFoundError:
@@ -429,8 +431,10 @@ async def delete_file(req: DeleteFileRequest):
 
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
-    src_path = Path(req.src)
-    dst_path = Path(req.dst)
+    if ".." in req.src or ".." in req.dst:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    src_path = BASE_DIR / req.src
+    dst_path = BASE_DIR / req.dst
 
     try:
         dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -456,8 +460,10 @@ async def move_file(req: MoveFileRequest):
  
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
-    src_path = Path(req.path)
-    archive_dir = Path(req.archive_dir)
+    if ".." in req.path or ".." in req.archive_dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    src_path = BASE_DIR / req.path
+    archive_dir = BASE_DIR / req.archive_dir
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
@@ -485,7 +491,9 @@ async def archive_file(req: ArchiveFileRequest):
 # ------------------------------------
 @app.get("/list_files")
 async def list_files(dir: str, pattern: str = "*"):
-    p = Path(dir)
+    if ".." in dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    p = BASE_DIR / dir
     files = [str(f) for f in p.glob(pattern)]
     return {"files": files}
 
@@ -494,7 +502,9 @@ async def list_files(dir: str, pattern: str = "*"):
 # ------------------------------------
 @app.get("/search")
 async def search_files(term: str, dir: str):
-    base = Path(dir)
+    if ".." in dir:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    base = BASE_DIR / dir
     results = []
     for f in base.rglob("*"):
         if f.is_file():
