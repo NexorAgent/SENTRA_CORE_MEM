@@ -63,22 +63,3 @@ def get_logs():
             with open(os.path.join(LOGS_PATH, f), "r", encoding="utf-8") as lf:
                 logs.append(json.load(lf))
     return logs
-
-from fastapi.openapi.utils import get_openapi
-
-def custom_openapi():
-    print(">>> PATCH OPENAPI APPLIQUÉ <<<")  # Pour voir dans le terminal si c'est appelé
-    openapi_schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-    openapi_schema["servers"] = [
-        {"url": "https://api.sentracoremem.ovh"}
-    ]
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-app.openapi = custom_openapi
-

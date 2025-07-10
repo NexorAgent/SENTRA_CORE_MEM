@@ -1,10 +1,10 @@
+import os
 import subprocess
-from datetime import datetime
-from pathlib import Path
-
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from pathlib import Path
+from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,9 +14,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 app = FastAPI(
     title="Sentra Memory Plugin API",
     version="1.1.0",
-    description="API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers).",
+    description="API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers)."
 )
-
 
 @app.get("/ai-plugin.json", include_in_schema=False)
 async def get_ai_plugin():
@@ -26,7 +25,6 @@ async def get_ai_plugin():
         raise HTTPException(status_code=404, detail="ai-plugin.json not found")
     return FileResponse(path, media_type="application/json")
 
-
 @app.get("/logo.png", include_in_schema=False)
 async def get_logo():
     # Sert un logo par défaut ou un fichier existant
@@ -35,13 +33,11 @@ async def get_logo():
         raise HTTPException(status_code=404, detail="logo.png not found")
     return FileResponse(path, media_type="image/png")
 
-
 # -------------------------------
 #  Modèles de requête / réponse
 # -------------------------------
 class RepriseRequest(BaseModel):
     project: str
-
 
 class RepriseResponse(BaseModel):
     status: str
@@ -49,23 +45,19 @@ class RepriseResponse(BaseModel):
     resume_content: str | None = None
     detail: str | None = None
 
-
 class WriteNoteRequest(BaseModel):
     text: str  # contenu de la note à enregistrer
     project: str | None = None
 
-
 class WriteFileRequest(BaseModel):
-    project: str  # e.g. "SENTRA_CORE"
-    filename: str  # ex. "nouveau_guide.md"
-    content: str  # contenu brut (Markdown/texte) à écrire
-
+    project: str        # e.g. "SENTRA_CORE"
+    filename: str       # ex. "nouveau_guide.md"
+    content: str        # contenu brut (Markdown/texte) à écrire
 
 class WriteResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
-
 
 # -------------------------------
 #  Route 1: reprise de projet
@@ -85,7 +77,8 @@ async def reprise_projet(req: RepriseRequest):
         process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if process.returncode != 0:
             return RepriseResponse(
-                status="error", detail=f"Échec de `{cmd}` : {process.stderr}"
+                status="error",
+                detail=f"Échec de `{cmd}` : {process.stderr}"
             )
 
     # Repérer le dernier résumé GPT
@@ -93,22 +86,31 @@ async def reprise_projet(req: RepriseRequest):
     resume_folder = Path("projects") / project_slug / "resume"
     if not resume_folder.exists():
         return RepriseResponse(
-            status="error", detail=f"Aucun dossier resume pour {projet}."
+            status="error",
+            detail=f"Aucun dossier resume pour {projet}."
         )
     resume_files = sorted(
-        resume_folder.glob("resume_gpt2_*.md"), key=lambda f: f.stat().st_mtime
+        resume_folder.glob("resume_gpt2_*.md"),
+        key=lambda f: f.stat().st_mtime
     )
     if not resume_files:
-        return RepriseResponse(status="error", detail="Aucun résumé GPT final trouvé.")
+        return RepriseResponse(
+            status="error",
+            detail="Aucun résumé GPT final trouvé."
+        )
     last = resume_files[-1]
     try:
         content = last.read_text(encoding="utf-8")
     except Exception as e:
-        return RepriseResponse(status="error", detail=f"Impossible de lire {last}: {e}")
+        return RepriseResponse(
+            status="error",
+            detail=f"Impossible de lire {last}: {e}"
+        )
     return RepriseResponse(
-        status="success", resume_path=str(last), resume_content=content
+        status="success",
+        resume_path=str(last),
+        resume_content=content
     )
-
 
 # ----------------------------------
 #  Route 2: écriture d’une note simple
@@ -118,23 +120,19 @@ async def write_note(req: WriteNoteRequest):
     """
     Enregistre une note dans la mémoire JSON (memory/sentra_memory.json).
     """
-    from scripts.git_utils import git_commit_push
     from scripts.memory_agent import save_note_from_text
+    from scripts.git_utils import git_commit_push
 
     text = req.text.strip()
     if not text:
-        raise HTTPException(
-            status_code=400, detail="Le champ 'text' ne peut pas être vide."
-        )
+        raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
     try:
         save_note_from_text(text)
     except Exception as e:
         return WriteResponse(status="error", detail=f"Erreur write_note: {e}")
 
-    project_slug = (
-        req.project.strip().lower().replace(" ", "_") if req.project else "sentra_core"
-    )
+    project_slug = req.project.strip().lower().replace(" ", "_") if req.project else "sentra_core"
     base_dir = Path("projects") / project_slug / "fichiers"
     base_dir.mkdir(parents=True, exist_ok=True)
     memoire_file = base_dir / f"memoire_{project_slug}.md"
@@ -153,7 +151,6 @@ async def write_note(req: WriteNoteRequest):
 
     return WriteResponse(status="success", detail="Note enregistrée dans la mémoire.")
 
-
 # -----------------------------------------------------
 #  Route 3: écriture d’un fichier dans un projet donné
 # -----------------------------------------------------
@@ -167,9 +164,7 @@ async def write_file(req: WriteFileRequest):
     content = req.content
 
     if not projet or not filename:
-        raise HTTPException(
-            status_code=400, detail="Les champs 'project' et 'filename' sont requis."
-        )
+        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
     if ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
@@ -180,20 +175,18 @@ async def write_file(req: WriteFileRequest):
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        return WriteResponse(
-            status="error",
-            detail=f"Impossible de créer dossier {file_path.parent}: {e}",
-        )
+        return WriteResponse(status="error", detail=f"Impossible de créer dossier {file_path.parent}: {e}")
     try:
         with file_path.open("w", encoding="utf-8") as f:
             f.write(content)
     except Exception as e:
         return WriteResponse(
-            status="error", detail=f"Erreur écriture du fichier {file_path}: {e}"
+            status="error",
+            detail=f"Erreur écriture du fichier {file_path}: {e}"
         )
 
     return WriteResponse(
         status="success",
         detail=f"Fichier créé/modifié: {file_path}",
-        path=str(file_path),
+        path=str(file_path)
     )

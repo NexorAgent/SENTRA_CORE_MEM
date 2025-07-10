@@ -18,13 +18,12 @@ import argparse
 import base64
 import csv
 import zlib
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 from typing import Iterable, Tuple
 
-from ..mem_block import make_mem_block
 from .glyph_generator import compress_text
-
+from ..mem_block import make_mem_block
 
 def compress_content(text: str, mode: str, obfuscate: bool, src_name: str = "") -> str:
     """Compress text using glyph or zlib, option obfuscate (MEM.BLOCK sans mapping)."""
@@ -47,7 +46,6 @@ def compress_content(text: str, mode: str, obfuscate: bool, src_name: str = "") 
         return base64.b85encode(compressed).decode("ascii")
     raise ValueError(f"Unknown mode: {mode}")
 
-
 def process_file(src: Path, dst: Path, mode: str, obfuscate: bool) -> Tuple[int, int]:
     """Compress one file and return (original_size, compressed_size)."""
     try:
@@ -60,21 +58,16 @@ def process_file(src: Path, dst: Path, mode: str, obfuscate: bool) -> Tuple[int,
     dst.write_text(compressed, encoding="utf-8")
     return len(content.encode("utf-8")), len(compressed.encode("utf-8"))
 
-
 def iter_text_files(root: Path) -> Iterable[Path]:
     """Yield all .txt files under root recursively."""
     for path in root.rglob("*.txt"):
         if path.is_file():
             yield path
 
-
 def write_report(entries: Iterable[Tuple[str, int, int]], report_path: Path) -> None:
     """Write CSV or Markdown report depending on extension."""
     if report_path.suffix.lower() == ".md":
-        lines = [
-            "| File | Original | Compressed | Ratio |",
-            "| --- | ---:| ---:| ---:|",
-        ]
+        lines = ["| File | Original | Compressed | Ratio |", "| --- | ---:| ---:| ---:|"]
         for rel, orig, comp in entries:
             ratio = comp / orig if orig else 0
             lines.append(f"| {rel} | {orig} | {comp} | {ratio:.2f} |")
@@ -87,10 +80,7 @@ def write_report(entries: Iterable[Tuple[str, int, int]], report_path: Path) -> 
                 ratio = comp / orig if orig else 0
                 writer.writerow([rel, orig, comp, f"{ratio:.2f}"])
 
-
-def compress_directory(
-    src: Path, dst: Path, mode: str = "glyph", obfuscate: bool = False
-) -> Path:
+def compress_directory(src: Path, dst: Path, mode: str = "glyph", obfuscate: bool = False) -> Path:
     """Compress all text files from *src* into *dst* and return report path."""
     if mode == "csv":
         algo = "glyph"
@@ -100,9 +90,7 @@ def compress_directory(
         report_path = dst / "report.md"
     else:
         algo = mode
-        report_path = dst / (
-            "report.md" if algo == "glyph" and obfuscate else "report.csv"
-        )
+        report_path = dst / ("report.md" if algo == "glyph" and obfuscate else "report.csv")
     entries = []
     for path in iter_text_files(src):
         rel = path.relative_to(src)
@@ -112,27 +100,13 @@ def compress_directory(
     write_report(entries, report_path)
     return report_path
 
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="Batch compress text files using glyph or zlib"
-    )
+    parser = argparse.ArgumentParser(description="Batch compress text files using glyph or zlib")
     parser.add_argument("src", type=Path, help="Source directory (recursif, *.txt)")
     parser.add_argument("dst", type=Path, help="Destination directory")
-    parser.add_argument(
-        "--mode",
-        choices=["glyph", "zlib"],
-        default="glyph",
-        help="Compression mode (default: glyph)",
-    )
-    parser.add_argument(
-        "--report", type=Path, help="Path to CSV or Markdown report (auto .csv/.md)"
-    )
-    parser.add_argument(
-        "--obfuscate",
-        action="store_true",
-        help="Use MEM.BLOCK compression without mapping (glyph only)",
-    )
+    parser.add_argument("--mode", choices=["glyph", "zlib"], default="glyph", help="Compression mode (default: glyph)")
+    parser.add_argument("--report", type=Path, help="Path to CSV or Markdown report (auto .csv/.md)")
+    parser.add_argument("--obfuscate", action="store_true", help="Use MEM.BLOCK compression without mapping (glyph only)")
     args = parser.parse_args()
 
     src = args.src
@@ -142,6 +116,6 @@ def main():
     if report_path and report_path != report:
         report.rename(report_path)
 
-
 if __name__ == "__main__":
     main()
+

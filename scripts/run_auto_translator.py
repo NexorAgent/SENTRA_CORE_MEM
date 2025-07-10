@@ -1,26 +1,18 @@
 # run_auto_translator.py
-import argparse
-import base64
-import json
 import os
-import random
 import re
+import json
 import zlib
-from collections import Counter
+import base64
+import argparse
+import random
 from datetime import datetime
+from collections import Counter
 
 parser = argparse.ArgumentParser(description="Pipeline de compression + mémoire IA/IA")
-parser.add_argument(
-    "-i", "--input", default="resume_translated.txt", help="Fichier source à traiter"
-)
-parser.add_argument(
-    "--obfuscate",
-    action="store_true",
-    help="Randomise les glyphes pour cette exécution",
-)
-parser.add_argument(
-    "--map-out", default=None, help="Fichier de sortie pour la table de correspondance"
-)
+parser.add_argument("-i", "--input", default="resume_translated.txt", help="Fichier source à traiter")
+parser.add_argument("--obfuscate", action="store_true", help="Randomise les glyphes pour cette exécution")
+parser.add_argument("--map-out", default=None, help="Fichier de sortie pour la table de correspondance")
 args = parser.parse_args()
 
 INPUT_FILE = args.input

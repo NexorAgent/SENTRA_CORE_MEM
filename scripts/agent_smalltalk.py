@@ -1,6 +1,5 @@
-import os
-
 from openai import OpenAI
+import os
 
 print("=== agent_smalltalk.py IMPORTED ===")
 
@@ -19,7 +18,7 @@ def run(user_message: str) -> dict:
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": user_message},
+                {"role": "user",   "content": user_message},
             ],
             temperature=0.7,
             max_tokens=120,

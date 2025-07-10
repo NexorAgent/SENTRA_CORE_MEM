@@ -1,9 +1,18 @@
+ codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
+ codex/finaliser-scripts-et-tests-de-compression
 """Utility to sanitize the glyph dictionary.
 
-- A backup of the existing file is written to `glyph_dict_meta.json`.
-- Only simple `term -> glyph` pairs are kept and duplicates are removed.
-"""
+ main
+"""scripts/clean_glyph_dict.py
+Scinde `memory/glyph_dict.json` en deux :
+- Sauvegarde l’ancien dict complet sous `memory/glyph_dict_meta.json`
+- Extrait uniquement les paires terme→glyphe (valeur str) vers `memory/glyph_dict.json`
+main
 
+- A backup of the existing file is written to ``glyph_dict_meta.json``.
+- Only simple ``term -> glyph`` pairs are kept and duplicates are removed.
+"""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -41,5 +50,29 @@ GLYPH_PATH.write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding=
 
 print(f"[clean_glyph_dict] dict épuré écrit dans : {GLYPH_PATH}")
 print(f"[clean_glyph_dict] ancien dict sauvegardé dans : {META_PATH}")
+codex/supprimer-les-marqueurs-de-fusion-et-valider-les-fichiers
+
+ codex/finaliser-scripts-et-tests-de-compression
 if duplicates:
     print("[clean_glyph_dict] doublons supprimés:", duplicates)
+
+from .glyph_generator import _load_dict, _save_dict
+
+if __name__ == "__main__":
+    data = _load_dict()
+    reverse = {}
+    duplicates = []
+    for term, glyph in data.items():
+        if glyph in reverse:
+            duplicates.append(term)
+        else:
+            reverse[glyph] = term
+    for term in duplicates:
+        del data[term]
+    if duplicates:
+        print("Removed duplicates:", duplicates)
+        _save_dict(data)
+    else:
+        print("No duplicates found")
+ main
+ main

@@ -7,10 +7,10 @@ Usage:
     run()                                 # appelé depuis le bot Discord
 Crée un fichier reports/YYYY/MM/YYYY-MM-DD_rapport.md avec contenu basique.
 """
-import json
 import sys
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
+import json
 
 # Répertoire racine du projet
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +20,6 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 # Répertoire mémoire et logs
 MEMORY_FILE = PROJECT_ROOT / "memory" / "sentra_memory.json"
 LOG_FILE = PROJECT_ROOT / "logs" / "execution_log.txt"
-
 
 def load_memory_entries():
     entries = []

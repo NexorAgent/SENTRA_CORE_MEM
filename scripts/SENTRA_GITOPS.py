@@ -69,7 +69,7 @@ COMMANDS = {
 
 def main(args: list[str]) -> None:
     if not args:
-        print('Usage: python SENTRA_GITOPS.py status|add|commit "message"|push')
+        print("Usage: python SENTRA_GITOPS.py status|add|commit \"message\"|push")
         return
     cmd = args[0]
     if cmd not in COMMANDS:

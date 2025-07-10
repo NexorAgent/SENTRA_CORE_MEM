@@ -5,8 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List
-
+from typing import List, Dict
 
 def load_memory_entries() -> List[Dict]:
     """
@@ -26,7 +25,6 @@ def load_memory_entries() -> List[Dict]:
                 return []
     except json.JSONDecodeError:
         return []
-
 
 def search_memory(query: str, max_results: int = 5) -> List[str]:
     """

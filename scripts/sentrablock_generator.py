@@ -1,7 +1,9 @@
 # scripts/zblock_generator.py → renommé sentrablock_generator.py
 
-import json
+import os
 import re
+import json
+from datetime import datetime
 from pathlib import Path
 
 # CONFIGURATION
@@ -32,12 +34,10 @@ for file in LOG_DIR.glob("*_translated.txt"):
                 "agent": id_match.group(1),
                 "date": ts_match.group(1),
                 "intent": int_match.group(1),
-                "glyph": glyph_match.group(1),
+                "glyph": glyph_match.group(1)
             }
             index_data["SENTRA_BLOCKS"].append(block_entry)
 
 # Sauvegarde de l’index
-INDEX_PATH.write_text(
-    json.dumps(index_data, indent=2, ensure_ascii=False), encoding="utf-8"
-)
+INDEX_PATH.write_text(json.dumps(index_data, indent=2, ensure_ascii=False), encoding="utf-8")
 print(f"[SENTRA_BLOCK_GENERATOR] Index mis à jour : {INDEX_PATH}")

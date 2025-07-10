@@ -1,9 +1,9 @@
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+import subprocess
 
 from scripts.glyph.compressor import Compressor
 
@@ -32,15 +32,7 @@ class CompressorTest(unittest.TestCase):
         input_file.write_text("memo block universel", encoding="utf-8")
 
         subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "scripts.glyph.compressor",
-                "--mode",
-                "abbrev",
-                str(input_file),
-                str(output_file),
-            ],
+            [sys.executable, "-m", "scripts.glyph.compressor", "--mode", "abbrev", str(input_file), str(output_file)],
             check=True,
         )
 

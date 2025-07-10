@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
-
-
+from configs.config import CONFIG  # Chemin mis à jour
 
 def generate_markdown(memory_content, title="Mémoire IA/IA"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -10,7 +9,6 @@ def generate_markdown(memory_content, title="Mémoire IA/IA"):
     md += "## Contenu compressé :\n"
     md += f"```text\n{memory_content}\n```\n"
     return md
-
 
 if __name__ == "__main__":
     mem_path = "memories/example.zmem.src"

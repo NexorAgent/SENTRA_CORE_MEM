@@ -1,0 +1,19 @@
+# Dossier launcher – Autmatismes SENTRA
+
+merge_to_main.bat
+    Fusionne la branche dev vers main puis pousse sur le dépôt distant.
+
+run_auto_translator.bat
+    Lance le script de traduction automatique (scripts/auto_translator.py).
+
+run_discord.bat
+    Ouvre le bot Discord (scripts/discord_bot.py).
+
+run_orchestrator.bat
+    Lance le cycle complet (sentra_cycle.bat) pour le projet par défaut.
+
+sentra_cycle.bat
+    Usage : sentra_cycle.bat <nom_du_projet>
+    1) Récupère les fichiers Discord (discord_fetcher.py)
+    2) Génère le résumé brut (project_resume.py)
+    3) Génère le résumé GPT final (project_resumer_gpt.py)

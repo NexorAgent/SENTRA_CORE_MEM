@@ -1,7 +1,6 @@
  codex/ajouter-des-tests-pour-les-nouvelles-routes
 import json
 from pathlib import Path
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -133,7 +132,6 @@ def test_archive_file_invalid(client):
     assert resp.status_code == 400
 
 import importlib
-
 from fastapi import FastAPI
 
 

@@ -1,12 +1,10 @@
-import tempfile
 import unittest
+import tempfile
 from pathlib import Path
-
 from fastapi.testclient import TestClient
 
 from scripts import file_manager
 from scripts.api_sentra import app
-
 
 class FileManagerTest(unittest.TestCase):
     def setUp(self):
@@ -54,12 +52,9 @@ class FileManagerTest(unittest.TestCase):
         f = Path(self.tmp.name) / "ar.txt"
         f.write_text("b")
         ad = Path(self.tmp.name) / "arcdir"
-        res = self.client.post(
-            "/archive_file", json={"path": str(f), "archive_dir": str(ad)}
-        )
+        res = self.client.post("/archive_file", json={"path": str(f), "archive_dir": str(ad)})
         self.assertEqual(res.status_code, 200)
         self.assertTrue((ad / "ar.txt").exists())
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import datetime
 import json
+import datetime
 import pathlib
 
 # ─── Configuration ─────────────────────────────────────────────
@@ -9,7 +9,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 MEM_PATH = ROOT / "memory" / "sentra_memory.json"
 
 # ─── Fonctions de gestion de la mémoire persistante ──────────────
-
 
 def append_memory(contenu: str, typ: str = "log") -> None:
     """
@@ -31,9 +30,11 @@ def append_memory(contenu: str, typ: str = "log") -> None:
         data = []
 
     # Ajouter la nouvelle entrée
-    data.append(
-        {"date": datetime.date.today().isoformat(), "type": typ, "contenu": contenu}
-    )
+    data.append({
+        "date": datetime.date.today().isoformat(),
+        "type": typ,
+        "contenu": contenu
+    })
 
     # Réécriture complète
     with MEM_PATH.open("w", encoding="utf-8") as f:

@@ -1,13 +1,11 @@
-"""
+'''
 cmpz_dict_builder.py
 
 Module for building a dynamic compression dictionary for the CMPZ pipeline.
-"""
-
-import json
+'''  
 import re
+import json
 from collections import Counter
-
 
 class CMPZDictBuilder:
     def __init__(self, memory_blocks, stopwords=None):
@@ -50,16 +48,14 @@ class CMPZDictBuilder:
         freq = self.build_frequency()
         most_common = freq.most_common(top_n)
         # assign hex-based glyph codes: §00, §01, …
-        self.dictionary = {
-            token: f"§{i:02X}" for i, (token, _) in enumerate(most_common)
-        }
+        self.dictionary = {token: f"§{i:02X}" for i, (token, _) in enumerate(most_common)}
         return self.dictionary
 
     def load_dict(self, path):
         """
         Load existing dictionary from JSON file
         """
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, 'r', encoding='utf-8') as f:
             self.dictionary = json.load(f)
         return self.dictionary
 
@@ -67,25 +63,24 @@ class CMPZDictBuilder:
         """
         Persist dictionary to JSON file
         """
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.dictionary, f, ensure_ascii=False, indent=2)
 
-
 # Example usage
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Load memory blocks
-    with open("resume_translated.txt", "r", encoding="utf-8") as f:
-        blocks = f.read().split("---")  # adjust delimiter as needed
+    with open('resume_translated.txt', 'r', encoding='utf-8') as f:
+        blocks = f.read().split('---')  # adjust delimiter as needed
 
     # Optionally load stopwords
     stopwords = set()
     try:
-        with open("cmpz_stopwords.txt", "r", encoding="utf-8") as sf:
+        with open('cmpz_stopwords.txt', 'r', encoding='utf-8') as sf:
             stopwords = set(sf.read().split())
     except FileNotFoundError:
         pass
 
     builder = CMPZDictBuilder(blocks, stopwords)
     glyph_dict = builder.build_dict(top_n=500)
-    builder.save_dict("cmpz_dict.json")
+    builder.save_dict('cmpz_dict.json')
     print(f"Generated {len(glyph_dict)} glyph entries.")
