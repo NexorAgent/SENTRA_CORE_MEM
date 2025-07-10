@@ -1,7 +1,8 @@
-import base64
-import os
 import sys
+import os
+import json
 import zlib
+import base64
 
 if len(sys.argv) < 2:
     print("Usage: python zmem_loader.py <nom_memoire>")

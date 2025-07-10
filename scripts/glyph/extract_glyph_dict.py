@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Extract a simple ``mot -> glyphe`` mapping from an enriched glyph dictionary."""
-import argparse
 import json
+import argparse
 import sys
 from pathlib import Path
 
@@ -45,9 +45,8 @@ if __name__ == '__main__':
 
 codex/finaliser-scripts-et-tests-de-compression
 
-import json
-
 from .glyph_generator import _load_dict
+import json
 
 if __name__ == "__main__":
     d = _load_dict()

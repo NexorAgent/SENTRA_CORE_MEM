@@ -1,10 +1,11 @@
-import sys
-from datetime import datetime
+import os
 from pathlib import Path
+from datetime import datetime
 
 # Ce script génère un résumé basique du projet en listant les fichiers et extraits
 # Usage: python project_resume.py <nom_du_projet>
 
+import sys
 
 
 def summarize_project(project_name: str):
@@ -20,9 +21,7 @@ def summarize_project(project_name: str):
     resume_path = resume_dir / f"resume_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
 
     lines = []
-    lines.append(
-        f"# Résumé du projet {project_name} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-    )
+    lines.append(f"# Résumé du projet {project_name} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     # Lister tous les fichiers dans 'fichiers'
     lines.append("## Liste des fichiers disponibles :\n")

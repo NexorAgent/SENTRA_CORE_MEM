@@ -1,21 +1,15 @@
-import base64
-import json
 import os
+import json
 import zlib
+import base64
 
 # Fonction pour encoder une chaîne de caractères en format zmem
 # et mettre à jour l'index de mémoire
 
-
-def encode_zmem(
-    content: str,
-    ctx_tag: str,
-    zlib_txt_out: str,
-    zlib_bin_out: str,
-    zmem_src_out: str,
-    zmem_bin_out: str,
-    update_dict_path: str,
-):
+def encode_zmem(content: str, ctx_tag: str,
+                zlib_txt_out: str, zlib_bin_out: str,
+                zmem_src_out: str, zmem_bin_out: str,
+                update_dict_path: str):
     """
     Simule la compression d'une entrée de mémoire (content) et met à jour l'index.
     - Écrit le contenu brut dans zmem_src_out
@@ -78,15 +72,9 @@ def encode_zmem(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Encoder un fichier texte en mémoire compressée (.zmem)"
-    )
-    parser.add_argument(
-        "-i", "--input", required=True, help="Chemin vers le fichier texte à compresser"
-    )
-    parser.add_argument(
-        "-n", "--name", required=True, help="Nom à donner à la mémoire (fichier .zmem)"
-    )
+    parser = argparse.ArgumentParser(description="Encoder un fichier texte en mémoire compressée (.zmem)")
+    parser.add_argument("-i", "--input", required=True, help="Chemin vers le fichier texte à compresser")
+    parser.add_argument("-n", "--name", required=True, help="Nom à donner à la mémoire (fichier .zmem)")
     args = parser.parse_args()
 
     input_path = args.input
@@ -115,6 +103,6 @@ if __name__ == "__main__":
         zlib_bin_out=zlib_bin_out,
         zmem_src_out=zmem_src_out,
         zmem_bin_out=zmem_bin_out,
-        update_dict_path=update_dict_path,
+        update_dict_path=update_dict_path
     )
     print(f"[OK] Mémoire '{name}' sauvegardée.")

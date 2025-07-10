@@ -3,11 +3,11 @@
 discord_bot.py — Bot Discord du projet SENTRA_CORE_MEM avec serveur Flask pour keep-alive
 """
 
-import os
 import sys
+import os
 import threading
-import traceback
 from pathlib import Path
+import traceback
 
 # ─── Chemin projet ───────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -19,34 +19,29 @@ import discord
 from discord.ext import commands
 from flask import Flask
 
-import os
-
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-from scripts.agent_markdown import run as run_markdown
-from scripts.agent_notion import run as run_sync
-from scripts.memory_agent import save_note_from_text
-from sentra.dispatcher import detect_intent_and_route
 from sentra.zarch import quick_query
+from sentra.dispatcher import detect_intent_and_route
+from scripts.memory_agent import save_note_from_text
+from scripts.agent_notion import run as run_sync
+from scripts.agent_markdown import run as run_markdown
+from scripts.memory_lookup import search_memory
+from configs.discord_config import DISCORD_TOKEN
 
 # ─── Partie Flask ────────────────────────────────────────────
 app = Flask(__name__)
-
 
 @app.route("/", methods=["GET"])
 def home():
     return "SENTRA_CORE_MEM bot is running ✅", 200
 
-
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
 
 # ─── Partie Discord ──────────────────────────────────────────
 intents = discord.Intents.default()
 intents.message_content = True
 client = commands.Bot(command_prefix="!", intents=intents)
-
 
 # ─── Slash commands ─────────────────────────────────────────
 @client.tree.command(name="sync", description="Synchronise la mémoire (→ Notion)")
@@ -59,7 +54,6 @@ async def slash_sync(inter: discord.Interaction):
         await inter.followup.send(f"❌ Échec de la synchronisation : {e}")
         print(traceback.format_exc())
 
-
 @client.tree.command(name="report", description="Génère le rapport Markdown du jour")
 async def slash_report(inter: discord.Interaction):
     await inter.response.defer(thinking=True, ephemeral=False)
@@ -69,7 +63,6 @@ async def slash_report(inter: discord.Interaction):
     except Exception as e:
         await inter.followup.send(f"❌ Erreur rapport : {e}")
         print(traceback.format_exc())
-
 
 @client.tree.command(name="memoire", description="Recherche dans la mémoire locale")
 @discord.app_commands.describe(terme="Mot ou expression à rechercher")
@@ -87,7 +80,6 @@ async def slash_memoire(inter: discord.Interaction, terme: str):
         err = str(e)
         await inter.followup.send(f"❌ Erreur : {err}")
 
-
 # ─── Message libre : analyse d’intentions, prise de notes ────
 @client.event
 async def on_message(msg: discord.Message):
@@ -104,13 +96,11 @@ async def on_message(msg: discord.Message):
     if intent == "save_note":
         save_note_from_text(msg.content)
 
-
 # ─── READY : sync des commandes ──────────────────────────────
 @client.event
 async def on_ready():
     await client.tree.sync()
     print(f"✅ Bot connecté : {client.user}  |  Slash commands synchronisées")
-
 
 # ─── RUN : démarre Flask + Discord ─────────────────────────
 if __name__ == "__main__":

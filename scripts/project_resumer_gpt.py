@@ -1,10 +1,10 @@
-import base64
 import os
 import zlib
-from datetime import datetime
+import base64
+import openai
 from pathlib import Path
-
-from openai import OpenAI  # <- NOUVEL import
+from datetime import datetime
+from packaging import version  # pour comparer les versions (optionnel ici)
 
 # ————————————————
 # 1. Configuration OpenAI
@@ -14,7 +14,7 @@ def setup_openai():
     if not api_key:
         print("❌ Erreur : OPENAI_API_KEY non défini.")
         exit(1)
-    return OpenAI(api_key=api_key)  # <- NOUVEL OBJET client
+    openai.api_key = api_key
 
 # ————————————————
 # 2. Compression glyphique
@@ -25,9 +25,9 @@ def compress_to_glyph(text: str) -> str:
     return b64
 
 # ————————————————
-# 3. Appel à l’API OpenAI (nouvelle interface)
+# 3. Appel à l’API via l’ancienne interface
 # ————————————————
-def summarize_with_gpt(client, compressed_content: str) -> str:
+def summarize_with_gpt(compressed_content: str) -> str:
     prompt = (
         "Tu es une IA selon le serment SENTRA_OATH. "
         "Ci-dessous un contenu compressé (zlib+base64). "
@@ -37,14 +37,20 @@ def summarize_with_gpt(client, compressed_content: str) -> str:
         f"Contenu glyphique : {compressed_content}\n"
     )
 
-    response = client.chat.completions.create(
+    # On appelle uniquement l’ancienne interface ChatCompletion
+    response = openai.ChatCompletion.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=300,
-        temperature=0.3,
+        temperature=0.3
     )
 
-    return response.choices[0].message.content  # syntaxe OpenAI v1.x
+    choice = response.choices[0].message
+    # Selon la version du SDK, le message peut être un dict ou un objet avec un attribut "content"
+    if isinstance(choice, dict):
+        return choice.get("content", "")
+    else:
+        return getattr(choice, "content", "")
 
 # ————————————————
 # 4. Fonction principale
@@ -72,11 +78,13 @@ def main(project_name: str):
     glyph = compress_to_glyph(content)
     print(f"🔢 Contenu compressé (longueur = {len(glyph)} chars)")
 
-    # Configurer OpenAI (création client) et demander le résumé
-    client = setup_openai()
+    # Configurer OpenAI et demander le résumé
+    setup_openai()
+
     try:
-        summary = summarize_with_gpt(client, glyph)
+        summary = summarize_with_gpt(glyph)
     except Exception as e:
+        # Si ça plante, on affiche l’erreur et on termine avec un code non-zéro
         print(f"❌ Erreur OpenAI : {e}")
         exit(1)
 
@@ -94,7 +102,6 @@ def main(project_name: str):
 
 if __name__ == "__main__":
     import sys
-
     if len(sys.argv) < 2:
         print("Usage: python project_resumer_gpt.py <nom_du_projet>")
         exit(1)

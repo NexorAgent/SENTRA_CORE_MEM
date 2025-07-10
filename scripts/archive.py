@@ -9,10 +9,8 @@ os.makedirs(TARGET, exist_ok=True)
 
 EXCLUDE = [".git", "__pycache__", "memories", "archive", "logs", ".DS_Store"]
 
-
 def should_ignore(path):
     return any(part in EXCLUDE for part in path.split(os.sep))
-
 
 def copy_filtered(src, dst):
     for root, dirs, files in os.walk(src):
@@ -26,7 +24,6 @@ def copy_filtered(src, dst):
             fdst = os.path.join(dest_root, file)
             if not should_ignore(fsrc):
                 shutil.copy2(fsrc, fdst)
-
 
 if __name__ == "__main__":
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")

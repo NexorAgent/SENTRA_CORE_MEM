@@ -1,13 +1,16 @@
 import base64
 import json
-import re
 import zlib
+import re
 from typing import Dict, Optional, Tuple
 
-from scripts.glyph.glyph_generator import (compress_text, compress_with_dict,
-                                           decompress_text,
-                                           decompress_with_dict, export_dict)
-
+from scripts.glyph.glyph_generator import (
+    compress_text,
+    decompress_text,
+    decompress_with_dict,
+    export_dict,
+    compress_with_dict,
+)
 
 def make_mem_block(
     fields: Dict[str, str],
@@ -31,9 +34,7 @@ def make_mem_block(
         compressed_glyph = compress_text(text)
         mapping = export_dict() if include_mapping else None
 
-    z = base64.b85encode(zlib.compress(compressed_glyph.encode("utf-8"))).decode(
-        "utf-8"
-    )
+    z = base64.b85encode(zlib.compress(compressed_glyph.encode("utf-8"))).decode("utf-8")
     parts = [
         "⦿MEM.BLOCK🧠∴",
         f"⟁ID⟶{fields.get('ID','')}↯",
@@ -50,7 +51,6 @@ def make_mem_block(
     if obfuscate:
         return block, mapping
     return block
-
 
 def decode_mem_block(block: str) -> str:
     """Décompresse et décode un MEM.BLOCK."""
@@ -73,22 +73,17 @@ def decode_mem_block(block: str) -> str:
         return decompress_with_dict(compressed_glyph, mapping)
     return decompress_text(compressed_glyph)
 
-
 if __name__ == "__main__":
     import argparse
-    from datetime import datetime
     from pathlib import Path
+    from datetime import datetime
 
     parser = argparse.ArgumentParser(description="Create a MEM.BLOCK from a text file")
     parser.add_argument("input", help="source text file")
     parser.add_argument("-o", "--output", help="destination block file")
-    parser.add_argument(
-        "--include-mapping", action="store_true", help="embed mapping in the block"
-    )
+    parser.add_argument("--include-mapping", action="store_true", help="embed mapping in the block")
     parser.add_argument("--mapping-file", help="path to save the glyph mapping")
-    parser.add_argument(
-        "--obfuscate", action="store_true", help="randomize glyph assignments"
-    )
+    parser.add_argument("--obfuscate", action="store_true", help="randomize glyph assignments")
     args = parser.parse_args()
 
     text = Path(args.input).read_text(encoding="utf-8")
@@ -100,9 +95,13 @@ if __name__ == "__main__":
     }
 
     if args.obfuscate:
-        block, mapping = make_mem_block(fields, text, obfuscate=True)
+        block, mapping = make_mem_block(
+            fields, text, obfuscate=True
+        )
     else:
-        block = make_mem_block(fields, text, include_mapping=args.include_mapping)
+        block = make_mem_block(
+            fields, text, include_mapping=args.include_mapping
+        )
         mapping = None
 
     if args.output:
@@ -115,6 +114,4 @@ if __name__ == "__main__":
         if not map_path:
             base = args.output or args.input
             map_path = str(Path(base).with_suffix(".map.json"))
-        Path(map_path).write_text(
-            json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        Path(map_path).write_text(json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8")

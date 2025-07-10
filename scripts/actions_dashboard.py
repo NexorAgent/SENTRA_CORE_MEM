@@ -20,8 +20,7 @@ LOG_FILE = PROJECT_ROOT / "logs" / "actions.log"
 REPORT_FILE = PROJECT_ROOT / "logs" / "actions_report.md"
 
 # Capture "] action ->" ou "] action -" ou "] action:" etc.
-ACTION_REGEX = re.compile(r"\] *([^->:]+?)(?:->|-|:)")
-
+ACTION_REGEX = re.compile(r"\] *([^->:]+?)(?:->|-|:)" )
 
 def parse_actions() -> Counter:
     """Retourne un compteur {action: occurrences}."""

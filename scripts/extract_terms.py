@@ -1,6 +1,5 @@
 import re
 
-
 def extract_terms_from_text(text: str) -> list[str]:
     """
     Extrait les termes techniques/mots-clés d'un texte.
@@ -13,14 +12,8 @@ def extract_terms_from_text(text: str) -> list[str]:
 
     # Liste de mots métier à compléter librement
     lexique_metier = {
-        "orchestrateur",
-        "synchronisation",
-        "glyphique",
-        "pipeline",
-        "mémoire",
-        "agent",
-        "rapport",
-        "markdown",
+        "orchestrateur", "synchronisation", "glyphique", "pipeline",
+        "mémoire", "agent", "rapport", "markdown"
     }
     mots.update({mot for mot in text.split() if mot.lower() in lexique_metier})
 

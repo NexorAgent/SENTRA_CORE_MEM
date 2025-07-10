@@ -1,5 +1,6 @@
 # SENTRA_REGEN_CORE.py – Régénérateur adaptatif SENTRA (v0.1)
 
+import os
 import argparse
 from datetime import datetime
 from pathlib import Path
@@ -14,9 +15,8 @@ REGEN_TARGETS = {
     "Z_PROMPT_CODEX_REGEN.txt": "# Prompt CODEX Regen (régénéré)",
     "SENTRA_OATH.md": "# Charte SENTRA OATH (régénérée)",
     "Z_PLANNING.md": "# Planning par défaut (régénéré)",
-    "glyph_dict.json": "{}",
+    "glyph_dict.json": "{}"
 }
-
 
 def log_event(entry: str):
     timestamp = datetime.now().isoformat()
@@ -27,11 +27,7 @@ def log_event(entry: str):
 def scan_targets():
     print("🔍 Scan des fichiers critiques...")
     for filename in REGEN_TARGETS:
-        target_path = (
-            ROOT / filename
-            if not filename.startswith("Z_PROMPT")
-            else PROMPTS_DIR / filename
-        )
+        target_path = ROOT / filename if not filename.startswith("Z_PROMPT") else PROMPTS_DIR / filename
         if not target_path.exists():
             print(f"❌ Manquant : {target_path}")
         else:
@@ -41,11 +37,7 @@ def scan_targets():
 def regen_targets():
     print("♻️ Régénération des fichiers manquants...")
     for filename, content in REGEN_TARGETS.items():
-        target_path = (
-            ROOT / filename
-            if not filename.startswith("Z_PROMPT")
-            else PROMPTS_DIR / filename
-        )
+        target_path = ROOT / filename if not filename.startswith("Z_PROMPT") else PROMPTS_DIR / filename
         if not target_path.exists():
             target_path.parent.mkdir(parents=True, exist_ok=True)
             with open(target_path, "w", encoding="utf-8") as f:
@@ -61,16 +53,10 @@ def full_cycle():
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="SENTRA_REGEN_CORE - Régénération adaptative IA"
-    )
+    parser = argparse.ArgumentParser(description="SENTRA_REGEN_CORE - Régénération adaptative IA")
     parser.add_argument("--scan", action="store_true", help="Scanner les fichiers clés")
-    parser.add_argument(
-        "--regen", action="store_true", help="Régénérer les fichiers manquants"
-    )
-    parser.add_argument(
-        "--full", action="store_true", help="Faire un scan + régénération + log"
-    )
+    parser.add_argument("--regen", action="store_true", help="Régénérer les fichiers manquants")
+    parser.add_argument("--full", action="store_true", help="Faire un scan + régénération + log")
     args = parser.parse_args()
 
     if args.scan:

@@ -1,12 +1,7 @@
 import requests
 
-
 class LMStudioClient:
-    def __init__(
-        self,
-        url="http://localhost:1234/v1/chat/completions",
-        model="mistral-7b-instruct",
-    ):
+    def __init__(self, url="http://localhost:1234/v1/chat/completions", model="mistral-7b-instruct"):
         self.url = url
         self.model = model
 
@@ -15,7 +10,7 @@ class LMStudioClient:
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
-            "temperature": temperature,
+            "temperature": temperature
         }
         response = requests.post(self.url, json=payload)
         response.raise_for_status()

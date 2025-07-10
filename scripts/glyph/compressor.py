@@ -13,7 +13,6 @@ DEFAULT_DICT_DIR = ROOT / "memory"
 GLYPH_POOL = list("↯⊚⟴⚡∑¤†⌇⟁⊕⚙⚖🜁🧩🌀⧉♒︎⩾⊗" + string.punctuation)
 EMOJI_POOL = list("😀😁😂🤣😃😄😅😆😉😊😋😎🥳🤖👾👻")
 
-
 class Compressor:
     """Generic text compressor with multiple modes."""
 
@@ -67,7 +66,9 @@ class Compressor:
         elif self.mode == "abbr":
             token = "".join(random.choice(string.ascii_uppercase) for _ in range(3))
             while token in used:
-                token = "".join(random.choice(string.ascii_uppercase) for _ in range(3))
+                token = "".join(
+                    random.choice(string.ascii_uppercase) for _ in range(3)
+                )
             return token
         elif self.mode == "alphanum":
             chars = string.ascii_uppercase + string.digits
@@ -102,9 +103,7 @@ class Compressor:
         return text
 
     def decompress_text(self, text: str) -> str:
-        for term, token in sorted(
-            self.mapping.items(), key=lambda x: len(x[1]), reverse=True
-        ):
+        for term, token in sorted(self.mapping.items(), key=lambda x: len(x[1]), reverse=True):
             text = text.replace(token, term)
         return text
 
@@ -115,19 +114,15 @@ class Compressor:
     def decompress(self, text: str) -> str:
         return self.decompress_text(text)
 
-
 # ----------------------------------------------------------------------
 # CLI entry point
-
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Compress/decompress text")
     parser.add_argument("input", help="Input text file")
     parser.add_argument("output", help="Output text file")
     parser.add_argument("--mode", default="glyph", help="Compression mode")
-    parser.add_argument(
-        "--decompress", action="store_true", help="Decompress instead of compress"
-    )
+    parser.add_argument("--decompress", action="store_true", help="Decompress instead of compress")
     args = parser.parse_args(argv)
 
     comp = Compressor(args.mode)
@@ -138,6 +133,6 @@ def main(argv: list[str] | None = None) -> None:
         result = comp.compress_text(data)
     pathlib.Path(args.output).write_text(result, encoding="utf-8")
 
-
 if __name__ == "__main__":
     main()
+

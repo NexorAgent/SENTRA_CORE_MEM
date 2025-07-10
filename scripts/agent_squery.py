@@ -1,13 +1,12 @@
 # agent_squery.py
 import subprocess
 
-
 def run(intent=None, agent=None, date=None, tag=None, export=None):
     """
     Appelle le module SQUERY.py avec les paramètres fournis.
     """
     print("[SQUERY AGENT] Démarrage de la requête mémoire glyphée...")
-
+    
     command = ["python", "./scripts/SQUERY.py"]
 
     if intent:

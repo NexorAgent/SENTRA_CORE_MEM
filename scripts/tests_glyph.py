@@ -1,19 +1,24 @@
-import base64
-import json
 import os
-import sys
 import tempfile
-import types
 import unittest
+import subprocess
+import sys
+import base64
 import zlib
+import json
 from pathlib import Path
+import types
 
-from scripts import zmem_encoder
+from scripts.glyph import (
+    glyph_generator as gg,
+    make_mem_block,
+    decode_mem_block,
+    randomize_mapping,
+    compress_with_dict,
+    decompress_with_dict,
+)
 from scripts.compressor import Compressor
-from scripts.glyph import (compress_with_dict, decode_mem_block,
-                           decompress_with_dict)
-from scripts.glyph import glyph_generator as gg
-from scripts.glyph import make_mem_block, randomize_mapping
+from scripts import zmem_encoder
 from scripts.zmem_encoder import encode_zmem
 
 # Mock openai if not installed, for scripts.project_resumer_gpt
@@ -22,7 +27,6 @@ try:
     from scripts.project_resumer_gpt import compress_to_glyph
 except ImportError:
     compress_to_glyph = None
-
 
 class GlyphRoundTripTest(unittest.TestCase):
     def setUp(self):
@@ -36,26 +40,13 @@ class GlyphRoundTripTest(unittest.TestCase):
 
     def test_round_trip(self):
         samples = [
-            "chat avec intelligence",
-            "analyse des données",
-            "production de rapport",
-            "mémoire active",
-            "programme modulaire",
-            "réseau neuronal",
-            "système autonome",
-            "compression glyphique",
-            "gestion de projet",
-            "supervision automatique",
-            "pipeline de tests",
-            "nettoyage mémoire",
-            "extraction dictionnaire",
-            "audit de collisions",
-            "surveillance logs",
-            "génération de glyphes",
-            "interaction utilisateur",
-            "réponse adaptative",
-            "optimisation code",
-            "lecture configuration",
+            "chat avec intelligence", "analyse des données", "production de rapport",
+            "mémoire active", "programme modulaire", "réseau neuronal",
+            "système autonome", "compression glyphique", "gestion de projet",
+            "supervision automatique", "pipeline de tests", "nettoyage mémoire",
+            "extraction dictionnaire", "audit de collisions", "surveillance logs",
+            "génération de glyphes", "interaction utilisateur", "réponse adaptative",
+            "optimisation code", "lecture configuration"
         ]
         for text in samples:
             compressed = gg.compress_text(text)
@@ -64,24 +55,14 @@ class GlyphRoundTripTest(unittest.TestCase):
 
     def test_mem_block_cycle(self):
         text = "memo block universel"
-        fields = {
-            "ID": "ZTEST",
-            "TS": "2025-01-01T00:00",
-            "INT": "UTEST",
-            "Σ": "MEM.GLYPH",
-        }
+        fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
         block = make_mem_block(fields, text, include_mapping=True)
         restored = decode_mem_block(block)
         self.assertEqual(restored, text)
 
     def test_mem_block_no_mapping(self):
         text = "cycle sans mapping"
-        fields = {
-            "ID": "ZTEST",
-            "TS": "2025-01-01T00:00",
-            "INT": "UTEST",
-            "Σ": "MEM.GLYPH",
-        }
+        fields = {"ID": "ZTEST", "TS": "2025-01-01T00:00", "INT": "UTEST", "Σ": "MEM.GLYPH"}
         gg.compress_text(text)  # ensure glyphs exist in dictionary
         block = make_mem_block(fields, text, include_mapping=False)
         restored = decode_mem_block(block)
@@ -146,9 +127,7 @@ class GlyphRoundTripTest(unittest.TestCase):
             zmem_bin_out=str(zmem_bin),
             update_dict_path=str(index),
         )
-        decoded = zlib.decompress(base64.b64decode(zmem_bin.read_text())).decode(
-            "utf-8"
-        )
+        decoded = zlib.decompress(base64.b64decode(zmem_bin.read_text())).decode("utf-8")
         self.assertEqual(decoded, text)
         if zlib_bin.exists():
             decoded2 = zlib.decompress(zlib_bin.read_bytes()).decode("utf-8")
@@ -184,20 +163,11 @@ class GlyphRoundTripTest(unittest.TestCase):
             with self.subTest(mode=mode):
                 comp = Compressor(mode)
                 if mode == "custom":
-                    comp.mapping = {
-                        "test": "X1",
-                        "unitaire": "Y2",
-                        "pour": "Z3",
-                        "tous": "A4",
-                        "les": "B5",
-                        "modes": "C6",
-                        "compressor": "C7",
-                    }
+                    comp.mapping = {"test": "X1", "unitaire": "Y2", "pour": "Z3", "tous": "A4", "les": "B5", "modes": "C6", "compressor": "C7"}
                     comp._save_mapping()
                 compressed = comp.compress(txt)
                 decompressed = comp.decompress(compressed)
                 self.assertEqual(decompressed, txt)
-
 
 class BatchCompressTest(unittest.TestCase):
     def setUp(self):
@@ -218,12 +188,10 @@ class BatchCompressTest(unittest.TestCase):
 
     def test_batch_compress(self):
         from scripts.glyph.batch_compress import compress_directory
-
         report = compress_directory(self.src, self.dst, mode="csv", obfuscate=False)
         self.assertTrue((self.dst / "a.txt.mb").exists())
         self.assertTrue((self.dst / "sub" / "b.txt.mb").exists())
         self.assertTrue(report.exists())
-
 
 if __name__ == "__main__":
     unittest.main()

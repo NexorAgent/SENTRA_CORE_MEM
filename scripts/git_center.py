@@ -1,6 +1,5 @@
 import subprocess
 
-
 def run(cmd, cwd=None, capture=True):
     print(f"\n> {cmd}")
     result = subprocess.run(cmd, cwd=cwd, capture_output=capture, text=True, shell=True)
@@ -10,10 +9,8 @@ def run(cmd, cwd=None, capture=True):
         print(result.stderr)
     return result
 
-
 def menu():
-    print(
-        """
+    print("""
 ┌──────────────────────────────────────────────┐
 │                  GIT CENTER                  │
 ├───── Actions possibles : ─────────────────────┤
@@ -27,9 +24,7 @@ def menu():
 │15. git rm         16. git stash              │
 │17. git config     18. Quitter                │
 └──────────────────────────────────────────────┘
-"""
-    )
-
+""")
 
 def main():
     repo = input("Chemin du repo git (ou vide pour dossier actuel) : ").strip() or "."
@@ -88,13 +83,12 @@ def main():
         elif choix == "17":
             param = input("Paramètre à config (ex: user.name) : ")
             value = input("Valeur : ")
-            run(f'git config {param} "{value}"', cwd=repo)
+            run(f"git config {param} \"{value}\"", cwd=repo)
         elif choix == "18":
             print("Bye 👋")
             break
         else:
             print("Choix inconnu.")
-
 
 if __name__ == "__main__":
     main()

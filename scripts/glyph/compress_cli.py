@@ -7,21 +7,12 @@ from pathlib import Path
 
 from .mem_block import make_mem_block
 
-
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Compresse un texte en MEM.BLOCK glyphique (avec ou sans mapping, obfuscation possible)"
-    )
+    parser = argparse.ArgumentParser(description="Compresse un texte en MEM.BLOCK glyphique (avec ou sans mapping, obfuscation possible)")
     parser.add_argument("input", help="Fichier texte source")
-    parser.add_argument(
-        "-o", "--output", required=True, help="Fichier destination pour le MEM.BLOCK"
-    )
+    parser.add_argument("-o", "--output", required=True, help="Fichier destination pour le MEM.BLOCK")
     parser.add_argument("--id", default="ZCLI", help="Champ ID pour le bloc")
-    parser.add_argument(
-        "--obfuscate",
-        action="store_true",
-        help="Obfusque les glyphes (randomise les tokens)",
-    )
+    parser.add_argument("--obfuscate", action="store_true", help="Obfusque les glyphes (randomise les tokens)")
     parser.add_argument("--mapping-out", help="Chemin où sauvegarder le mapping (JSON)")
     args = parser.parse_args()
 
@@ -53,7 +44,6 @@ def main() -> None:
             except Exception:
                 print("[WARN] Impossible d’extraire le mapping du bloc généré.")
         print(f"Wrote MEM.BLOCK to {args.output}")
-
 
 if __name__ == "__main__":
     main()
