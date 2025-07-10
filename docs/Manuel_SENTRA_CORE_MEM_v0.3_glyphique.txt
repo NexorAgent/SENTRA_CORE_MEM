@@ -1,0 +1,196 @@
+# Manuel d’utilisation et Manifeste de SENTRA_CORE_MEM v0.2
+
+**Version : v0.2 (2025-05-25)**  
+**Branches Git :**  
+- **dev** : développement automatique quotidien  
+- **main** : version stable, fusion manuelle  
+
+---
+
+## Table des matières
+
+1. [Vue d’ensemble](#vue-densemble)  
+2. [Arborescence du projet](#arborescence-du-projet)  
+3. [Description des fichiers et dossiers](#description-des-fichiers-et-dossiers)  
+4. [Actions possibles & workflows](#actions-possibles--workflows)  
+5. [Notice d’utilisation pas-à-pas](#notice-dutilisation-pas-à-pas)  
+6. [Bonnes pratiques & conseils](#bonnes-pratiques--conseils)  
+
+---
+
+## Vue d’ensemble
+
+SENTRA_CORE_MEM est une plateforme de workflow IA légère, offrant :
+
+- **Gestion de mémoire** compressée et glyphique  
+- **Orchestration** de requêtes (intention → agents)  
+- **Archivage** et **consultation** via Notion  
+- **Génération** de rapports Markdown horodatés  
+- **Cycle Git** automatique vers `dev` + fusion manuelle vers `main`  
+
+Chaque composant s’auto-organise en dossiers dédiés pour garder un dépôt propre et évolutif.
+
+---
+
+## Arborescence du projet
+
+SENTRA_CORE_MEM_v0.1/
+├─ docs/
+│ ├─ SENTRA_OATH.md
+│ └─ glyph_rules.txt
+├─ logs/
+│ └─ execution_log.txt
+├─ memory/
+│ └─ sentra_memory.json
+├─ prompts/
+├─ reports/
+│ └─ YYYY/MM/
+├─ scripts/
+│ └─ memory_manager.py
+├─ sentra/
+│ ├─ agents/
+│ └─ orchestrator.py
+├─ .env
+├─ sentra_config.py
+├─ notion_config.py
+├─ main.py
+├─ main_agents.py
+├─ markdown_generator.py
+├─ sentra_cycle.bat
+├─ merge_to_main.bat
+├─ README.md
+├─ CHANGELOG.md
+└─ requirements.txt
+
+
+
+---
+
+## Description des fichiers et dossiers
+
+- **docs/**  
+  - `SENTRA_OATH.md` : code de conduite IA  
+  - `glyph_rules.txt` : règles de compression glyphique  
+- **logs/**  
+  - `execution_log.txt` : journal append-only des appels IA  
+- **memory/**  
+  - `sentra_memory.json` : historique compressé des échanges  
+- **prompts/** : prompts systèmes  
+- **reports/** : rapports Markdown générés (année/mois)  
+- **scripts/memory_manager.py** : API interne mémoire  
+- **sentra/orchestrator.py** : moteur d’intention → agent → log → mémoire  
+- **markdown_generator.py** : création de rapports `.md`  
+- **sentra/agents/** : agents spécialisés (Notion, réseau…)  
+- **notion_config.py** : clé & ID Notion  
+- **sentra_config.py** : options globales IA  
+- **sentra_cycle.bat** : cycle complet → push `dev`  
+- **merge_to_main.bat** : merge `dev` → `main`  
+- **CHANGELOG.md** : historique de versions  
+- **README.md** : doc d’introduction  
+- **requirements.txt** : dépendances Python  
+
+---
+
+## Actions possibles & workflows
+
+| Action                  | Commande / Script                                 | Résultat                            |
+|-------------------------|---------------------------------------------------|-------------------------------------|
+| Orchestrer IA           | `python -m sentra.orchestrator ["message"]`       | log + mémoire + réponse console     |
+| Archivage Notion        | `python sentra/agents/agent_notion.py`            | page ajoutée dans Notion            |
+| Lecture Notion          | `python sentra/agents/notion_reader.py`           | derniers logs affichés              |
+| Générer rapport MD      | `python markdown_generator.py "sujet"`            | `.md` créé dans `/reports/`         |
+| Cycle complet           | `double-clic sentra_cycle.bat`                    | étapes 1→5 + push `dev`             |
+| Fusion vers prod        | `double-clic merge_to_main.bat`                   | merge `dev`→`main` + push `main`    |
+| Nettoyage local         | `clean_local.bat` (supprime caches & tests)       | dépôt épuré                         |
+
+---
+
+## Notice d’utilisation pas-à-pas
+
+1. **Cloner le dépôt**  
+   ```bash
+   git clone https://github.com/NexorAgent/SENTRA_CORE_MEM.git
+   cd SENTRA_CORE_MEM_v0.1
+
+2.Configurer l’environnement
+
+   .Remplir .env, notion_config.py, sentra_config.py.
+
+3.Installer les dépendances
+
+pip install -r requirements.txt
+
+ 4.Lancer un cycle IA
+
+    .Double-clic sur sentra_cycle.bat
+
+5.Consulter le rapport
+
+    .Ouvre reports/YYYY/MM/*.md
+
+6.Fusionner vers main
+
+    .Double-clic sur merge_to_main.bat
+
+7.Mettre à jour CHANGELOG.md
+
+    .Ajouter section [vX.Y] – date
+
+Bonnes pratiques & conseils
+Pousser automatiquement sur dev, fusionner manuellement sur main.
+
+Ne pas écraser execution_log.txt (mode append).
+
+Conserver anciens rapports pour audit.
+
+Relire SENTRA_OATH.md pour rester aligné.
+
+───────────────────────────────────────────────────────────────
+🆕 Traduction glyphique (Auto Translator)
+───────────────────────────────────────────────────────────────
+Depuis la v0.4, SENTRA intègre un module de compression glyphique automatique.
+
+→ Objectif : traduire tout texte métier en glyphes intelligents, puis le compresser
+via zlib + base85. Les gains sont de l’ordre de -70% sur le stockage et -80% sur
+l’empreinte token envoyée à OpenAI.
+
+→ Emplacement du module : `sentra/agents/auto_translator.py`
+
+→ Lancement (manuel ou scripté) :
+• CMD :    `python -m sentra.agents.auto_translator`
+• BAT :    `run_auto_translator.bat`
+• Python : `from sentra.agents.auto_translator import to_glyph, from_glyph`
+
+→ Dictionnaire de glyphes enrichi automatiquement :
+Stocké dans `memory/glyph_dict.json` — chaque mot inconnu est compressé et
+mémorisé automatiquement. Plus le système tourne, plus il est efficient.
+
+→ Commandes internes disponibles :
+- `list_glyphs()` → affiche le dico actuel
+- `reload_dict()` → recharge le dico sans redémarrage
+- `save_memory(key, text)` → enregistre un contenu compressé dans la mémoire
+
+Exécution automatique du traducteur glyphique
+But : générer ou mettre à jour tous les glyphes/abréviations à partir des logs.
+
+Procédure :
+
+Démarrer LM Studio (API locale activée, modèle chargé)
+
+Placer les fichiers .txt à traduire dans le dossier /logs/
+
+Double-cliquer sur run_auto_translator.bat
+
+Vérifier la mise à jour de /memory/glyph_dict.json
+
+Code du batch
+bat
+Copier
+Modifier
+@echo off
+python -c "from sentra.orchestrator import dispatcher; import glob; [print(dispatcher(f'glyph traduction {file}')) for file in glob.glob('logs\\*.txt')]"
+pause
+Résultat attendu
+Console : liste des glyphes générés
+
+memory/glyph_dict.json mis à jour

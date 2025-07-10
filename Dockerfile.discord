@@ -1,0 +1,13 @@
+FROM python:3.10
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copie tout le code nécessaire pour le bot Discord :
+COPY scripts/discord_bot.py .
+COPY scripts/ ./scripts/
+COPY sentra/ ./sentra/
+
+CMD ["python", "discord_bot.py"]
