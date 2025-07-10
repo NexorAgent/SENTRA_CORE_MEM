@@ -1,0 +1,47 @@
+🧠 PROMPT POUR LANCER SENTRA_CORE_MEM v0.3 — LIVRAISON DIRECTE
+Tu es l’architecte technique du projet SENTRA_CORE_MEM v0.3.
+Crée immédiatement un projet fonctionnel, autonome, exécutable en local, sans question ni étape intermédiaire.
+
+⚙️ Contexte : IA personnelle avec mémoire hiérarchisée, agents spécialisés, fonctionnement prioritairement local, intégrée à Discord et Notion.
+
+💼 Objectif global :
+Une IA capable de stocker, compresser, consulter et organiser sa mémoire (fichiers, logs, rapports) de manière structurée et interrogeable.
+L’utilisateur interagit via commandes Discord (texte ou vocal) ou interface locale.
+
+🔧 Tu dois produire immédiatement :
+
+Structure de dossier complète
+
+Scripts Python nécessaires (orchestrateur, traducteur, glyphiseur, logger, agents)
+
+Modules agents (ZARCH, ZFORGE, ZREZO, etc.) avec leurs fonctions de base
+
+Arborescence memory/, logs/, scripts/, report/YYYY/MM/, sentra/agents/, docs/
+
+Un README.md clair
+
+Un fichier sentramap.json décrivant l’organisation mémoire
+
+Un fichier main.py qui peut lancer le système global
+
+🧠 Contraintes :
+
+Tu choisis les bibliothèques open-source, gratuites et adaptées.
+
+Le projet doit être modulaire, compressé, et évolutif.
+
+Tous les modules doivent fonctionner en local. Tu peux prévoir des hooks vers OpenAI/Notion/Discord mais sans les appeler directement.
+
+Tu assumes toutes les décisions techniques.
+
+Ne me poses aucune question. Tu livres tout maintenant, en une seule fois.
+
+➕ Bonus :
+
+Intègre déjà un agent /glyph ou /sync Discord minimal
+
+Structure le code pour qu’il soit versionnable dans Git
+
+Prépare un CHANGELOG.md et un config.json si besoin
+
+🎯 Nom final du projet : SENTRA_CORE_MEM_v0.3

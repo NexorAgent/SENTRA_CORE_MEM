@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  sentra_api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./projects:/app/projects
+      - ./memory:/app/memory
+      - ./logs:/app/logs
+    command: uvicorn scripts.api_sentra:app --host 0.0.0.0 --port 8000 --reload
+    restart: always
+    networks:
+      - sentra_network
+
+  sentra_n8n:
+    image: n8nio/n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+    networks:
+      - sentra_network
+
+  sentra_discord:
+    build:
+      context: .
+      dockerfile: Dockerfile.discord
+    env_file:
+      - .env
+    depends_on:
+      - sentra_api
+    networks:
+      - sentra_network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: sentra_cloudflared
+    command: tunnel run sentra-core-mem
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    depends_on:
+      - sentra_api
+      - sentra_n8n
+    networks:
+      - sentra_network
+
+networks:
+  sentra_network:
+    driver: bridge

@@ -1,0 +1,10 @@
+tunnel: 3d984c85-6c40-4164-9841-c8c5022110ed
+credentials-file: /etc/cloudflared/3d984c85-6c40-4164-9841-c8c5022110ed.json
+
+ingress:
+  - hostname: api.sentracoremem.ovh
+    service: http://sentra_api:8000
+  - hostname: n8n.sentracoremem.ovh
+    service: http://sentra_n8n:5678
+  - service: http_status:404
+
