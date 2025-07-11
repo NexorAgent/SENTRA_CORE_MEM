@@ -1,0 +1,102 @@
+[
+  {
+    "type": "note",
+    "text": "note ceci est un test memoire",
+    "timestamp": "2025-06-01T08:12:52"
+  },
+  {
+    "type": "note",
+    "text": "Première note test CLI",
+    "timestamp": "2025-06-01T08:26:52"
+  },
+  {
+    "type": "note",
+    "text": "première mémoire automatique par GPT pour sentra core",
+    "timestamp": "2025-06-09T07:27:58"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-28T11:30:02"
+  },
+  {
+    "type": "note",
+    "text": "Note de test Git automatique - 2025-06-28T19:36:51.369282",
+    "timestamp": "2025-06-28T19:36:51"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:31:33"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:46:28"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:49:52"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:53:34"
+  },
+  {
+    "type": "note",
+    "text": "Ceci est une note de test pour la mémoire persistante.",
+    "timestamp": "2025-06-29T06:59:11"
+  },
+  {
+    "type": "note",
+    "text": "Note de test Git automatique - 2025-06-29T09:02:02.384661",
+    "timestamp": "2025-06-29T07:02:02"
+  },
+  {
+    "type": "note",
+    "text": "🌀 ZORANIC NOTE :: À chaque redémarrage du tunnel ngrok, le lien HTTP change. Penser à le mettre à jour systématiquement.",
+    "timestamp": "2025-06-30T05:40:41"
+  },
+  {
+    "type": "note",
+    "text": "révision leçon 1",
+    "timestamp": "2025-06-30T14:40:35"
+  },
+  {
+    "type": "note",
+    "text": "initial test note via API",
+    "timestamp": "2025-06-30T15:04:11"
+  },
+  {
+    "type": "note",
+    "text": "bootstrap memorial",
+    "timestamp": "2025-06-30T15:11:58"
+  },
+  {
+    "type": "note",
+    "text": "Note test envoyée via l’API ngrok.",
+    "timestamp": "2025-07-07T14:54:08"
+  },
+  {
+    "type": "note",
+    "text": "Reprise projet test_api effectuée avec succès : résumé généré et accessible.",
+    "timestamp": "2025-07-07T15:42:54"
+  },
+  {
+    "type": "note",
+    "text": "Demande de lecture du fichier Z_PLANNING.md dans docs/",
+    "timestamp": "2025-07-07T16:14:56"
+  },
+  {
+    "type": "note",
+    "text": "Lecture manuelle directe demandée du fichier docs/Z_PLANNING.md",
+    "timestamp": "2025-07-07T16:16:53"
+  },
+  {
+    "type": "note",
+    "text": "note test",
+    "timestamp": "2025-07-08T17:38:52"
+  }
+]
