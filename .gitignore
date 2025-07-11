@@ -25,3 +25,6 @@ n8n/n8n_data/*.log
 memories/
 memory_zia/
 memory_index.json
+
+cloudflared/
+!cloudflared/config.yml
