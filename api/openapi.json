@@ -1,0 +1,787 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sentra Memory Plugin API",
+    "description": "API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers).",
+    "version": "1.1.0"
+  },
+  "servers": [
+    {
+HEAD
+      "url": "https://e20d-2a02-842b-8110-2c01-cd3-2171-5220-2075.ngrok-free.app",
+
+      "url": "https://27d5-2a02-842b-8110-2c01-1959-4174-be76-f262.ngrok-free.app",
+ 41a667258e3469db82a5b5643897ee72e9a4b65d
+      "description": "Tunnel ngrok → FastAPI local (port 8000)"
+    }
+  ],
+  "paths": {
+    "/check_env": {
+      "get": {
+        "summary": "Check Env",
+        "description": "Route de debug : affiche si OPENAI_API_KEY est défini et son préfixe.",
+        "operationId": "checkEnv",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reprise": {
+      "post": {
+        "summary": "Reprise Projet",
+        "operationId": "repriseProjet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepriseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepriseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/write_note": {
+      "post": {
+        "summary": "Write Note",
+        "operationId": "writeNote",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_notes": {
+      "get": {
+        "summary": "Get Notes",
+        "description": "Renvoie en texte brut le contenu complet de memory/sentra_memory.json.",
+        "operationId": "getNotes",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/read_note": {
+      "get": {
+        "summary": "Read Note",
+        "operationId": "readNote",
+        "parameters": [
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Term"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadNoteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_memorial": {
+      "get": {
+        "summary": "Get Memorial",
+        "description": "Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.",
+        "operationId": "getMemorial",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "sentra_core",
+              "title": "Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ListFilesResponse"}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/write_file": {
+      "post": {
+        "summary": "Write File",
+        "operationId": "writeFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delete_file": {
+      "post": {
+        "summary": "Delete File",
+        "operationId": "deleteFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/move_file": {
+      "post": {
+        "summary": "Move File",
+        "operationId": "moveFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/archive_file": {
+      "post": {
+        "summary": "Archive File",
+        "operationId": "archiveFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/list_files": {
+      "get": {
+        "summary": "List Files",
+        "operationId": "listFiles",
+        "parameters": [
+          {
+            "name": "dir",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dir"
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "*",
+              "title": "Pattern"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/SearchResponse"}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "summary": "Search Files",
+        "operationId": "searchFiles",
+        "parameters": [
+          {
+            "name": "term",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Term"
+            }
+          },
+          {
+            "name": "dir",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dir"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": ["monitoring"],
+        "summary": "Home",
+        "operationId": "home",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": ["monitoring"],
+        "summary": "Status",
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": ["monitoring"],
+        "summary": "Get Version",
+        "operationId": "getVersion",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readme": {
+      "get": {
+        "tags": ["monitoring"],
+        "summary": "Get Readme",
+        "operationId": "getReadme",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logs/latest": {
+      "get": {
+        "tags": ["logs"],
+        "summary": "Get Latest Logs",
+        "operationId": "getLatestLogs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents": {
+      "get": {
+        "tags": ["monitoring"],
+        "summary": "List Agents",
+        "operationId": "listAgents",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArchiveFileRequest": {
+        "type": "object",
+        "title": "ArchiveFileRequest",
+        "required": ["path", "archive_dir"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "archive_dir": {
+            "type": "string",
+            "title": "Archive Dir"
+          }
+        }
+      },
+      "DeleteFileRequest": {
+        "type": "object",
+        "title": "DeleteFileRequest",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "validate_before_delete": {
+            "type": "boolean",
+            "title": "Validate Before Delete",
+            "default": true
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "type": "object",
+        "title": "HTTPValidationError",
+        "properties": {
+          "detail": {
+            "type": "array",
+            "title": "Detail",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "MoveFileRequest": {
+        "type": "object",
+        "title": "MoveFileRequest",
+        "required": ["src", "dst"],
+        "properties": {
+          "src": {
+            "type": "string",
+            "title": "Src"
+          },
+          "dst": {
+            "type": "string",
+            "title": "Dst"
+          }
+        }
+      },
+      "ReadNoteResponse": {
+        "type": "object",
+        "title": "ReadNoteResponse",
+        "required": ["status", "results"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "results": {
+            "type": "array",
+            "title": "Results",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RepriseRequest": {
+        "type": "object",
+        "title": "RepriseRequest",
+        "required": ["project"],
+        "properties": {
+          "project": {
+            "type": "string",
+            "title": "Project"
+          }
+        }
+      },
+      "RepriseResponse": {
+        "type": "object",
+        "title": "RepriseResponse",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "resume_path": {
+            "type": ["string", "null"],
+            "title": "Resume Path"
+          },
+          "resume_content": {
+            "type": ["string", "null"],
+            "title": "Resume Content"
+          },
+          "detail": {
+            "type": ["string", "null"],
+            "title": "Detail"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "title": "ValidationError",
+        "required": ["loc", "msg", "type"],
+        "properties": {
+          "loc": {
+            "type": "array",
+            "title": "Location",
+            "items": {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "integer" }
+              ]
+            }
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        }
+      },
+      "WriteFileRequest": {
+        "type": "object",
+        "title": "WriteFileRequest",
+        "required": ["project", "filename", "content"],
+        "properties": {
+          "project": { "type": "string", "title": "Project" },
+          "filename": { "type": "string", "title": "Filename" },
+          "content":  { "type": "string", "title": "Content" }
+        }
+      },
+      "WriteNoteRequest": {
+        "type": "object",
+        "title": "WriteNoteRequest",
+        "required": ["text"],
+        "properties": {
+          "text": { "type": "string", "title": "Text" },
+          "project": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "title": "Project"
+          }
+        }
+      },
+      "WriteResponse": {
+        "type": "object",
+        "title": "WriteResponse",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "title": "Status" },
+          "detail": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "title": "Detail"
+          },
+          "path": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "title": "Path"
+          }
+        }
+      },
+      "ListFilesResponse": {
+        "type": "object",
+        "title": "ListFilesResponse",
+        "required": ["status", "files"],
+        "properties": {
+          "status": {"type": "string", "title": "Status"},
+          "detail": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Detail"
+          },
+          "files": {
+            "type": "array",
+            "title": "Files",
+            "items": {"type": "string"}
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "title": "SearchResponse",
+        "required": ["status", "matches"],
+        "properties": {
+          "status": {"type": "string", "title": "Status"},
+          "detail": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "title": "Detail"
+          },
+          "matches": {
+            "type": "array",
+            "title": "Matches",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}
