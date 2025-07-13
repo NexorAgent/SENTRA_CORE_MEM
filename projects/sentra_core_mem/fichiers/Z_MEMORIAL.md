@@ -11,3 +11,6 @@
 - ✅ `.gitignore` mis à jour pour exclure tous les fichiers sensibles (.env, logs, caches, etc.).
 🔒 Sécurité des données assurée avant le push vers GitHub.
 
+## 2025-07-13 15:55:40
+- 🔁 PUSH GIT manuel demandé : sauvegarde actuelle complète du VPS et code SENTRA_CORE.
+

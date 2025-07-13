@@ -168,5 +168,10 @@
     "type": "note",
     "text": "✅ `.gitignore` mis à jour pour exclure tous les fichiers sensibles (.env, logs, caches, etc.).\n🔒 Sécurité des données assurée avant le push vers GitHub.",
     "timestamp": "2025-07-13T15:46:58"
+  },
+  {
+    "type": "note",
+    "text": "🔁 PUSH GIT manuel demandé : sauvegarde actuelle complète du VPS et code SENTRA_CORE.",
+    "timestamp": "2025-07-13T15:55:40"
   }
 ]
