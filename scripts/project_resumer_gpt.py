@@ -1,7 +1,9 @@
+#!/home/debian/venv_sentra/bin/python
+
 import os
 import zlib
 import base64
-import openai
+from openai import OpenAI
 from pathlib import Path
 from datetime import datetime
 from packaging import version  # pour comparer les versions (optionnel ici)
@@ -14,7 +16,7 @@ def setup_openai():
     if not api_key:
         print("❌ Erreur : OPENAI_API_KEY non défini.")
         exit(1)
-    openai.api_key = api_key
+    return OpenAI(api_key=api_key)
 
 # ————————————————
 # 2. Compression glyphique
@@ -27,7 +29,7 @@ def compress_to_glyph(text: str) -> str:
 # ————————————————
 # 3. Appel à l’API via l’ancienne interface
 # ————————————————
-def summarize_with_gpt(compressed_content: str) -> str:
+def summarize_with_gpt(client, compressed_content: str) -> str:
     prompt = (
         "Tu es une IA selon le serment SENTRA_OATH. "
         "Ci-dessous un contenu compressé (zlib+base64). "
@@ -37,20 +39,14 @@ def summarize_with_gpt(compressed_content: str) -> str:
         f"Contenu glyphique : {compressed_content}\n"
     )
 
-    # On appelle uniquement l’ancienne interface ChatCompletion
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=300,
         temperature=0.3
     )
 
-    choice = response.choices[0].message
-    # Selon la version du SDK, le message peut être un dict ou un objet avec un attribut "content"
-    if isinstance(choice, dict):
-        return choice.get("content", "")
-    else:
-        return getattr(choice, "content", "")
+    return response.choices[0].message.content
 
 # ————————————————
 # 4. Fonction principale
@@ -79,10 +75,11 @@ def main(project_name: str):
     print(f"🔢 Contenu compressé (longueur = {len(glyph)} chars)")
 
     # Configurer OpenAI et demander le résumé
-    setup_openai()
+    client = setup_openai()
 
     try:
-        summary = summarize_with_gpt(glyph)
+       summary = summarize_with_gpt(client, glyph)
+
     except Exception as e:
         # Si ça plante, on affiche l’erreur et on termine avec un code non-zéro
         print(f"❌ Erreur OpenAI : {e}")

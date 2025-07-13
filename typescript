@@ -1,0 +1,119 @@
+Script started on 2025-07-13 13:48:40+00:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="124" LINES="29"]
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ [7m/home/debian/venv_sentra/bin/python scripts/project_resumer_gpt.py[27m[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C/home/debian/venv_sentra/bin/python scripts/project_resumer_gpt.py
+[?2004lUsage: python project_resumer_gpt.py <nom_du_projet>
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ [7m/home/debian/venv_sentra/bin/python scripts/project_resumer_gpt.py SENTRA_CORE_MEM[27m[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C/home/debian/venv_sentra/bin/python scripts/project_resumer_gpt.py SENTRA_CORE_MEM
+[?2004l📄 Lecture du fichier résumé : projects/sentra_core_mem/resume/resume_20250713_134941.md
+🔢 Contenu compressé (longueur = 732 chars)
+✅ Résumé GPT généré : projects/sentra_core_mem/resume/resume_gpt_20250713_135053.md
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ [7mgrep -R "project_resumer_gpt.py" -n .[27mgrep -R "project_resumer_gpt.py" -n .
+[?2004lgrep: ./.git/index: binary file matches
+./launcher/READ ME.txt:19:    3) Génère le résumé GPT final (project_resumer_gpt.py)
+./launcher/sentra_cycle.bat:7:python project_resumer_gpt.py %PROJET%
+./scripts/discord_fetcher.py:74:    cmd3 = f"python scripts/project_resumer_gpt.py {projet}"
+./scripts/project_resumer_gpt.py:108:        print("Usage: python project_resumer_gpt.py <nom_du_projet>")
+./scripts/api_sentra.py:152:    project_resumer_gpt_script = base_path / "scripts" / "project_resumer_gpt.py"
+./scripts/api_sentra.py:192:    # 5) Exécuter project_resumer_gpt.py <project> en capturant stdout/stderr
+./scripts/api_sentra.py:202:                f"Erreur project_resumer_gpt.py (code {process.returncode}):\n"
+./scripts/api_sentra.py:210:            detail=f"Exception lors de l’appel à project_resumer_gpt.py : {repr(e)}"
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ [7mdocker ps[27mdocker ps
+[?2004lCONTAINER ID   IMAGE                     COMMAND                  CREATED       STATUS       PORTS                                       NAMES
+a05fe272628a   sentra_core_mem_discord   "python scripts/disc…"   3 hours ago   Up 3 hours                                               sentra_core_mem_discord_1
+e0cead0d3ff2   sentra_core_mem_api       "uvicorn scripts.api…"   3 hours ago   Up 3 hours   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp   sentra_core_mem_api_1
+309f75460999   n8nio/n8n                 "tini -- /docker-ent…"   3 hours ago   Up 3 hours   0.0.0.0:5678->5678/tcp, :::5678->5678/tcp   sentra_core_mem_n8n_1
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ [7mdocker compose build sentra_core_mem_api[27m
+[7mdocker compose up -d[27m
+[A[A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cdocker compose build sentra_core_mem_api
+docker compose up -d
+[A
+[?2004ldocker: 'compose' is not a docker command.
+See 'docker --help'
+unknown shorthand flag: 'd' in -d
+See 'docker --help'.
+
+Usage:  docker [OPTIONS] COMMAND
+
+A self-sufficient runtime for containers
+
+Options:
+      --config string      Location of client config files (default "/home/debian/.docker")
+  -c, --context string     Name of the context to use to connect to the daemon (overrides DOCKER_HOST env var and
+                           default context set with "docker context use")
+  -D, --debug              Enable debug mode
+  -H, --host list          Daemon socket(s) to connect to
+  -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default "/home/debian/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/home/debian/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/home/debian/.docker/key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information and quit
+
+Management Commands:
+  builder     Manage builds
+  completion  Generate the autocompletion script for the specified shell
+  config      Manage Docker configs
+  container   Manage containers
+  context     Manage contexts
+  image       Manage images
+  manifest    Manage Docker image manifests and manifest lists
+  network     Manage networks
+  node        Manage Swarm nodes
+  plugin      Manage plugins
+  secret      Manage Docker secrets
+  service     Manage services
+  stack       Manage Docker stacks
+  swarm       Manage Swarm
+  system      Manage Docker
+  trust       Manage trust on Docker images
+  volume      Manage volumes
+
+Commands:
+  attach      Attach local standard input, output, and error streams to a running container
+  build       Build an image from a Dockerfile
+  commit      Create a new image from a container's changes
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create a new container
+  diff        Inspect changes to files or directories on a container's filesystem
+  events      Get real time events from the server
+  exec        Run a command in a running container
+  export      Export a container's filesystem as a tar archive
+  history     Show the history of an image
+  images      List images
+  import      Import the contents from a tarball to create a filesystem image
+  info        Display system-wide information
+  inspect     Return low-level information on Docker objects
+  kill        Kill one or more running containers
+  load        Load an image from a tar archive or STDIN
+  login       Log in to a Docker registry
+  logout      Log out from a Docker registry
+  logs        Fetch the logs of a container
+  pause       Pause all processes within one or more containers
+  port        List port mappings or a specific mapping for the container
+  ps          List containers
+  pull        Pull an image or a repository from a registry
+  push        Push an image or a repository to a registry
+  rename      Rename a container
+  restart     Restart one or more containers
+  rm          Remove one or more containers
+  rmi         Remove one or more images
+  run         Run a command in a new container
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  search      Search the Docker Hub for images
+  start       Start one or more stopped containers
+  stats       Display a live stream of container(s) resource usage statistics
+  stop        Stop one or more running containers
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+  top         Display the running processes of a container
+  unpause     Unpause all processes within one or more containers
+  update      Update configuration of one or more containers
+  version     Show the Docker version information
+  wait        Block until one or more containers stop, then print their exit codes
+
+Run 'docker COMMAND --help' for more information on a command.
+
+To get more help with docker, check out our guides at https://docs.docker.com/go/guides/
+
+[?2004h]0;debian@vps-f35a30df: ~/SENTRA_CORE_MEM[01;32mdebian@vps-f35a30df[00m:[01;34m~/SENTRA_CORE_MEM[00m$ exit
+[?2004lexit
+
+Script done on 2025-07-13 13:56:58+00:00 [COMMAND_EXIT_CODE="125"]

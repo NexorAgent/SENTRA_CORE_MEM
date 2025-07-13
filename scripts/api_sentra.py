@@ -387,7 +387,7 @@ async def write_file(req: WriteFileRequest):
     if not projet or not filename:
         raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
 
- codex/modifier-vérification-de-chemin-dans-/write_file
+# codex/modifier-vérification-de-chemin-dans-/write_file 
     if ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
 
@@ -397,7 +397,7 @@ async def write_file(req: WriteFileRequest):
     base_path        = BASE_DIR
     project_slug     = projet.lower().replace(" ", "_")
     dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
- main
+ 
 
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -507,7 +507,7 @@ async def archive_file(req: ArchiveFileRequest):
 # ------------------------------------
 @app.get("/list_files", response_model=ListFilesResponse)
 async def list_files(dir: str, pattern: str = "*"):
- codex/créer-modèles-de-réponse-dédiés-pour-/list_files-et-/search
+ 
     p = Path(dir)
     try:
         files = [str(f) for f in p.glob(pattern)]
@@ -524,7 +524,7 @@ async def list_files(dir: str, pattern: str = "*"):
     p = BASE_DIR / dir
     files = [str(f) for f in p.glob(pattern)]
     return {"files": files}
- main
+ 
 
 # ------------------------------------
 #  GET /search

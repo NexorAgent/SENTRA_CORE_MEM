@@ -98,5 +98,75 @@
     "type": "note",
     "text": "note test",
     "timestamp": "2025-07-08T17:38:52"
+  },
+  {
+    "type": "note",
+    "text": "Note de test pour vérifier la communication entre l'interface et l'API SENTRA_CORE.",
+    "timestamp": "2025-07-13T06:55:14"
+  },
+  {
+    "type": "note",
+    "text": "Test note GPT via curl",
+    "timestamp": "2025-07-13T07:08:08"
+  },
+  {
+    "type": "note",
+    "text": "Note de test pour vérifier la communication entre l'interface et l'API SENTRA_CORE.",
+    "timestamp": "2025-07-13T07:09:28"
+  },
+  {
+    "type": "note",
+    "text": "Test note GPT via curl",
+    "timestamp": "2025-07-13T07:18:38"
+  },
+  {
+    "type": "note",
+    "text": "Note de test pour vérifier la communication entre l'interface et l'API SENTRA_CORE.",
+    "timestamp": "2025-07-13T07:19:25"
+  },
+  {
+    "type": "note",
+    "text": "Note test automatisée via endpoint /write_note.",
+    "timestamp": "2025-07-13T07:22:20"
+  },
+  {
+    "type": "note",
+    "text": "Test note GPT via curl",
+    "timestamp": "2025-07-13T07:26:22"
+  },
+  {
+    "type": "note",
+    "text": "Test note GPT via curl",
+    "timestamp": "2025-07-13T07:32:39"
+  },
+  {
+    "type": "note",
+    "text": "Troisième tentative d’écriture de note malgré les erreurs réseau précédentes.",
+    "timestamp": "2025-07-13T12:43:28"
+  },
+  {
+    "type": "note",
+    "text": "Test direct de note sans contenu complexe.",
+    "timestamp": "2025-07-13T12:49:25"
+  },
+  {
+    "type": "note",
+    "text": "Test d’écriture d’une note automatique dans le projet SENTRA_CORE_MEM.",
+    "timestamp": "2025-07-13T13:05:54"
+  },
+  {
+    "type": "note",
+    "text": "✅ Test fonction /write_note passé avec succès dans GPT.",
+    "timestamp": "2025-07-13T13:42:13"
+  },
+  {
+    "type": "note",
+    "text": "📦 Fichier `discord_fetcher.py` listé dans `scripts/`, prêt pour analyse. En attente d’ouverture du contenu pour inspection des triggers Discord → Notion.",
+    "timestamp": "2025-07-13T14:22:49"
+  },
+  {
+    "type": "note",
+    "text": "✅ `.gitignore` mis à jour pour exclure tous les fichiers sensibles (.env, logs, caches, etc.).\n🔒 Sécurité des données assurée avant le push vers GitHub.",
+    "timestamp": "2025-07-13T15:46:58"
   }
 ]
