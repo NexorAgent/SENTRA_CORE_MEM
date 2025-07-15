@@ -12,6 +12,10 @@ services:
       - .env
     ports:
       - "8000:8000"
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   discord:
     build:
@@ -21,6 +25,10 @@ services:
       - .env
     depends_on:
       - api
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   orchestrator:
     build:
@@ -33,6 +41,10 @@ services:
       - ./projects:/app/projects
     depends_on:
       - api
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   n8n:
     image: n8nio/n8n
@@ -40,6 +52,10 @@ services:
     ports:
       - "5678:5678"
     environment:
+<<<<<<< Updated upstream
+=======
+      - N8N_SECURE_COOKIE=false
+>>>>>>> Stashed changes
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=sentra
       - N8N_BASIC_AUTH_PASSWORD=memcore
@@ -48,3 +64,7 @@ services:
       - GENERIC_TIMEZONE=Europe/Paris
     volumes:
       - ./n8n/n8n_data:/home/node/.n8n
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
