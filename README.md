@@ -18,7 +18,9 @@
 
 - **VPS OVH** : orchestration, mémoire centrale (ChromaDB), API REST (FastAPI), agents et automatisations (n8n), backups, logs, traçabilité
 - **PC local (DeepSeek R1/7B quantisé)** : reasoning, résumé, brainstorming, agents spécialisés (via Ollama/llama.cpp, API REST locale ou tunnel sécurisé)
-- **Interopérabilité** : Tunnel Cloudflare/Reverse proxy, fallback automatique OpenAI → DeepSeek local, workflow modulaire
+- **Interopérabilité** : tunnel Cloudflare sécurisé et reverse proxy HTTPS
+- **Docker Compose** : orchestration des services API, Discord, n8n et volumes
+- **Fallback IA** : bascule automatique OpenAI → DeepSeek local pour le reasoning
 
 ---
 
@@ -159,6 +161,11 @@ Orchestration mémoire : vector search (ChromaDB), résumé markdown, fusion int
 Brainstorming/code/veille par DeepSeek R1 via API Ollama (voir planning)
 
 Automatisation n8n : backup, synchronisation, extraction, dashboard, surveillance
+### Exemple n8n
+1. **HTTP Request** → `POST /write_note` avec un contenu généré
+2. **GitHub** → `pull` puis `push` automatique
+3. **Discord** → alerte en cas d’échec
+Le tout exposé derrière Cloudflare pour sécuriser l'accès.
 ```
 
 ### Orchestrateur & agents

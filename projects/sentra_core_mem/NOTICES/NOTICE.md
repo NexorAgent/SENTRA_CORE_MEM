@@ -1,7 +1,7 @@
 # NOTICE.md – Manuel d’utilisation **SENTRA\_CORE\_MEM**
 
-> **Version : v0.4 – 11 juin 2025**
-> *Révision majeure : enrichissement complet du manuel (installation détaillée, cycles d’usage, FAQ).*
+> **Version : v0.5 – 15 juillet 2025**
+> *Mise à jour : API stabilisée, Docker/Cloudflare intégrés, exemples n8n.*
 > **Mainteneur :** Laurent / SENTRA CORE
 
 ---
@@ -14,6 +14,8 @@
 * **Orchestre** des *agents spécialisés* (Markdown, Notion, Discord, etc.) via `orchestrator.py`.
 * **Automatise** ses cycles (encode → load → sync → report) en local ou via GitHub Actions.
 * **Reste évolutive et 100 % open‑source** : modules plug‑and‑play, coûts API réduits.
+* **Déploiement Docker Compose** sur un VPS OVH pour l’ensemble des services.
+* **Protection Cloudflare Tunnel** : HTTPS public et atténuation DDoS.
 
 <p align="center"><img src="https://placehold.co/800x220?text=SENTRA_CORE_MEM+Architecture" alt="diagramme" /></p>
 
