@@ -7,7 +7,7 @@ from pathlib import Path
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Query  # <--- AJOUTE Query ici
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -15,6 +15,25 @@ from .git_utils import git_commit_push
 from .memory_lookup import search_memory
 from .memory_manager import query_memory
 
+def liste_suggestions(path):
+    """
+    Retourne la liste triée des fichiers/dossiers dans le dossier parent existant le plus proche.
+    """
+    current = Path(path)
+    while not current.exists() and current != current.parent:
+        current = current.parent
+    try:
+        return sorted([f.name for f in current.iterdir()])
+    except Exception:
+        return []
+
+
+def suggest_near(target, candidates):
+    """
+    Propose les fichiers proches du nom demandé (par inclusion du tronc du nom).
+    """
+    base = target.split('.')[0]
+    return [f for f in candidates if base in f]
 
 # ------------------------------------
 #  Création de l’application FastAPI
@@ -117,10 +136,12 @@ class WriteResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
+    suggestions: list[str] = []
 
 class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
+    suggestions: list[str] = []
 
 class ListFilesResponse(BaseModel):
     status: str
@@ -320,39 +341,192 @@ async def write_note(req: WriteNoteRequest):
 
 
 # ------------------------------------
-#  GET /get_notes  (affichage de sentra_memory.json)
-# ------------------------------------
-@app.get("/get_notes")
-async def get_notes():
-    """
-    Renvoie en texte brut le contenu complet de memory/sentra_memory.json.
-    """
-    memory_file  = BASE_DIR / "memory" / "sentra_memory.json"
-
-    if not memory_file.exists():
-        return Response(content="", media_type="text/plain")
-
-    try:
-        content = memory_file.read_text(encoding="utf-8")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Impossible de lire le fichier : {repr(e)}")
-
-    return Response(content=content, media_type="text/plain")
-
-# ------------------------------------
-#  GET /read_note  (recherche simple dans la mémoire)
+#  GET /read_note  (lecture intelligente fichier + mémoire)
 # ------------------------------------
 @app.get("/read_note", response_model=ReadNoteResponse)
-async def read_note(term: str = "", limit: int = 5):
+async def read_note(term: str = "", limit: int = 5, filepath: str = None):
+    """
+    Lecture intelligente universelle :
+    - Si 'filepath' fourni, lire tout fichier texte (md/txt) → status success si contenu, error sinon.
+    - Sinon, recherche classique mémoire IA.
+    - Toujours status explicite, suggestions en cas d’erreur.
+    """
+    if filepath:
+        file_path = BASE_DIR / filepath
+        parent = file_path.parent
+        candidates = liste_suggestions(parent)
+        if file_path.exists() and file_path.is_file():
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                if content.strip():
+                    return ReadNoteResponse(
+                        status="success",
+                        results=[content],
+                        suggestions=[]
+                    )
+                else:
+                    return ReadNoteResponse(
+                        status="error",
+                        results=[f"Fichier '{filepath}' vide."],
+                        suggestions=[]
+                    )
+            except Exception as e:
+                return ReadNoteResponse(
+                    status="error",
+                    results=[f"Erreur de lecture de {filepath}: {e}"],
+                    suggestions=candidates
+                )
+        else:
+            near = suggest_near(file_path.name, candidates)
+            return ReadNoteResponse(
+                status="error",
+                results=[f"Fichier '{filepath}' introuvable."],
+                suggestions=near if near else candidates
+            )
+    # Fallback : mémoire IA classique
     try:
         if term:
             results = search_memory(term, max_results=limit)
         else:
             recent = query_memory(limit)
             results = [f"- [{e.get('timestamp','')}] {e.get('text','')}" for e in recent]
-        return ReadNoteResponse(status="success", results=results)
+        if not results:
+            return ReadNoteResponse(
+                status="error",
+                results=["Aucune note trouvée dans la mémoire IA."],
+                suggestions=[]
+            )
+        return ReadNoteResponse(status="success", results=results, suggestions=[])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lecture mémoire : {repr(e)}")
+        return ReadNoteResponse(
+            status="error",
+            results=[f"Erreur lecture mémoire : {e}"],
+            suggestions=[]
+        )
+
+# ------------------------------------
+#  POST /movefile
+# ------------------------------------
+@app.post("/move_file", response_model=WriteResponse)
+async def move_file(req: MoveFileRequest):
+    if ".." in req.src or ".." in req.dst:
+        return WriteResponse(
+            status="error",
+            detail="Invalid path",
+            path=None,
+            suggestions=[]
+        )
+    src_path = BASE_DIR / req.src
+    dst_path = BASE_DIR / req.dst
+
+    try:
+        dst_path.parent.mkdir(parents=True, exist_ok=True)
+        src_path.rename(dst_path)
+    except FileNotFoundError:
+        candidates = liste_suggestions(src_path.parent)
+        near = suggest_near(src_path.name, candidates)
+        return WriteResponse(
+            status="error",
+            detail=f"Fichier source introuvable : {src_path}",
+            path=None,
+            suggestions=near if near else candidates
+        )
+    except PermissionError as e:
+        return WriteResponse(
+            status="error",
+            detail=f"Permission refusée : {e}",
+            path=None,
+            suggestions=[]
+        )
+    except Exception as e:
+        return WriteResponse(
+            status="error",
+            detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}",
+            path=None,
+            suggestions=[]
+        )
+
+    try:
+        git_commit_push([src_path, dst_path], f"GPT move: {src_path} -> {dst_path}")
+    except RuntimeError as e:
+        return WriteResponse(
+            status="error",
+            detail=str(e),
+            path=None,
+            suggestions=[]
+        )
+
+    return WriteResponse(
+        status="success",
+        detail=f"Fichier déplacé : {dst_path}",
+        path=str(dst_path),
+        suggestions=[]
+    )
+
+
+# ------------------------------------
+#  POST /write_file
+# ------------------------------------
+
+@app.post("/write_file", response_model=WriteResponse)
+async def write_file(req: WriteFileRequest):
+    projet   = req.project.strip()
+    filename = req.filename.strip()
+    contenu  = req.content
+
+    if not projet or not filename:
+        return WriteResponse(
+            status="error",
+            detail="Les champs 'project' et 'filename' sont requis.",
+            path=None,
+            suggestions=[]
+        )
+
+    if ".." in filename:
+        return WriteResponse(
+            status="error",
+            detail="Invalid filename",
+            path=None,
+            suggestions=[]
+        )
+
+    project_slug = projet.lower().replace(" ", "_")
+    file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
+
+    # Création automatique du dossier cible
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        suggestions = liste_suggestions(file_path.parent.parent)
+        return WriteResponse(
+            status="error",
+            detail=f"Impossible de créer le dossier {file_path.parent} : {e}",
+            path=None,
+            suggestions=suggestions
+        )
+
+    try:
+        file_path.write_text(contenu, encoding="utf-8")
+    except Exception as e:
+        suggestions = liste_suggestions(file_path.parent)
+        return WriteResponse(
+            status="error",
+            detail=f"Erreur écriture du fichier {file_path} : {e}",
+            path=None,
+            suggestions=suggestions
+        )
+
+    try:
+        git_commit_push([file_path], f"GPT file update ({project_slug}): {filename}")
+    except RuntimeError as e:
+        return WriteResponse(status="error", detail=str(e), path=None, suggestions=[])
+
+    return WriteResponse(
+        status="success",
+        detail=f"Fichier créé/modifié : {file_path}",
+        path=str(file_path),
+        suggestions=[]
+    )
 
 # ------------------------------------
 #  GET /get_memorial  (affichage de Z_MEMORIAL.md)
@@ -375,100 +549,6 @@ async def get_memorial(project: str = "sentra_core"):
 
     return Response(content=content, media_type="text/plain")
 
-# ------------------------------------
-#  POST /write_file
-# ------------------------------------
-@app.post("/write_file", response_model=WriteResponse)
-async def write_file(req: WriteFileRequest):
-    projet   = req.project.strip()
-    filename = req.filename.strip()
-    contenu  = req.content
-
-    if not projet or not filename:
-        raise HTTPException(status_code=400, detail="Les champs 'project' et 'filename' sont requis.")
-
-# codex/modifier-vérification-de-chemin-dans-/write_file 
-    if ".." in filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-
-    project_slug = projet.lower().replace(" ", "_")
-    file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
-
-    base_path        = BASE_DIR
-    project_slug     = projet.lower().replace(" ", "_")
-    dossier_fichiers = base_path / "projects" / project_slug / "fichiers"
- 
-
-    try:
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {file_path.parent} : {e}")
-    try:
-        file_path.write_text(contenu, encoding="utf-8")
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur écriture du fichier {file_path} : {e}")
-
-    try:
-        git_commit_push([file_path], f"GPT file update ({project_slug}): {filename}")
-    except RuntimeError as e:
-        return WriteResponse(status="error", detail=str(e))
-
-    return WriteResponse(
-        status="success",
-        detail=f"Fichier créé/modifié : {file_path}",
-        path=str(file_path)
-    )
-
-
-@app.post("/delete_file", response_model=WriteResponse)
-async def delete_file(req: DeleteFileRequest):
-    if ".." in req.path:
-        raise HTTPException(status_code=400, detail="Invalid path")
-    file_path = BASE_DIR / req.path
-    try:
-        file_path.unlink()
-    except FileNotFoundError:
-        return WriteResponse(status="error", detail=f"Fichier introuvable : {file_path}")
-    except PermissionError as e:
-        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur suppression du fichier {file_path} : {e}")
-
-    try:
-        git_commit_push([file_path], f"GPT delete: {file_path.name}")
-    except RuntimeError as e:
-        return WriteResponse(status="error", detail=str(e))
-
-    return WriteResponse(status="success", detail=f"Fichier supprimé : {file_path}", path=str(file_path))
-
-# ------------------------------------
-#  POST /move_file
-# ------------------------------------
-
-@app.post("/move_file", response_model=WriteResponse)
-async def move_file(req: MoveFileRequest):
-    if ".." in req.src or ".." in req.dst:
-        raise HTTPException(status_code=400, detail="Invalid path")
-    src_path = BASE_DIR / req.src
-    dst_path = BASE_DIR / req.dst
-
-    try:
-        dst_path.parent.mkdir(parents=True, exist_ok=True)
-        src_path.rename(dst_path)
-    except FileNotFoundError:
-        return WriteResponse(status="error", detail=f"Fichier source introuvable : {src_path}")
-    except PermissionError as e:
-        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
-    except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur déplacement {src_path} -> {dst_path} : {e}")
-
-    try:
-        git_commit_push([src_path, dst_path], f"GPT move: {src_path} -> {dst_path}")
-    except RuntimeError as e:
-        return WriteResponse(status="error", detail=str(e))
-
-    return WriteResponse(status="success", detail=f"Fichier déplacé : {dst_path}", path=str(dst_path))
-
 
 # ------------------------------------
 #  POST /archive_file
@@ -477,30 +557,70 @@ async def move_file(req: MoveFileRequest):
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
     if ".." in req.path or ".." in req.archive_dir:
-        raise HTTPException(status_code=400, detail="Invalid path")
+        return WriteResponse(
+            status="error",
+            detail="Invalid path",
+            path=None,
+            suggestions=[]
+        )
     src_path = BASE_DIR / req.path
     archive_dir = BASE_DIR / req.archive_dir
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        return WriteResponse(status="error", detail=f"Impossible de créer le dossier {archive_dir} : {e}")
+        suggestions = liste_suggestions(archive_dir.parent)
+        return WriteResponse(
+            status="error",
+            detail=f"Impossible de créer le dossier {archive_dir} : {e}",
+            path=None,
+            suggestions=suggestions
+        )
     dest_path = archive_dir / src_path.name
 
     try:
+        src_candidates = liste_suggestions(src_path.parent)
+        src_near = suggest_near(src_path.name, src_candidates)
         src_path.rename(dest_path)
     except FileNotFoundError:
-        return WriteResponse(status="error", detail=f"Fichier introuvable : {src_path}")
+        # Suggestions fuzzy en priorité
+        return WriteResponse(
+            status="error",
+            detail=f"Fichier introuvable : {src_path}",
+            path=None,
+            suggestions=src_near if src_near else src_candidates
+        )
     except PermissionError as e:
-        return WriteResponse(status="error", detail=f"Permission refusée : {e}")
+        return WriteResponse(
+            status="error",
+            detail=f"Permission refusée : {e}",
+            path=None,
+            suggestions=[]
+        )
     except Exception as e:
-        return WriteResponse(status="error", detail=f"Erreur archivage {src_path} : {e}")
+        return WriteResponse(
+            status="error",
+            detail=f"Erreur archivage {src_path} : {e}",
+            path=None,
+            suggestions=[]
+        )
 
     try:
         git_commit_push([src_path, dest_path], f"GPT archive: {src_path.name}")
     except RuntimeError as e:
-        return WriteResponse(status="error", detail=str(e))
+        return WriteResponse(
+            status="error",
+            detail=str(e),
+            path=None,
+            suggestions=[]
+        )
 
-    return WriteResponse(status="success", detail=f"Fichier archivé : {dest_path}", path=str(dest_path))
+    return WriteResponse(
+        status="success",
+        detail=f"Fichier archivé : {dest_path}",
+        path=str(dest_path),
+        suggestions=[]
+    )
+
 
 # ------------------------------------
 #  GET /list_files
@@ -546,6 +666,111 @@ async def search_files(term: str, dir: str):
         status="success",
         detail=f"{len(results)} match(es)",
         matches=results,
+    )
+    
+  # ------------------------------------
+#  GET /explore
+# ------------------------------------
+@app.get("/explore", tags=["monitoring"])
+async def explore(
+    project: str = Query(..., description="Nom du projet"),
+    path: str = Query("/", description="Chemin relatif à explorer (défaut: racine du projet)")
+):
+    """
+    Explore l'arborescence d'un projet et retourne la structure récursive à partir de 'path'.
+    """
+    base_dir = BASE_DIR / "projects" / project.strip().lower()
+    target_path = (base_dir / path.lstrip("/")).resolve()
+
+    # Sécurité : le chemin doit rester dans le dossier projet
+    if not str(target_path).startswith(str(base_dir)):
+        raise HTTPException(status_code=400, detail="Chemin hors du projet interdit.")
+
+    if not target_path.exists():
+        raise HTTPException(status_code=404, detail="Dossier/fichier introuvable.")
+
+    def scan_dir(p):
+        items = []
+        for child in sorted(p.iterdir()):
+            if child.is_dir():
+                items.append({
+                    "name": child.name,
+                    "type": "dir",
+                    "children": scan_dir(child)
+                })
+            else:
+                items.append({
+                    "name": child.name,
+                    "type": "file"
+                })
+        return items
+
+    children = []
+    if target_path.is_dir():
+        children = scan_dir(target_path)
+    else:
+        children = [{"name": target_path.name, "type": "file"}]
+
+    return {
+        "project": project,
+        "path": str(path),
+        "children": children
+    }
+
+# ------------------------------------
+#  POST /delete_file (suppression tolérante)
+# ------------------------------------
+@app.post("/delete_file", response_model=WriteResponse)
+async def delete_file(req: DeleteFileRequest):
+    if ".." in req.path:
+        return WriteResponse(
+            status="error",
+            detail="Invalid path",
+            path=None,
+            suggestions=[]
+        )
+    file_path = BASE_DIR / req.path
+    try:
+        file_path.unlink()
+    except FileNotFoundError:
+        candidates = liste_suggestions(file_path.parent)
+        near = suggest_near(file_path.name, candidates)
+        return WriteResponse(
+            status="error",
+            detail=f"Fichier introuvable : {file_path}",
+            path=None,
+            suggestions=near if near else candidates
+        )
+    except PermissionError as e:
+        return WriteResponse(
+            status="error",
+            detail=f"Permission refusée : {e}",
+            path=None,
+            suggestions=[]
+        )
+    except Exception as e:
+        return WriteResponse(
+            status="error",
+            detail=f"Erreur suppression du fichier {file_path} : {e}",
+            path=None,
+            suggestions=[]
+        )
+
+    try:
+        git_commit_push([file_path], f"GPT delete: {file_path.name}")
+    except RuntimeError as e:
+        return WriteResponse(
+            status="error",
+            detail=str(e),
+            path=None,
+            suggestions=[]
+        )
+
+    return WriteResponse(
+        status="success",
+        detail=f"Fichier supprimé : {file_path}",
+        path=str(file_path),
+        suggestions=[]
     )
 
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===

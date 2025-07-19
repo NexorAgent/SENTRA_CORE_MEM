@@ -12,6 +12,10 @@ services:
       - .env
     ports:
       - "8000:8000"
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   discord:
     build:
@@ -21,6 +25,10 @@ services:
       - .env
     depends_on:
       - api
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   orchestrator:
     build:
@@ -33,19 +41,49 @@ services:
       - ./projects:/app/projects
     depends_on:
       - api
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
 
   n8n:
-    image: n8nio/n8n
+    build:
+      context: .
+      dockerfile: Dockerfile.n8nzip
+
     restart: always
     ports:
       - "5678:5678"
     environment:
-        - N8N_SECURE_COOKIE=false
-        - N8N_BASIC_AUTH_ACTIVE=true
-        - N8N_BASIC_AUTH_USER=sentra
-        - N8N_BASIC_AUTH_PASSWORD=memcore
-        - N8N_HOST=localhost
-        - N8N_PORT=5678
-        - GENERIC_TIMEZONE=Europe/Paris
+      - N8N_SECURE_COOKIE=false
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=sentra
+      - N8N_BASIC_AUTH_PASSWORD=memcore
+      - N8N_HOST=n8n.sentracoremem.ovh
+      - WEBHOOK_URL=https://n8n.sentracoremem.ovh/
+      - N8N_PORT=5678
+      - GENERIC_TIMEZONE=Europe/Paris
     volumes:
       - ./n8n/n8n_data:/home/node/.n8n
+      - /home/debian/SENTRA_CORE_MEM:/home/debian/SENTRA_CORE_MEM
+      - /home/debian/projects/sentra_core_sandbox:/home/debian/projects/sentra_core_sandbox
+    dns:
+      - 213.186.33.99
+      - 8.8.8.8
+      - 1.1.1.1
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: sentra_filebrowser
+    volumes:
+      - ./:/srv
+      - ./filebrowser_config:/config
+    entrypoint: filebrowser
+    command: >
+      --database /config/filebrowser.db
+      --config /config/filebrowser.json
+      --address 0.0.0.0
+      --port 80
+    ports:
+      - "8081:80"
+    restart: unless-stopped
