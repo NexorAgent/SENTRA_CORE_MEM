@@ -1,69 +1,96 @@
 # SENTRA_CORE_MEM — Mémoire IA autonome 🧠
 
-**SENTRA_CORE_MEM** est un noyau IA capable de compresser ses souvenirs, d'orchestrer plusieurs agents et de fonctionner hors SaaS. Le projet reste entièrement open source et modulable.
+**SENTRA_CORE_MEM** est un noyau IA capable de compresser ses souvenirs, d'orchestrer plusieurs agents, de fonctionner hors SaaS et maintenant d'exploiter un cortex IA local (DeepSeek R1) connecté en API. Le projet reste entièrement open source et modulable.
+
+---
 
 ## Objectif
 - Mémoriser chaque interaction utile
 - Résumer à trois niveaux (humain, hybride, glyphique)
 - Mobiliser des agents dédiés (Markdown, Notion, Discord…)
-- Optimiser l'usage des tokens
+- Optimiser l'usage des tokens et la mémoire centrale (vectorielle)
+- Bénéficier d’une IA reasoning en local (DeepSeek R1/7B via Ollama)
+- Orchestrer l’automatisation via n8n, fallback cloud/local
+
+---
+
+## Architecture actuelle (MAJ 2025-07-15)
+
+- **VPS OVH** : orchestration, mémoire centrale (ChromaDB), API REST (FastAPI), agents et automatisations (n8n), backups, logs, traçabilité
+- **PC local (DeepSeek R1/7B quantisé)** : reasoning, résumé, brainstorming, agents spécialisés (via Ollama/llama.cpp, API REST locale ou tunnel sécurisé)
+- **Interopérabilité** : Tunnel Cloudflare/Reverse proxy, fallback automatique OpenAI → DeepSeek local, workflow modulaire
+
+---
 
 ## Structure du projet
 ```text
 sentra_core_mem/
 ├── memory/            # Mémoire compressée (.json)
-├── scripts/           # Encodeurs, agents et utilitaires
-├── sentra/            # Noyau, orchestrateur et recherche
+├── scripts/           # Encodeurs, agents, automatisations
+├── sentra/            # Noyau, orchestrateur, vector search
 ├── reports/           # Rapports générés
 ├── logs/              # Journaux d'exécution
-└── docs/              # Documentation
+├── docs/              # Documentation, changelog, plannings
+├── docker-compose.yml # Orchestration API, n8n, Discord, etc.
+└── projects/          # Multimémoire, journal, sandbox/prod
 ```
 
 ## Installation et configuration
-1. Cloner le dépôt :
-```bash
+Cloner le dépôt :
+
+bash
+Copier
+Modifier
 git clone https://github.com/sentra-core/sentra_core_mem.git
 cd sentra_core_mem
-```
-2. Créer un environnement virtuel puis installer les dépendances :
-```bash
+Créer un environnement virtuel puis installer les dépendances :
+
+bash
+Copier
+Modifier
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
-3. Copier `.env.example` en `.env` et renseigner les clés :
-```ini
+Copier .env.example en .env et renseigner les clés :
+
+ini
+Copier
+Modifier
 OPENAI_API_KEY=sk-...
 NOTION_TOKEN=secret_...
 NOTION_DB_ID=abcd1234...
 DISCORD_BOT_TOKEN=MTA...
-```
-4. Vérifier `configs/config.json` puis lancer le test rapide :
-```bash
+Vérifier configs/config.json puis lancer le test rapide :
+
+bash
+Copier
+Modifier
 python scripts/sentra_check.py
-```
-*Aucun fichier `.env` n'est fourni dans le dépôt ; chaque environnement garde ses clés privées.*
+Aucun fichier .env n'est fourni dans le dépôt ; chaque environnement garde ses clés privées.
 
-## Utilisation de l'API
-
-### Démarrer l'API FastAPI
+Utilisation de l'API
+Démarrer l'API FastAPI
 Pour tester localement l'API (plugin ChatGPT), lancez :
-```bash
-uvicorn scripts.api_sentra:app --reload --port 5000
-```
 
-### Endpoints principaux
-- `POST /write_note` – ajouter une note
-- `GET /get_notes` – lire toute la mémoire JSON
-- `GET /read_note` – rechercher dans la mémoire
-- `GET /get_memorial` – journal Markdown d'un projet
-- `POST /write_file` – créer ou modifier un fichier
-- `GET /list_files` – lister un dossier
-- `POST /delete_file` – supprimer un fichier
-- `POST /move_file` – déplacer un fichier
-- `POST /archive_file` – archiver un fichier
-- `POST /reprise` – résumer un canal Discord
-- `GET /check_env` – tester la clé API
-- `GET /legal` – consulter la notice légale
+bash
+Copier
+Modifier
+uvicorn scripts.api_sentra:app --reload --port 5000
+
+Endpoints principaux
+
+POST /write_note – ajouter une note
+GET /get_notes – lire toute la mémoire JSON
+GET /read_note – rechercher dans la mémoire
+GET /get_memorial – journal Markdown d'un projet
+POST /write_file – créer ou modifier un fichier
+GET /list_files – lister un dossier
+POST /delete_file – supprimer un fichier
+POST /move_file – déplacer un fichier
+POST /archive_file – archiver un fichier
+POST /reprise – résumer un canal Discord
+GET /check_env – tester la clé API
+GET /legal – consulter la notice légale
+
 
 ### Exemples `curl`
 ```bash
@@ -126,6 +153,13 @@ Le script `sentra/orchestrator.py` centralise ces étapes et gère la distributi
 python scripts/zmem_encoder.py -i docs/mon_texte.txt -n DEMO/MEM
 python scripts/compose_prompt.py DEMO/MEM
 ```
+📖 Exemples d'utilisation avancée
+Orchestration mémoire : vector search (ChromaDB), résumé markdown, fusion intelligente de notes
+
+Brainstorming/code/veille par DeepSeek R1 via API Ollama (voir planning)
+
+Automatisation n8n : backup, synchronisation, extraction, dashboard, surveillance
+```
 
 ### Orchestrateur & agents
 ```bash
@@ -170,6 +204,166 @@ Un fichier `docker-compose.yml` permet de lancer l'API FastAPI, le bot Discord, 
 ```bash
 docker compose up -d
 ```
+
+🧭 PHASE 0 – Audit & Préparation (Semaine 0)
+🎯 Objectif :
+Préparer le terrain côté VPS pour accueillir toute l’architecture SENTRA_CORE_MEM (API, Orchestrateur, n8n, etc.) de façon sécurisée, stable et documentée.
+
+✅ 0.1 — Audit du VPS
+🔍 Vérifier les ressources disponibles
+Connecte-toi en SSH :
+
+bash
+Copier
+Modifier
+ssh debian@<IP_DU_VPS>
+Et lance les commandes suivantes :
+
+bash
+Copier
+Modifier
+# CPU
+lscpu
+
+# RAM
+free -h
+
+# Stockage
+df -h
+
+# Réseau + nom machine
+hostnamectl && ip a
+📌 Objectif : confirmer que ton VPS a au moins 2 vCPU, 4 Go RAM et 20 Go de libre pour les besoins de base.
+
+🔐 Vérification sécurité SSH
+bash
+Copier
+Modifier
+# Vérifie si fail2ban est installé
+sudo systemctl status fail2ban
+
+# Vérifie si UFW est actif
+sudo ufw status verbose
+🔧 Si nécessaire :
+
+bash
+Copier
+Modifier
+# Installer fail2ban
+sudo apt install fail2ban -y
+
+# Installer et activer UFW
+sudo apt install ufw -y
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow ssh
+sudo ufw enable
+🐳 0.2 — Installation Docker / Docker Compose / Git
+bash
+Copier
+Modifier
+# Mise à jour
+sudo apt update && sudo apt upgrade -y
+
+# Installation Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Ajout de l’utilisateur au groupe Docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Vérification Docker
+docker --version
+
+# Docker Compose plugin (Debian >= 11)
+sudo apt install docker-compose-plugin -y
+docker compose version
+
+# Installation Git
+sudo apt install git -y
+git --version
+📁 0.3 — Création du dossier projet "propre"
+bash
+Copier
+Modifier
+# Clonage du projet
+git clone https://github.com/NexorAgent/SENTRA_CORE_MEM.git
+cd SENTRA_CORE_MEM
+
+# Création du .env
+cp .env.example .env
+nano .env  # (adapter les clés API, ports, etc.)
+📄 0.4 — Rédaction documentation initiale
+Crée un fichier README_PHASE0.md avec :
+
+markdown
+Copier
+Modifier
+# 📄 SENTRA_CORE_MEM — Phase 0 : Audit & Préparation
+
+## 🔍 VPS
+- CPU : 2vCPU
+- RAM : 4 Go
+- Disque libre : 25 Go
+- Nom de machine : sentra-core
+- OS : Debian 11
+
+## 🔐 Sécurité
+- SSH activé, port : 22
+- Fail2ban actif
+- UFW actif, règles :
+  - allow ssh
+  - allow 80, 443 (pour Nginx / tunnel)
+- OVH Firewall externe : désactivé (si cloudflared)
+
+## 🐳 Docker & Git
+- Docker : ✅ installé
+- Docker Compose : ✅ OK (v2)
+- Git : ✅ installé
+
+## 📁 Dossier projet
+- Structure clonée depuis GitHub
+- .env généré avec clés API
+
+## ✅ Vérifications OK
+- SSH : ✅
+- Git : ✅
+- Docker : ✅
+- Ports API & n8n ouverts : ✅
+✅ 0.5 — Vérification finale
+bash
+Copier
+Modifier
+# Tester que tout fonctionne
+docker --version
+docker compose version
+git status
+📦 Fichiers à ajouter au Git (si projet privé)
+plaintext
+Copier
+Modifier
+📁 SENTRA_CORE_MEM/
+├── README_PHASE0.md
+├── .env.example
+├── .gitignore
+Tu peux aussi pousser les premières infos d’audit dans ton repo Git :
+
+bash
+Copier
+Modifier
+git add README_PHASE0.md
+git commit -m "Ajout audit phase 0"
+git push origin main
+⏱️ Durée estimée
+Étape	Durée max
+Audit SSH + CPU/RAM	10 min
+Installation Docker/Git	20 min
+Configuration UFW	10 min
+Clonage + .env	10 min
+Rédaction README audit	15 min
+
+⏳ Total : 1h max si tout est prêt.
 
 © 2025 — Projet open‑source modulable ✨
 

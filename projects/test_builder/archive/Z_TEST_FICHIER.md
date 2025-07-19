@@ -1,1 +1,0 @@
-✅ Test fonction /write_file passé avec succès dans GPT. Fichier créé automatiquement.

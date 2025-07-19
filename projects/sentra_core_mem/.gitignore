@@ -1,0 +1,29 @@
+# Ignorer bytecode Python
+__pycache__/
+*.pyc
+
+# Ignorer environnements virtuels
+.env
+
+# Ignorer dossier de rapports (si tu ne veux pas le versionner)
+reports/
+# Test-generated dictionary files
+memory/abbr_dict.json
+memory/alphanum_dict.json
+memory/custom_dict.json
+obfuscated_map.json
+main
+
+# Ignore logs and test artifacts
+logs/
+logs_raw/
+logs_compressed/
+n8n/n8n_data/*.log
+
+# Ignore memory cache files
+memories/
+memory_zia/
+memory_index.json
+
+cloudflared/
+!cloudflared/config.yml
