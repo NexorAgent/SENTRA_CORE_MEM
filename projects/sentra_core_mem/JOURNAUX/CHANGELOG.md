@@ -70,3 +70,15 @@
 - Unit tests pour ces fonctions et routes
 ### Changed
 - README/NOTICE mis à jour avec des exemples `curl` et Python
+
+## [v0.5] – 2025-07-15
+### Added
+- Tunnel Cloudflare pour un accès HTTPS sécurisé
+- Docker Compose complet (API, n8n, bot Discord)
+- Documentation détaillée (backup, sécurité, n8n)
+- Route `/explore` pour parcourir l’arborescence
+### Changed
+- API stabilisée avec messages d’erreur et suggestions
+- Gestion d’erreur automatique et cohérente sur tous les endpoints
+### Fixed
+- Correction de divers scripts de backup et logs

@@ -1,4 +1,3 @@
- codex/ajouter-des-tests-pour-les-nouvelles-routes
 import json
 from pathlib import Path
 import pytest
@@ -144,4 +143,3 @@ def test_root_api_wrapper():
     mod_root = importlib.import_module('api_sentra')
     mod_script = importlib.import_module('scripts.api_sentra')
     assert mod_root.app is mod_script.app
- main
