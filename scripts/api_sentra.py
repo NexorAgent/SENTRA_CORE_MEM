@@ -3,6 +3,7 @@ import subprocess
 import json
 import time
 from pathlib import Path
+from app.routes.correction import router as correction_router
 
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +44,7 @@ app = FastAPI(
     version="1.1.0",
     description="API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers)."
 )
+app.include_router(correction_router)
 
 # ------------------------------------
 #  Route statique pour servir ai-plugin.json

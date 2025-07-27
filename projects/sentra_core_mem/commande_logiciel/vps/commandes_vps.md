@@ -57,4 +57,12 @@ et affiner par dossier ls -l ~/SENTRA_CORE_MEM/projects/sentra_core_mem/A_LIRE_A
 rclone copy -v ~/SENTRA_CORE_MEM "drive vps backup:sentra_backup"
 ```
 
+### Acces a SENTRA_CORE_MEM
+```bash 
+cd ~/SENTRA_CORE_MEM
+```
 
+### arborescence
+```bash 
+cd ~/SENTRA_CORE_MEM && tree -L 2
+```

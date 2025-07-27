@@ -4,13 +4,20 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes:
+      - ./scripts:/app/scripts
       - ./memory:/app/memory
       - ./projects:/app/projects
       - ./logs:/app/logs
+      - ./.gemini:/root/.gemini
+      - /sandbox:/sandbox
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app
     ports:
+      - "8001:8000"
       - "8000:8000"
     dns:
       - 213.186.33.99
@@ -53,9 +60,11 @@ services:
 
     restart: always
     ports:
-      - "5678:5678"
+      - "5679:5678"
     environment:
       - N8N_SECURE_COOKIE=false
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=sentra
       - N8N_BASIC_AUTH_PASSWORD=memcore

@@ -1,0 +1,71 @@
+import sys
+import os
+
+import json
+import requests
+from ..core.prompt_pool_loader import load_prompt
+
+def correct_with_openrouter(file_path, model=None):
+    """
+    Utilise OpenRouter pour corriger un fichier Python.
+    Lit le prompt depuis YAML, appelle l'API, et remplace le code si valide.
+    """
+    if not os.path.exists(file_path):
+        return False, f"❌ Fichier introuvable : {file_path}"
+
+    try:
+        with open(file_path, "r") as f:
+            code = f.read().strip()
+
+        if not code:
+            return False, "❌ Fichier vide."
+
+        # Chargement du prompt YAML
+        prompt_data = load_prompt("corrector")
+        prompt_template = prompt_data["prompt"]
+        prompt = prompt_template.replace("{code}", code)
+
+        # Chargement API Key + modèle
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        model = model or os.getenv("OPENROUTER_MODEL", "deepseek-coder:free")
+
+        if not api_key:
+            return False, "❌ OPENROUTER_API_KEY non défini."
+
+        # Appel API
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": "Tu es un agent de correction de code IA structuré."},
+                    {"role": "user", "content": prompt}
+                ]
+            },
+            timeout=60
+        )
+
+        if response.status_code != 200:
+            return False, f"❌ Erreur OpenRouter : {response.status_code} - {response.text}"
+
+        result = response.json()
+        content = result["choices"][0]["message"]["content"].strip()
+
+        parsed = json.loads(content)
+        corrected_code = parsed.get("corrected_code", "").strip()
+
+        if not corrected_code:
+            return False, "❌ JSON valide mais champ 'corrected_code' manquant ou vide."
+
+        # Écriture sécurisée
+        with open(file_path, "w") as f:
+            f.write(corrected_code)
+
+        return True, "✅ Correction par OpenRouter réussie."
+
+    except Exception as e:
+        return False, f"❌ Exception agent_openrouter : {str(e)}"
