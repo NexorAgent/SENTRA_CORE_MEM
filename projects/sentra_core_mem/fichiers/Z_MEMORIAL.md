@@ -113,3 +113,6 @@ Déployer une IA hybride, autonome, évolutive et sécurisée, alliant :
 - Markdown, Prometheus (option), Cloudflare Tunnel
 - Docker Compose, Google Drive backup
 
+## 2025-07-20 15:56:24
+- 🟢 [2025-07-20] Avancement SENTRA_CORRECTOR++ v1.0 : suppression Gemini, intégration OpenRouter, endpoint /correct_file actif, Docker optimisé, prochaines étapes : batch, reporting avancé, extension multi-agent, fallback IA auto. Document à reporter dans les fichiers docs/Z_MEMORIAL.md et README.md dès que possible.
+
