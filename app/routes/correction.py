@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 import subprocess
@@ -13,7 +15,14 @@ class CorrectionRequest(BaseModel):
     file_path: str
     agent_id: str
 
-@router.post("/correct_file")
+class CorrectionResponse(BaseModel):
+    status: Literal["success", "error", "forbidden", "exception"]
+    message: str | None = None
+    output: str | None = None
+    errors: str | None = None
+
+
+@router.post("/correct_file", response_model=CorrectionResponse)
 def correct_file_endpoint(request: CorrectionRequest):
     full_path = request.file_path
 

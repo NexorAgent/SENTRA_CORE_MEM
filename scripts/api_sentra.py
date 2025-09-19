@@ -4,14 +4,16 @@ import subprocess
 import json
 import time
 from pathlib import Path
+from typing import Literal
+
 from app.routes.correction import router as correction_router
 
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-from fastapi import FastAPI, HTTPException, Response, Query
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel, Field
 
 from .git_utils import git_commit_push
 from .memory_lookup import search_memory
@@ -119,16 +121,19 @@ async def legal_notice():
     notice_path = BASE_DIR / "NOTICE.md"
     if notice_path.exists():
         return FileResponse(path=str(notice_path), media_type="text/markdown")
-    return Response(
-        content="SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE",
-        media_type="text/plain",
-    )
+    return PlainTextResponse("SENTRA Memory Plugin - MIT License \u00a9 2025 SENTRA CORE")
 
 # ------------------------------------
 
 #  Endpoint de debug pour vérifier OPENAI_API_KEY
 # ------------------------------------
-@app.get("/check_env")
+class CheckEnvResponse(BaseModel):
+    env_OK: bool
+    OPENAI_API_KEY_prefix: str | None = None
+    detail: str | None = None
+
+
+@app.get("/check_env", response_model=CheckEnvResponse)
 async def check_env():
     """
     Route de debug : affiche si OPENAI_API_KEY est défini et son préfixe.
@@ -145,11 +150,13 @@ async def check_env():
 class RepriseRequest(BaseModel):
     project: str
 
+
 class RepriseResponse(BaseModel):
     status: str
     resume_path: str | None = None
     resume_content: str | None = None
     detail: str | None = None
+
 
 class WriteNoteRequest(BaseModel):
     text: str
@@ -161,43 +168,86 @@ class WriteFileRequest(BaseModel):
     filename: str
     content: str
 
+
 class DeleteFileRequest(BaseModel):
     path: str
     validate_before_delete: bool = True
+
 
 class MoveFileRequest(BaseModel):
     src: str
     dst: str
 
+
 class ArchiveFileRequest(BaseModel):
     path: str
     archive_dir: str
+
 
 class FileActionResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
 
+
 class WriteResponse(BaseModel):
     status: str
     detail: str | None = None
     path: str | None = None
-    suggestions: list[str] = []
+    suggestions: list[str] = Field(default_factory=list)
+
 
 class ReadNoteResponse(BaseModel):
     status: str
     results: list[str]
-    suggestions: list[str] = []
+    suggestions: list[str] = Field(default_factory=list)
+
 
 class ListFilesResponse(BaseModel):
     status: str
     detail: str | None = None
     files: list[str]
 
+
 class SearchResponse(BaseModel):
     status: str
     detail: str | None = None
     matches: list[str]
+
+
+class ExploreItem(BaseModel):
+    name: str
+    type: Literal["dir", "file"]
+    children: list["ExploreItem"] | None = None
+
+
+class ExploreResponse(BaseModel):
+    project: str
+    path: str
+    children: list[ExploreItem]
+
+
+class HomeResponse(BaseModel):
+    message: str
+
+
+class StatusResponse(BaseModel):
+    status: str
+    project: str
+    version: str
+    agents: list[str]
+
+
+class LogsResponse(BaseModel):
+    latest: list[str]
+
+
+class AgentsResponse(BaseModel):
+    active_agents: list[str]
+    status: str
+
+
+ExploreItem.model_rebuild()
 
 # Requests pour la gestion de fichiers existants
 
@@ -563,7 +613,7 @@ async def write_file(req: WriteFileRequest):
 # ------------------------------------
 #  GET /get_memorial  (affichage de Z_MEMORIAL.md)
 # ------------------------------------
-@app.get("/get_memorial")
+@app.get("/get_memorial", response_class=PlainTextResponse)
 async def get_memorial(project: str = "sentra_core"):
     """
     Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.
@@ -572,14 +622,14 @@ async def get_memorial(project: str = "sentra_core"):
     memorial_file = safe_join(BASE_DIR, "projects", project_slug, "fichiers", "Z_MEMORIAL.md")
 
     if not memorial_file.exists():
-        return Response(content="Z_MEMORIAL.md non trouvé", media_type="text/plain")
+        raise HTTPException(status_code=404, detail="Z_MEMORIAL.md non trouvé")
 
     try:
         content = memorial_file.read_text(encoding="utf-8")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Impossible de lire le fichier : {repr(e)}")
 
-    return Response(content=content, media_type="text/plain")
+    return PlainTextResponse(content)
 
 
 # ------------------------------------
@@ -703,7 +753,7 @@ async def search_files(term: str, dir: str):
   # ------------------------------------
 #  GET /explore
 # ------------------------------------
-@app.get("/explore", tags=["monitoring"])
+@app.get("/explore", response_model=ExploreResponse, tags=["monitoring"])
 async def explore(
     project: str = Query(..., description="Nom du projet"),
     path: str = Query("/", description="Chemin relatif à explorer (défaut: racine du projet)")
@@ -805,53 +855,47 @@ async def delete_file(req: DeleteFileRequest):
 
 # === SENTRA CORE MEM — ROUTES PUBLIQUES INTELLIGENTES ===
 
-from fastapi.responses import JSONResponse, PlainTextResponse
-
-@app.get("/", tags=["monitoring"])
+@app.get("/", response_model=HomeResponse, tags=["monitoring"])
 async def home():
-    return JSONResponse(
-        content={"message": "✅ API SENTRA_CORE_MEM active. Bienvenue sur le noyau IA local."}
+    return HomeResponse(message="✅ API SENTRA_CORE_MEM active. Bienvenue sur le noyau IA local.")
+
+@app.get("/status", response_model=StatusResponse, tags=["monitoring"])
+async def status():
+    return StatusResponse(
+        status="🟢 OK",
+        project="SENTRA_CORE_MEM",
+        version="v0.4",
+        agents=["markdown", "notion", "discord", "glyph", "scheduler"],
     )
 
-@app.get("/status", tags=["monitoring"])
-async def status():
-    return {
-        "status": "🟢 OK",
-        "project": "SENTRA_CORE_MEM",
-        "version": "v0.4",
-        "agents": ["markdown", "notion", "discord", "glyph", "scheduler"]
-    }
-
-@app.get("/version", tags=["monitoring"])
+@app.get("/version", response_class=PlainTextResponse, tags=["monitoring"])
 async def get_version():
     changelog_path = BASE_DIR / "CHANGELOG.md"
     if changelog_path.exists():
         with open(changelog_path, "r", encoding="utf-8") as f:
             return PlainTextResponse(f.read(), media_type="text/plain")
-    return JSONResponse(content={"error": "CHANGELOG.md non trouvé"}, status_code=404)
+    raise HTTPException(status_code=404, detail="CHANGELOG.md non trouvé")
 
-@app.get("/readme", tags=["monitoring"])
+@app.get("/readme", response_class=PlainTextResponse, tags=["monitoring"])
 async def get_readme():
     readme_path = BASE_DIR / "README.md"
     if readme_path.exists():
         with open(readme_path, "r", encoding="utf-8") as f:
             return PlainTextResponse(f.read(), media_type="text/plain")
-    return JSONResponse(content={"error": "README.md non trouvé"}, status_code=404)
+    raise HTTPException(status_code=404, detail="README.md non trouvé")
 
-@app.get("/logs/latest", tags=["logs"])
+@app.get("/logs/latest", response_model=LogsResponse, tags=["logs"])
 async def get_latest_logs():
     log_path = BASE_DIR / "logs" / "execution_log.txt"
     if log_path.exists():
         with open(log_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
-            return {"latest": lines[-10:]}
-    return JSONResponse(content={"error": "Aucun log trouvé"}, status_code=404)
+            return LogsResponse(latest=[line.rstrip("\n") for line in lines[-10:]])
+    raise HTTPException(status_code=404, detail="Aucun log trouvé")
 
-@app.get("/agents", tags=["monitoring"])
+@app.get("/agents", response_model=AgentsResponse, tags=["monitoring"])
 async def list_agents():
-    return {
-        "active_agents": [
-            "markdown", "notion", "discord", "glyph", "scheduler"
-        ],
-        "status": "🟢 tous actifs (dans le code)"
-    }
+    return AgentsResponse(
+        active_agents=["markdown", "notion", "discord", "glyph", "scheduler"],
+        status="🟢 tous actifs (dans le code)",
+    )

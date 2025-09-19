@@ -1,0 +1,844 @@
+openapi: "3.1.0"
+info:
+  title: "Sentra Memory Plugin API"
+  description: "API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers)."
+  version: "1.1.0"
+paths:
+  /correct_file:
+    post:
+      summary: "Correct File Endpoint"
+      operationId: "correctFile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrectionResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /check_env:
+    get:
+      summary: "Check Env"
+      description: "Route de debug : affiche si OPENAI_API_KEY est défini et son préfixe."
+      operationId: "checkEnv"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckEnvResponse"
+  /reprise:
+    post:
+      summary: "Reprise Projet"
+      operationId: "repriseProjet"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepriseRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepriseResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /write_note:
+    post:
+      summary: "Write Note"
+      operationId: "writeNote"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WriteNoteRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WriteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /read_note:
+    get:
+      summary: "Read Note"
+      description: "Lecture intelligente universelle :\n- Si 'filepath' fourni, lire tout fichier texte (md/txt) → status success si contenu, error sinon.\n- Sinon, recherche classique mémoire IA.\n- Toujours status explicite, suggestions en cas d’erreur."
+      operationId: "readNote"
+      parameters:
+        -
+          name: "term"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            default: ""
+            title: "Term"
+        -
+          name: "limit"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            default: 5
+            title: "Limit"
+        -
+          name: "filepath"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            title: "Filepath"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadNoteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /move_file:
+    post:
+      summary: "Move File"
+      operationId: "moveFile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveFileRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WriteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /write_file:
+    post:
+      summary: "Write File"
+      operationId: "writeFile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WriteFileRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WriteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /get_memorial:
+    get:
+      summary: "Get Memorial"
+      description: "Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md."
+      operationId: "getMemorial"
+      parameters:
+        -
+          name: "project"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            default: "sentra_core"
+            title: "Project"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /archive_file:
+    post:
+      summary: "Archive File"
+      operationId: "archiveFile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArchiveFileRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WriteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /list_files:
+    get:
+      summary: "List Files"
+      operationId: "listFiles"
+      parameters:
+        -
+          name: "dir"
+          in: "query"
+          required: true
+          schema:
+            type: "string"
+            title: "Dir"
+        -
+          name: "pattern"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            default: "*"
+            title: "Pattern"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListFilesResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /search:
+    get:
+      summary: "Search Files"
+      operationId: "searchFiles"
+      parameters:
+        -
+          name: "term"
+          in: "query"
+          required: true
+          schema:
+            type: "string"
+            title: "Term"
+        -
+          name: "dir"
+          in: "query"
+          required: true
+          schema:
+            type: "string"
+            title: "Dir"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /explore:
+    get:
+      tags:
+        - "monitoring"
+      summary: "Explore"
+      description: "Explore l'arborescence d'un projet et retourne la structure récursive à partir de 'path'."
+      operationId: "exploreProject"
+      parameters:
+        -
+          name: "project"
+          in: "query"
+          required: true
+          schema:
+            type: "string"
+            description: "Nom du projet"
+            title: "Project"
+          description: "Nom du projet"
+        -
+          name: "path"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            description: "Chemin relatif à explorer (défaut: racine du projet)"
+            default: "/"
+            title: "Path"
+          description: "Chemin relatif à explorer (défaut: racine du projet)"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExploreResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /delete_file:
+    post:
+      summary: "Delete File"
+      operationId: "deleteFile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteFileRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WriteResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /:
+    get:
+      tags:
+        - "monitoring"
+      summary: "Home"
+      operationId: "home"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeResponse"
+  /status:
+    get:
+      tags:
+        - "monitoring"
+      summary: "Status"
+      operationId: "status"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+  /version:
+    get:
+      tags:
+        - "monitoring"
+      summary: "Get Version"
+      operationId: "getVersion"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+  /readme:
+    get:
+      tags:
+        - "monitoring"
+      summary: "Get Readme"
+      operationId: "getReadme"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+  /logs/latest:
+    get:
+      tags:
+        - "logs"
+      summary: "Get Latest Logs"
+      operationId: "getLatestLogs"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogsResponse"
+  /agents:
+    get:
+      tags:
+        - "monitoring"
+      summary: "List Agents"
+      operationId: "listAgents"
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentsResponse"
+components:
+  schemas:
+    AgentsResponse:
+      properties:
+        active_agents:
+          items:
+            type: "string"
+          type: "array"
+          title: "Active Agents"
+        status:
+          type: "string"
+          title: "Status"
+      type: "object"
+      required:
+        - "active_agents"
+        - "status"
+      title: "AgentsResponse"
+    ArchiveFileRequest:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+        archive_dir:
+          type: "string"
+          title: "Archive Dir"
+      type: "object"
+      required:
+        - "path"
+        - "archive_dir"
+      title: "ArchiveFileRequest"
+    CheckEnvResponse:
+      properties:
+        env_OK:
+          type: "boolean"
+          title: "Env Ok"
+        OPENAI_API_KEY_prefix:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Openai Api Key Prefix"
+        detail:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Detail"
+      type: "object"
+      required:
+        - "env_OK"
+      title: "CheckEnvResponse"
+    CorrectionRequest:
+      properties:
+        file_path:
+          type: "string"
+          title: "File Path"
+        agent_id:
+          type: "string"
+          title: "Agent Id"
+      type: "object"
+      required:
+        - "file_path"
+        - "agent_id"
+      title: "CorrectionRequest"
+    CorrectionResponse:
+      properties:
+        status:
+          type: "string"
+          enum:
+            - "success"
+            - "error"
+            - "forbidden"
+            - "exception"
+          title: "Status"
+        message:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Message"
+        output:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Output"
+        errors:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Errors"
+      type: "object"
+      required:
+        - "status"
+      title: "CorrectionResponse"
+    DeleteFileRequest:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+        validate_before_delete:
+          type: "boolean"
+          title: "Validate Before Delete"
+          default: true
+      type: "object"
+      required:
+        - "path"
+      title: "DeleteFileRequest"
+    ExploreItem:
+      properties:
+        name:
+          type: "string"
+          title: "Name"
+        type:
+          type: "string"
+          enum:
+            - "dir"
+            - "file"
+          title: "Type"
+        children:
+          anyOf:
+            -
+              items:
+                $ref: "#/components/schemas/ExploreItem"
+              type: "array"
+            -
+              type: "null"
+          title: "Children"
+      type: "object"
+      required:
+        - "name"
+        - "type"
+      title: "ExploreItem"
+    ExploreResponse:
+      properties:
+        project:
+          type: "string"
+          title: "Project"
+        path:
+          type: "string"
+          title: "Path"
+        children:
+          items:
+            $ref: "#/components/schemas/ExploreItem"
+          type: "array"
+          title: "Children"
+      type: "object"
+      required:
+        - "project"
+        - "path"
+        - "children"
+      title: "ExploreResponse"
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: "#/components/schemas/ValidationError"
+          type: "array"
+          title: "Detail"
+      type: "object"
+      title: "HTTPValidationError"
+    HomeResponse:
+      properties:
+        message:
+          type: "string"
+          title: "Message"
+      type: "object"
+      required:
+        - "message"
+      title: "HomeResponse"
+    ListFilesResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        detail:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Detail"
+        files:
+          items:
+            type: "string"
+          type: "array"
+          title: "Files"
+      type: "object"
+      required:
+        - "status"
+        - "files"
+      title: "ListFilesResponse"
+    LogsResponse:
+      properties:
+        latest:
+          items:
+            type: "string"
+          type: "array"
+          title: "Latest"
+      type: "object"
+      required:
+        - "latest"
+      title: "LogsResponse"
+    MoveFileRequest:
+      properties:
+        src:
+          type: "string"
+          title: "Src"
+        dst:
+          type: "string"
+          title: "Dst"
+      type: "object"
+      required:
+        - "src"
+        - "dst"
+      title: "MoveFileRequest"
+    ReadNoteResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        results:
+          items:
+            type: "string"
+          type: "array"
+          title: "Results"
+        suggestions:
+          items:
+            type: "string"
+          type: "array"
+          title: "Suggestions"
+      type: "object"
+      required:
+        - "status"
+        - "results"
+      title: "ReadNoteResponse"
+    RepriseRequest:
+      properties:
+        project:
+          type: "string"
+          title: "Project"
+      type: "object"
+      required:
+        - "project"
+      title: "RepriseRequest"
+    RepriseResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        resume_path:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Resume Path"
+        resume_content:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Resume Content"
+        detail:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Detail"
+      type: "object"
+      required:
+        - "status"
+      title: "RepriseResponse"
+    SearchResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        detail:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Detail"
+        matches:
+          items:
+            type: "string"
+          type: "array"
+          title: "Matches"
+      type: "object"
+      required:
+        - "status"
+        - "matches"
+      title: "SearchResponse"
+    StatusResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        project:
+          type: "string"
+          title: "Project"
+        version:
+          type: "string"
+          title: "Version"
+        agents:
+          items:
+            type: "string"
+          type: "array"
+          title: "Agents"
+      type: "object"
+      required:
+        - "status"
+        - "project"
+        - "version"
+        - "agents"
+      title: "StatusResponse"
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              -
+                type: "string"
+              -
+                type: "integer"
+          type: "array"
+          title: "Location"
+        msg:
+          type: "string"
+          title: "Message"
+        type:
+          type: "string"
+          title: "Error Type"
+      type: "object"
+      required:
+        - "loc"
+        - "msg"
+        - "type"
+      title: "ValidationError"
+    WriteFileRequest:
+      properties:
+        project:
+          type: "string"
+          title: "Project"
+        filename:
+          type: "string"
+          title: "Filename"
+        content:
+          type: "string"
+          title: "Content"
+      type: "object"
+      required:
+        - "project"
+        - "filename"
+        - "content"
+      title: "WriteFileRequest"
+    WriteNoteRequest:
+      properties:
+        text:
+          type: "string"
+          title: "Text"
+        project:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Project"
+      type: "object"
+      required:
+        - "text"
+      title: "WriteNoteRequest"
+    WriteResponse:
+      properties:
+        status:
+          type: "string"
+          title: "Status"
+        detail:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Detail"
+        path:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Path"
+        suggestions:
+          items:
+            type: "string"
+          type: "array"
+          title: "Suggestions"
+      type: "object"
+      required:
+        - "status"
+      title: "WriteResponse"
+servers:
+  -
+    url: "http://localhost:5000"
