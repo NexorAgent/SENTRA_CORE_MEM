@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import json
 import time
@@ -8,7 +9,7 @@ from app.routes.correction import router as correction_router
 # Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-from fastapi import FastAPI, HTTPException, Response, Query  # <--- AJOUTE Query ici
+from fastapi import FastAPI, HTTPException, Response, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -45,6 +46,49 @@ app = FastAPI(
     description="API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers)."
 )
 app.include_router(correction_router)
+
+SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+
+
+def normalize_project_slug(raw: str | None, *, default: str | None = None) -> str:
+    """Normalise et valide un nom de projet avant usage fichier."""
+    value = raw if raw is not None else default
+    if value is None:
+        raise HTTPException(status_code=400, detail="Le champ 'project' est invalide.")
+
+    slug = value.strip()
+    if not slug:
+        if default is not None and raw is None:
+            slug = default.strip()
+        else:
+            raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
+
+    slug = slug.lower().replace(" ", "_")
+    if not SLUG_PATTERN.fullmatch(slug):
+        raise HTTPException(status_code=400, detail="Slug de projet invalide.")
+
+    return slug
+
+
+def safe_join(base: Path, *parts: str | os.PathLike[str]) -> Path:
+    """Assemble un chemin sous *base* en refusant les échappements."""
+    base_resolved = base.resolve(strict=False)
+    candidate = base_resolved
+    for part in parts:
+        if part is None:
+            continue
+        part_path = Path(part)
+        if part_path.is_absolute():
+            raise HTTPException(status_code=400, detail="Chemin absolu interdit.")
+        candidate = candidate / part_path
+
+    resolved = candidate.resolve(strict=False)
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Chemin hors de la zone autorisée.")
+
+    return resolved
 
 # ------------------------------------
 #  Route statique pour servir ai-plugin.json
@@ -162,9 +206,8 @@ class SearchResponse(BaseModel):
 # ------------------------------------
 @app.post("/reprise", response_model=RepriseResponse)
 async def reprise_projet(req: RepriseRequest):
-    projet = req.project.strip()
-    if not projet:
-        raise HTTPException(status_code=400, detail="Le champ 'project' ne peut pas être vide.")
+    project_slug = normalize_project_slug(req.project)
+    projet = project_slug
 
     # 1) Déterminer la racine du projet
     base_path = BASE_DIR
@@ -234,8 +277,7 @@ async def reprise_projet(req: RepriseRequest):
         )
 
     # 6) Récupérer le dernier fichier resume_gpt_*.md
-    project_slug  = projet.lower().replace(" ", "_")
-    resume_folder = base_path / "projects" / project_slug / "resume"
+    resume_folder = safe_join(BASE_DIR, "projects", project_slug, "resume")
 
     if not resume_folder.exists():
         return RepriseResponse(
@@ -277,8 +319,7 @@ async def write_note(req: WriteNoteRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Le champ 'text' ne peut pas être vide.")
 
-    project_val = getattr(req, "project", None) or "sentra_core"
-    project_slug = project_val.strip().lower().replace(" ", "_")
+    project_slug = normalize_project_slug(getattr(req, "project", None), default="sentra_core")
     # Calcul une seule fois du slug projet/clone
    
     # 1) Chemin vers la racine du projet
@@ -309,7 +350,7 @@ async def write_note(req: WriteNoteRequest):
         raise HTTPException(status_code=500, detail=f"Échec d’écriture de la note : {repr(e)}")
 
     # 3) Journal mimétique Z_MEMORIAL.md
-    memorial_dir  = BASE_DIR / "projects" / project_slug / "fichiers"
+    memorial_dir = safe_join(BASE_DIR, "projects", project_slug, "fichiers")
     memorial_dir.mkdir(parents=True, exist_ok=True)
 
     memorial_file = memorial_dir / "Z_MEMORIAL.md"
@@ -354,7 +395,11 @@ async def read_note(term: str = "", limit: int = 5, filepath: str = None):
     - Toujours status explicite, suggestions en cas d’erreur.
     """
     if filepath:
-        file_path = BASE_DIR / filepath
+        path_value = filepath.strip()
+        if not path_value:
+            raise HTTPException(status_code=400, detail="Le paramètre 'filepath' est invalide.")
+
+        file_path = safe_join(BASE_DIR, path_value)
         parent = file_path.parent
         candidates = liste_suggestions(parent)
         if file_path.exists() and file_path.is_file():
@@ -411,15 +456,13 @@ async def read_note(term: str = "", limit: int = 5, filepath: str = None):
 # ------------------------------------
 @app.post("/move_file", response_model=WriteResponse)
 async def move_file(req: MoveFileRequest):
-    if ".." in req.src or ".." in req.dst:
-        return WriteResponse(
-            status="error",
-            detail="Invalid path",
-            path=None,
-            suggestions=[]
-        )
-    src_path = BASE_DIR / req.src
-    dst_path = BASE_DIR / req.dst
+    src_value = req.src.strip()
+    dst_value = req.dst.strip()
+    if not src_value or not dst_value:
+        raise HTTPException(status_code=400, detail="Les champs 'src' et 'dst' sont requis.")
+
+    src_path = safe_join(BASE_DIR, src_value)
+    dst_path = safe_join(BASE_DIR, dst_value)
 
     try:
         dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -472,28 +515,15 @@ async def move_file(req: MoveFileRequest):
 
 @app.post("/write_file", response_model=WriteResponse)
 async def write_file(req: WriteFileRequest):
-    projet   = req.project.strip()
+    project_slug = normalize_project_slug(req.project)
     filename = req.filename.strip()
-    contenu  = req.content
+    contenu = req.content
 
-    if not projet or not filename:
-        return WriteResponse(
-            status="error",
-            detail="Les champs 'project' et 'filename' sont requis.",
-            path=None,
-            suggestions=[]
-        )
+    if not filename:
+        raise HTTPException(status_code=400, detail="Le champ 'filename' ne peut pas être vide.")
 
-    if ".." in filename:
-        return WriteResponse(
-            status="error",
-            detail="Invalid filename",
-            path=None,
-            suggestions=[]
-        )
-
-    project_slug = projet.lower().replace(" ", "_")
-    file_path = BASE_DIR / "projects" / project_slug / "fichiers" / filename
+    project_dir = safe_join(BASE_DIR, "projects", project_slug, "fichiers")
+    file_path = safe_join(project_dir, filename)
 
     # Création automatique du dossier cible
     try:
@@ -538,8 +568,8 @@ async def get_memorial(project: str = "sentra_core"):
     """
     Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md.
     """
-    project_slug = project.strip().lower().replace(" ", "_") or "sentra_core"
-    memorial_file = BASE_DIR / "projects" / project_slug / "fichiers" / "Z_MEMORIAL.md"
+    project_slug = normalize_project_slug(project, default="sentra_core")
+    memorial_file = safe_join(BASE_DIR, "projects", project_slug, "fichiers", "Z_MEMORIAL.md")
 
     if not memorial_file.exists():
         return Response(content="Z_MEMORIAL.md non trouvé", media_type="text/plain")
@@ -558,15 +588,13 @@ async def get_memorial(project: str = "sentra_core"):
  
 @app.post("/archive_file", response_model=WriteResponse)
 async def archive_file(req: ArchiveFileRequest):
-    if ".." in req.path or ".." in req.archive_dir:
-        return WriteResponse(
-            status="error",
-            detail="Invalid path",
-            path=None,
-            suggestions=[]
-        )
-    src_path = BASE_DIR / req.path
-    archive_dir = BASE_DIR / req.archive_dir
+    src_value = req.path.strip()
+    archive_value = req.archive_dir.strip()
+    if not src_value or not archive_value:
+        raise HTTPException(status_code=400, detail="Les champs 'path' et 'archive_dir' sont requis.")
+
+    src_path = safe_join(BASE_DIR, src_value)
+    archive_dir = safe_join(BASE_DIR, archive_value)
     try:
         archive_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
@@ -629,23 +657,21 @@ async def archive_file(req: ArchiveFileRequest):
 # ------------------------------------
 @app.get("/list_files", response_model=ListFilesResponse)
 async def list_files(dir: str, pattern: str = "*"):
- 
-    p = Path(dir)
-    try:
-        files = [str(f) for f in p.glob(pattern)]
-        return ListFilesResponse(
-            status="success",
-            detail=f"{len(files)} file(s) found",
-            files=files,
-        )
-    except Exception as e:
-        return ListFilesResponse(status="error", detail=str(e), files=[])
+    dir_value = dir.strip()
+    if not dir_value:
+        raise HTTPException(status_code=400, detail="Le paramètre 'dir' est requis.")
 
-    if ".." in dir:
-        raise HTTPException(status_code=400, detail="Invalid path")
-    p = BASE_DIR / dir
-    files = [str(f) for f in p.glob(pattern)]
-    return {"files": files}
+    target_dir = safe_join(BASE_DIR, dir_value)
+    try:
+        files = [str(f) for f in target_dir.glob(pattern)]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return ListFilesResponse(
+        status="success",
+        detail=f"{len(files)} file(s) found",
+        files=files,
+    )
  
 
 # ------------------------------------
@@ -653,9 +679,13 @@ async def list_files(dir: str, pattern: str = "*"):
 # ------------------------------------
 @app.get("/search", response_model=SearchResponse)
 async def search_files(term: str, dir: str):
-    if ".." in dir:
-        raise HTTPException(status_code=400, detail="Invalid path")
-    base = BASE_DIR / dir
+    dir_value = dir.strip()
+    if not dir_value:
+        raise HTTPException(status_code=400, detail="Le paramètre 'dir' est requis.")
+
+    base = safe_join(BASE_DIR, dir_value)
+    if not base.exists() or not base.is_dir():
+        raise HTTPException(status_code=404, detail="Dossier introuvable.")
     results = []
     for f in base.rglob("*"):
         if f.is_file():
@@ -681,7 +711,8 @@ async def explore(
     """
     Explore l'arborescence d'un projet et retourne la structure récursive à partir de 'path'.
     """
-    base_dir = BASE_DIR / "projects" / project.strip().lower()
+    project_slug = normalize_project_slug(project)
+    base_dir = safe_join(BASE_DIR, "projects", project_slug)
     target_path = (base_dir / path.lstrip("/")).resolve()
 
     # Sécurité : le chemin doit rester dans le dossier projet
@@ -724,14 +755,11 @@ async def explore(
 # ------------------------------------
 @app.post("/delete_file", response_model=WriteResponse)
 async def delete_file(req: DeleteFileRequest):
-    if ".." in req.path:
-        return WriteResponse(
-            status="error",
-            detail="Invalid path",
-            path=None,
-            suggestions=[]
-        )
-    file_path = BASE_DIR / req.path
+    path_value = req.path.strip()
+    if not path_value:
+        raise HTTPException(status_code=400, detail="Le champ 'path' est requis.")
+
+    file_path = safe_join(BASE_DIR, path_value)
     try:
         file_path.unlink()
     except FileNotFoundError:
