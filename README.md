@@ -374,5 +374,15 @@ Rédaction README audit	15 min
 
 © 2025 — Projet open‑source modulable ✨
 
+## ✅ Tests automatisés
+
+Le paquet `tests/` contient une suite Pytest couvrant les routes mémoire/fichiers et un scénario E2E (marqué `slow`). Les fixtures isolent les dépendances externes (Git, Google Sheet, n8n, Discord) en les simulant.
+
+```bash
+pytest
+```
+
+Utilisez `pytest -m "not slow"` pour exclure le test de bout en bout si besoin.
+
 ## Licence
 Ce projet est distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
