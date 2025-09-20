@@ -1,208 +1,74 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import pytest
 
 
-def test_write_file_success(client, api_context):
-    response = client.post(
-        "/write_file",
-        json={"project": "Demo", "filename": "notes/spec.md", "content": "# Spec"},
-    )
+def _write_payload(path: str, content: str) -> dict[str, str]:
+    return {
+        "path": path,
+        "content": content,
+        "user": "operator",
+        "agent": "scribe",
+    }
+
+
+def test_files_write_creates_file_and_commits(client, api_context):
+    response = client.post("/files/write", json=_write_payload("/projects/demo/docs/spec.md", "# Spec"))
     assert response.status_code == 200
-    data = response.json()
-    written_path = Path(data["path"])
-    expected_path = api_context["base_dir"] / "projects" / "demo" / "fichiers" / "notes" / "spec.md"
-    assert written_path == expected_path
+    payload = response.json()
+    written_path = Path(payload["path"])
+
+    assert written_path.exists()
     assert written_path.read_text(encoding="utf-8") == "# Spec"
-    assert any("GPT file update" in entry["message"] for entry in api_context["commits"])
+
+    expected_hash = hashlib.sha256("# Spec".encode("utf-8")).hexdigest()
+    assert payload["sha256"] == expected_hash
+    assert payload["committed"] is True
+    assert payload["commit_message"] is not None
+
+    assert any(commit["file"] == written_path for commit in api_context["git_commits"])
+    assert any(event["tool"] == "files.write" for event in api_context["audit_events"])
 
 
-def test_write_file_validation_errors(client):
-    response = client.post(
-        "/write_file",
-        json={"project": "demo", "filename": " ", "content": "data"},
-    )
-    assert response.status_code == 400
+def test_files_write_idempotent_when_content_unchanged(client, api_context):
+    path = "/projects/demo/docs/spec.md"
+    client.post("/files/write", json=_write_payload(path, "content"))
+    commit_count = len(api_context["git_commits"])
 
-
-def test_write_file_rejects_escape(client):
-    response = client.post(
-        "/write_file",
-        json={"project": "demo", "filename": "../escape.md", "content": "no"},
-    )
-    assert response.status_code == 400
-
-
-def test_move_file_success(client, api_context):
-    base_dir = api_context["base_dir"]
-    src_rel = Path("projects/demo/fichiers/spec.txt")
-    dst_rel = Path("projects/demo/fichiers/spec-final.txt")
-    src_path = base_dir / src_rel
-    src_path.parent.mkdir(parents=True, exist_ok=True)
-    src_path.write_text("content", encoding="utf-8")
-
-    response = client.post("/move_file", json={"src": str(src_rel), "dst": str(dst_rel)})
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "success"
-    assert not src_path.exists()
-    assert (base_dir / dst_rel).exists()
-    assert any("GPT move" in entry["message"] for entry in api_context["commits"])
-
-
-def test_move_file_missing_source(client):
-    response = client.post(
-        "/move_file",
-        json={
-            "src": "projects/demo/fichiers/missing.txt",
-            "dst": "projects/demo/fichiers/new-name.txt",
-        },
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "error"
-    assert "introuvable" in data["detail"]
+    second = client.post("/files/write", json=_write_payload(path, "content"))
+    assert second.status_code == 200
+    body = second.json()
+    assert body["committed"] is False
+    assert body["commit_message"] is None
+    assert len(api_context["git_commits"]) == commit_count
 
 
 @pytest.mark.parametrize(
-    "payload",
-    [
-        {"src": " ", "dst": "projects/demo/fichiers/out.txt"},
-        {"src": "projects/demo/fichiers/in.txt", "dst": ""},
-    ],
+    "path_value",
+    ["/unknown/root/file.txt", "/projects/../etc/passwd", "projects/demo/../../escape"],
 )
-def test_move_file_validation(payload, client):
-    response = client.post("/move_file", json=payload)
+def test_files_write_rejects_invalid_paths(client, path_value):
+    response = client.post("/files/write", json=_write_payload(path_value, "data"))
     assert response.status_code == 400
 
 
-def test_archive_file_success(client, api_context):
-    base_dir = api_context["base_dir"]
-    src_rel = Path("projects/demo/fichiers/archive.txt")
-    archive_rel = Path("archive/demo")
-    src_path = base_dir / src_rel
-    src_path.parent.mkdir(parents=True, exist_ok=True)
-    src_path.write_text("archive me", encoding="utf-8")
-
-    response = client.post(
-        "/archive_file",
-        json={"path": str(src_rel), "archive_dir": str(archive_rel)},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    dest_path = base_dir / archive_rel / src_path.name
-    assert dest_path.exists() and not src_path.exists()
-    assert any("GPT archive" in entry["message"] for entry in api_context["commits"])
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {"path": " ", "archive_dir": "archive/demo"},
-        {"path": "projects/demo/fichiers/file.txt", "archive_dir": "../escape"},
-    ],
-)
-def test_archive_file_validation(client, payload):
-    response = client.post("/archive_file", json=payload)
-    assert response.status_code == 400
-
-
-def test_delete_file_success(client, api_context):
-    base_dir = api_context["base_dir"]
-    file_rel = Path("projects/demo/fichiers/remove.txt")
-    target = base_dir / file_rel
+def test_files_read_returns_content_and_metadata(client, api_context):
+    target = api_context["base_dir"] / "projects" / "demo" / "docs" / "spec.md"
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text("bye", encoding="utf-8")
+    target.write_text("spec content", encoding="utf-8")
 
-    response = client.post("/delete_file", json={"path": str(file_rel)})
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "success"
-    assert not target.exists()
-    assert any("GPT delete" in entry["message"] for entry in api_context["commits"])
-
-
-def test_delete_file_missing(client):
-    response = client.post(
-        "/delete_file",
-        json={"path": "projects/demo/fichiers/ghost.txt"},
-    )
+    response = client.post("/files/read", json={"path": "/projects/demo/docs/spec.md", "user": "operator"})
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "error"
-    assert "introuvable" in data["detail"]
+    assert data["path"] == str(target)
+    assert data["content"] == "spec content"
+    assert data["sha256"] == hashlib.sha256("spec content".encode("utf-8")).hexdigest()
+    assert data["last_modified"] is not None
 
 
-def test_delete_file_validation(client):
-    response = client.post("/delete_file", json={"path": " "})
-    assert response.status_code == 400
-
-
-def test_list_files_returns_matches(client, api_context):
-    base_dir = api_context["base_dir"]
-    project_dir = base_dir / "projects" / "demo" / "fichiers"
-    project_dir.mkdir(parents=True, exist_ok=True)
-    (project_dir / "a.md").write_text("A", encoding="utf-8")
-    (project_dir / "b.txt").write_text("B", encoding="utf-8")
-
-    response = client.get(
-        "/list_files",
-        params={"dir": "projects/demo/fichiers", "pattern": "*.md"},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    assert str(project_dir / "a.md") in data["files"]
-    assert str(project_dir / "b.txt") not in data["files"]
-
-
-def test_search_files(client, api_context):
-    base_dir = api_context["base_dir"]
-    project_dir = base_dir / "projects" / "demo" / "fichiers"
-    project_dir.mkdir(parents=True, exist_ok=True)
-    (project_dir / "spec.md").write_text("Important spec for SENTRA", encoding="utf-8")
-
-    response = client.get(
-        "/search",
-        params={"term": "spec", "dir": "projects/demo/fichiers"},
-    )
-    assert response.status_code == 200
-    results = response.json()
-    assert results["matches"]
-    assert str(project_dir / "spec.md") in results["matches"]
-
-
-def test_search_files_missing_directory(client):
-    response = client.get(
-        "/search",
-        params={"term": "x", "dir": "projects/demo/missing"},
-    )
+def test_files_read_missing_file_returns_404(client):
+    response = client.post("/files/read", json={"path": "/projects/demo/missing.md", "user": "operator"})
     assert response.status_code == 404
-
-
-def test_explore_prevents_escape(client):
-    response = client.get(
-        "/explore",
-        params={"project": "demo", "path": "../../etc"},
-    )
-    assert response.status_code == 400
-
-
-def test_explore_lists_files(client, api_context):
-    base_dir = api_context["base_dir"]
-    root = base_dir / "projects" / "demo"
-    nested = root / "fichiers"
-    nested.mkdir(parents=True, exist_ok=True)
-    (nested / "index.md").write_text("content", encoding="utf-8")
-
-    response = client.get(
-        "/explore",
-        params={"project": "demo", "path": "/"},
-    )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["children"]
-    assert any(item["name"] == "fichiers" for item in payload["children"])
