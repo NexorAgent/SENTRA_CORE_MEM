@@ -41,8 +41,14 @@ class RAGQueryRequest(BaseModel):
     n_results: int = Field(5, ge=1, le=50)
 
 
+class RAGQueryHit(BaseModel):
+    excerpt: str = Field(..., min_length=1)
+    source: str = Field(..., min_length=1)
+    score: float
+
+
 class RAGQueryResponse(BaseModel):
-    results: Dict[str, Any]
+    results: List[RAGQueryHit] = Field(default_factory=list)
 
 
 @router.post("/rag/index", name="rag.index")

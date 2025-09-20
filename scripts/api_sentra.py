@@ -622,7 +622,7 @@ async def get_memorial(project: str = "sentra_core"):
     memorial_file = safe_join(BASE_DIR, "projects", project_slug, "fichiers", "Z_MEMORIAL.md")
 
     if not memorial_file.exists():
-        raise HTTPException(status_code=404, detail="Z_MEMORIAL.md non trouvé")
+        return PlainTextResponse("Z_MEMORIAL.md non trouvé")
 
     try:
         content = memorial_file.read_text(encoding="utf-8")
