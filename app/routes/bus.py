@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.dependencies import get_audit_logger, get_bus_service
 from app.services.audit import AuditLogger
@@ -14,17 +14,31 @@ router = APIRouter(tags=["bus"])
 
 class BusSendRequest(BaseModel):
     user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
     spreadsheet_id: str = Field(..., min_length=1)
     worksheet: str = Field(..., min_length=1)
-    payload: Dict[str, Any] = Field(default_factory=dict)
+    from_: str = Field(..., min_length=1, alias="from")
+    to: str = Field(..., min_length=1)
+    topic: str = Field(..., min_length=1)
+    goal: str = Field(..., min_length=1)
+    context_json: Dict[str, Any] = Field(default_factory=dict)
     idempotency_key: str | None = None
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BusSendResponse(BaseModel):
-    message_id: str
+    id: str
+    ts: str
+    from_: str = Field(..., alias="from")
+    to: str
+    topic: str
+    goal: str
+    context_json: Dict[str, Any]
     status: str
-    timestamp: str
+    error: str
+    last_update: str
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BusPollRequest(BaseModel):
@@ -36,12 +50,18 @@ class BusPollRequest(BaseModel):
 
 
 class BusRecord(BaseModel):
-    message_id: str
-    timestamp: str
-    user: str
-    agent: str
+    id: str
+    ts: str
+    from_: str = Field(..., alias="from")
+    to: str
+    topic: str
+    goal: str
+    context_json: Dict[str, Any]
     status: str
-    payload: Dict[str, Any]
+    error: str
+    last_update: str
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BusPollResponse(BaseModel):
@@ -50,16 +70,26 @@ class BusPollResponse(BaseModel):
 
 class BusUpdateStatusRequest(BaseModel):
     user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
     spreadsheet_id: str = Field(..., min_length=1)
     worksheet: str = Field(..., min_length=1)
     message_id: str = Field(..., min_length=1)
     status: str = Field(..., min_length=1)
+    error: str | None = None
 
 
 class BusUpdateStatusResponse(BaseModel):
-    message_id: str
+    id: str
+    ts: str
+    from_: str = Field(..., alias="from")
+    to: str
+    topic: str
+    goal: str
+    context_json: Dict[str, Any]
     status: str
+    error: str
+    last_update: str
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 @router.post("/bus/send", name="bus.send")
@@ -68,14 +98,17 @@ def bus_send(
     audit_logger: AuditLogger = Depends(get_audit_logger),
     service: BusService = Depends(get_bus_service),
 ) -> BusSendResponse:
-    audit_logger.log("bus.send", request.model_dump(exclude={"user"}), request.user)
+    audit_logger.log("bus.send", request.model_dump(by_alias=True, exclude={"user"}), request.user)
     try:
         result = service.send(
             spreadsheet_id=request.spreadsheet_id,
             worksheet=request.worksheet,
-            payload=request.payload,
+            sender=request.from_,
+            recipient=request.to,
+            topic=request.topic,
+            goal=request.goal,
+            context_json=request.context_json,
             user=request.user,
-            agent=request.agent,
             idempotency_key=request.idempotency_key,
         )
     except BusServiceError as error:
@@ -115,6 +148,7 @@ def bus_update_status(
             worksheet=request.worksheet,
             message_id=request.message_id,
             status=request.status,
+            error=request.error,
         )
     except BusServiceError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error

@@ -41,7 +41,10 @@ def get_google_auth_manager() -> GoogleAuthManager:
 
 @lru_cache(maxsize=1)
 def get_bus_service() -> BusService:
-    return BusService(auth_manager=get_google_auth_manager())
+    return BusService(
+        auth_manager=get_google_auth_manager(),
+        n8n_client=get_n8n_client(),
+    )
 
 
 @lru_cache(maxsize=1)
