@@ -78,58 +78,155 @@ Copier
 Modifier
 uvicorn scripts.api_sentra:app --reload --port 5000
 
-Endpoints principaux
+### Outils MCP disponibles
 
-POST /write_note – ajouter une note
-GET /get_notes – lire toute la mémoire JSON
-GET /read_note – rechercher dans la mémoire
-GET /get_memorial – journal Markdown d'un projet
-POST /write_file – créer ou modifier un fichier
-GET /list_files – lister un dossier
-POST /delete_file – supprimer un fichier
-POST /move_file – déplacer un fichier
-POST /archive_file – archiver un fichier
-POST /reprise – résumer un canal Discord
-GET /check_env – tester la clé API
-GET /legal – consulter la notice légale
+L'API FastAPI expose désormais ses capacités sous forme d'outils MCP. Chaque requête transporte au minimum le champ `user` pour l'audit et, lorsqu'une écriture est réalisée, un `agent` permettant d'attribuer l'action.
 
+- **`files.read`** (`POST /files/read`) – lit un fichier dans `/projects`, `/reports` ou `/students`.
+  ```json
+  {
+    "user": "ops",
+    "path": "/projects/demo/fichiers/todo.md"
+  }
+  ```
+- **`files.write`** (`POST /files/write`) – crée ou met à jour un fichier et pousse l'artefact dans Git.
+  ```json
+  {
+    "user": "ops",
+    "agent": "scribe",
+    "path": "/projects/demo/fichiers/todo.md",
+    "content": "- [ ] Préparer la démo",
+    "idempotency_key": "todo-v1"
+  }
+  ```
+- **`memory.note.add`** (`POST /memory/note/add`) – ajoute une note horodatée à la mémoire centrale.
+  ```json
+  {
+    "user": "ops",
+    "agent": "scribe",
+    "note": {
+      "text": "Organiser la réunion de planification",
+      "tags": ["planning", "demo"],
+      "metadata": {"source": "discord"},
+      "note_id": "planning-001"
+    }
+  }
+  ```
+- **`memory.note.find`** (`POST /memory/note/find`) – effectue une recherche full-text ou par tags.
+  ```json
+  {
+    "user": "ops",
+    "query": "réunion demo",
+    "tags": ["planning"],
+    "limit": 5
+  }
+  ```
+- **`bus.send`** (`POST /bus/send`) – publie un message structuré dans la feuille Google "bus".
+  ```json
+  {
+    "user": "ops",
+    "agent": "dispatcher",
+    "spreadsheet_id": "1Abc...",
+    "worksheet": "bus",
+    "payload": {
+      "from": "sentra",
+      "to": "codex",
+      "topic": "draft",
+      "goal": "Ship v2 spec"
+    },
+    "idempotency_key": "draft-2025-01-20"
+  }
+  ```
+- **`bus.poll`** (`POST /bus/poll`) – récupère les messages suivant un statut donné.
+  ```json
+  {
+    "user": "ops",
+    "spreadsheet_id": "1Abc...",
+    "worksheet": "bus",
+    "status": "pending",
+    "limit": 10
+  }
+  ```
+- **`bus.updateStatus`** (`POST /bus/updateStatus`) – clôture ou relance un message du bus.
+  ```json
+  {
+    "user": "ops",
+    "agent": "dispatcher",
+    "spreadsheet_id": "1Abc...",
+    "worksheet": "bus",
+    "message_id": "bus-2025-0001",
+    "status": "done"
+  }
+  ```
+- **`gcal.create_event`** (`POST /google/gcal/create_event`) – planifie un événement dans Google Agenda.
+  ```json
+  {
+    "user": "ops",
+    "agent": "calendar",
+    "calendar_id": "primary",
+    "summary": "Demo SENTRA",
+    "description": "Synchro produit",
+    "location": "Visio",
+    "start": "2025-01-20T09:00:00Z",
+    "end": "2025-01-20T10:00:00Z",
+    "timezone": "Europe/Paris",
+    "attendees": ["lead@example.com"],
+    "idempotency_key": "demo-2025-01-20"
+  }
+  ```
+- **`gdrive.upload`** (`POST /google/gdrive/upload`) – envoie un fichier (base64) vers Google Drive.
+  ```json
+  {
+    "user": "ops",
+    "agent": "uploader",
+    "name": "rapport.pdf",
+    "mime_type": "application/pdf",
+    "content_base64": "JVBERi0xLjQKJ...",
+    "folder_id": "abc123"
+  }
+  ```
+- **`rag.index`** (`POST /rag/index`) – indexe un lot de documents dans la collection ChromaDB.
+  ```json
+  {
+    "user": "ops",
+    "agent": "rag-writer",
+    "collection": "prod-notes",
+    "documents": [
+      {
+        "text": "Spec SENTRA v2",
+        "metadata": {"source": "wiki"},
+        "id": "spec-v2"
+      }
+    ]
+  }
+  ```
+- **`rag.query`** (`POST /rag/query`) – interroge la collection vectorielle et renvoie les passages les plus proches.
+  ```json
+  {
+    "user": "ops",
+    "collection": "prod-notes",
+    "query": "résumé architecture",
+    "n_results": 3
+  }
+  ```
 
-### Exemples `curl`
-```bash
-curl -X POST http://localhost:8000/write_note \
-     -H "Content-Type: application/json" \
-     -d '{"text":"Nouvelle note","project":"sentra_core"}'
+Chaque `files.write` déclenche automatiquement un `git commit` suivi d'un `git push`. Les notes restent sauvegardées dans `memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`. Lorsqu’un champ `project` est fourni, elles sont aussi ajoutées dans `projects/<slug>/fichiers/memoire_<slug>.md`.
 
-curl http://localhost:8000/get_notes
+#### Bus Google Sheet & workflow `bus-dispatch`
 
-# Rechercher dans la mémoire
-curl "http://localhost:8000/read_note?term=project"
+Le bus d'orchestration repose sur une feuille Google Sheet structurée avec les colonnes `id | ts | from | to | topic | goal | context_json | status | error | last_update` :
 
-# Lire le journal Markdown du projet
-curl "http://localhost:8000/get_memorial?project=sentra_core"
+- `id` – identifiant unique généré par `bus.send` (utilisé pour les mises à jour).
+- `ts` – horodatage d'insertion.
+- `from` / `to` – agent source et cible.
+- `topic` – sujet court lisible.
+- `goal` – objectif détaillé transmis aux agents.
+- `context_json` – charge utile complète sérialisée (JSON).
+- `status` – état du message (`pending`, `queued`, `running`, `done`, `error`).
+- `error` – dernier message d'erreur remonté par un agent.
+- `last_update` – date de la dernière modification par un outil ou un opérateur.
 
-# Écrire un fichier
-curl -X POST http://localhost:8000/write_file \
-     -H "Content-Type: application/json" \
-     -d '{"project": "sentra_core", "filename": "todo.md", "content": "- [ ] Tâche"}'
-```
-```bash
-# Supprimer un fichier
-curl -X POST http://localhost:8000/delete_file \
-     -H "Content-Type: application/json" \
-     -d '{"path": "/tmp/test.txt"}'
-
-# Déplacer un fichier
-curl -X POST http://localhost:8000/move_file \
-     -H "Content-Type: application/json" \
-     -d '{"src": "/tmp/a.txt", "dst": "/tmp/b.txt"}'
-
-# Archiver un fichier
-curl -X POST http://localhost:8000/archive_file \
-     -H "Content-Type: application/json" \
-     -d '{"path": "/tmp/a.log", "archive_dir": "/tmp/archive"}'
-```
-Chaque écriture déclenche automatiquement un `git commit` suivi d'un `git push`. Les notes sont sauvegardées dans `memory/sentra_memory.json` ainsi que dans `projects/<nom>/fichiers/Z_MEMORIAL.md`. Lorsqu’un champ `project` est fourni, elles sont aussi ajoutées dans `projects/<slug>/fichiers/memoire_<slug>.md`.
+Le workflow n8n `bus-dispatch` se déploie en trois étapes : (1) un nœud *Google Sheets Watch* écoute les lignes dont le `status` est `pending`; (2) un nœud *Discord* publie la mission sur le canal opérateurs avec un lien vers la ligne ; (3) un nœud *Google Sheets Update* applique la réponse (nouveau `status`, horodatage `last_update`, éventuel `error`). Ainsi, toute boucle `bus.send → bus.poll → bus.updateStatus` reste synchronisée entre la feuille, Discord et les agents SENTRA.
 
 ## 🔒 Obfuscation glyphique
 L'option `--obfuscate` du script `run_auto_translator.py` attribue des glyphes aléatoires à chaque balise. Le mapping généré est écrit dans un fichier `<nom>_mapping.json` (ou chemin défini par `--map-out`). **Attention :** perdre ce fichier rend la décompression impossible. Conservez-le précieusement ou lancez le script sans obfuscation si la récupération prévaut.
@@ -162,7 +259,7 @@ Brainstorming/code/veille par DeepSeek R1 via API Ollama (voir planning)
 
 Automatisation n8n : backup, synchronisation, extraction, dashboard, surveillance
 ### Exemple n8n
-1. **HTTP Request** → `POST /write_note` avec un contenu généré
+1. **HTTP Request** → `POST /memory/note/add` avec un contenu généré
 2. **GitHub** → `pull` puis `push` automatique
 3. **Discord** → alerte en cas d’échec
 Le tout exposé derrière Cloudflare pour sécuriser l'accès.
@@ -376,13 +473,17 @@ Rédaction README audit	15 min
 
 ## ✅ Tests automatisés
 
-Le paquet `tests/` contient une suite Pytest couvrant les routes mémoire/fichiers et un scénario E2E (marqué `slow`). Les fixtures isolent les dépendances externes (Git, Google Sheet, n8n, Discord) en les simulant.
+Le paquet `tests/` contient une suite Pytest rafraîchie couvrant chaque outil MCP (`files`, `memory`, `bus`, `google`, `rag`) en plus du scénario E2E (marqué `slow`). Les fixtures isolent les dépendances externes (Git, Google Sheet, n8n, Discord) en les simulant.
 
 ```bash
-pytest
+pytest -k "files"
+pytest -k "memory"
+pytest -k "bus"
+pytest -k "google"
+pytest -k "rag"
 ```
 
-Utilisez `pytest -m "not slow"` pour exclure le test de bout en bout si besoin.
+Lancer `pytest` sans filtre exécute l'ensemble de la suite, et `pytest -m "not slow"` permet d'exclure le test de bout en bout si besoin.
 
 ## Licence
 Ce projet est distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
