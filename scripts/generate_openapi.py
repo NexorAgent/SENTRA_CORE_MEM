@@ -1,12 +1,8 @@
-"""Utility to regenerate the OpenAPI schema for the SENTRA FastAPI app."""
-from __future__ import annotations
-
 import json
 import sys
+import types
 from pathlib import Path
-from typing import Any, Dict, Tuple
-
-from fastapi.openapi.utils import get_openapi
+from typing import Any, Dict
 
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -14,44 +10,128 @@ ROOT_DIR = CURRENT_DIR.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from scripts.api_sentra import app
 
-# Mapping of (HTTP method, path) to the expected MCP tool operationId.
-OPERATION_IDS: Dict[Tuple[str, str], str] = {
-    ("GET", "/check_env"): "checkEnv",
-    ("POST", "/reprise"): "repriseProjet",
-    ("POST", "/write_note"): "writeNote",
-    ("GET", "/read_note"): "readNote",
-    ("POST", "/move_file"): "moveFile",
-    ("POST", "/write_file"): "writeFile",
-    ("GET", "/get_memorial"): "getMemorial",
-    ("POST", "/archive_file"): "archiveFile",
-    ("GET", "/list_files"): "listFiles",
-    ("GET", "/search"): "searchFiles",
-    ("POST", "/delete_file"): "deleteFile",
-    ("GET", "/"): "home",
-    ("GET", "/status"): "status",
-    ("GET", "/version"): "getVersion",
-    ("GET", "/readme"): "getReadme",
-    ("GET", "/logs/latest"): "getLatestLogs",
-    ("GET", "/agents"): "listAgents",
-    ("GET", "/explore"): "exploreProject",
-    ("POST", "/correct_file"): "correctFile",
-}
+def _install_google_stubs() -> None:
+    if "google.oauth2.service_account" in sys.modules:
+        return
+
+    google_module = sys.modules.setdefault("google", types.ModuleType("google"))
+    oauth2_module = sys.modules.setdefault("google.oauth2", types.ModuleType("google.oauth2"))
+    service_account_module = types.ModuleType("google.oauth2.service_account")
+
+    class DummyCredentials:
+        @classmethod
+        def from_service_account_file(cls, *args, **kwargs):
+            return cls()
+
+    service_account_module.Credentials = DummyCredentials
+    oauth2_module.service_account = service_account_module
+    setattr(google_module, "oauth2", oauth2_module)
+    sys.modules["google.oauth2"] = oauth2_module
+    sys.modules["google.oauth2.service_account"] = service_account_module
 
 
-def apply_operation_ids(schema: Dict[str, Any]) -> None:
-    paths = schema.get("paths", {})
-    for path, operations in paths.items():
-        for method, details in operations.items():
-            key = (method.upper(), path)
-            custom_id = OPERATION_IDS.get(key)
-            if custom_id:
-                details["operationId"] = custom_id
+def _install_googleapiclient_stubs() -> None:
+    required_modules = {
+        "googleapiclient.discovery",
+        "googleapiclient.http",
+        "googleapiclient.errors",
+    }
+    if required_modules.issubset(sys.modules.keys()):
+        return
+
+    googleapiclient_module = sys.modules.setdefault(
+        "googleapiclient", types.ModuleType("googleapiclient")
+    )
+
+    class DummyService:
+        def __getattr__(self, _name):
+            def _call(*args, **kwargs):
+                return self
+
+            return _call
+
+    def build(*args, **kwargs):
+        return DummyService()
+
+    discovery_module = types.ModuleType("googleapiclient.discovery")
+    discovery_module.build = build
+    sys.modules["googleapiclient.discovery"] = discovery_module
+    setattr(googleapiclient_module, "discovery", discovery_module)
+
+    http_module = types.ModuleType("googleapiclient.http")
+
+    class MediaInMemoryUpload:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    http_module.MediaInMemoryUpload = MediaInMemoryUpload
+    sys.modules["googleapiclient.http"] = http_module
+    setattr(googleapiclient_module, "http", http_module)
+
+    errors_module = types.ModuleType("googleapiclient.errors")
+
+    class HttpError(Exception):
+        pass
+
+    errors_module.HttpError = HttpError
+    sys.modules["googleapiclient.errors"] = errors_module
+    setattr(googleapiclient_module, "errors", errors_module)
 
 
-def ensure_servers(schema: Dict[str, Any]) -> None:
+def _install_chromadb_stub() -> None:
+    if "chromadb" in sys.modules:
+        return
+    try:
+        import chromadb  # type: ignore
+    except ModuleNotFoundError:
+        chromadb_module = types.ModuleType("chromadb")
+
+        class DummyCollection:
+            def upsert(self, *args, **kwargs):
+                return None
+
+            def query(self, *args, **kwargs):
+                return {}
+
+        class DummyClient:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def get_or_create_collection(self, name):
+                return DummyCollection()
+
+        chromadb_module.PersistentClient = DummyClient
+        sys.modules["chromadb"] = chromadb_module
+    else:
+        sys.modules.setdefault("chromadb", chromadb)
+
+
+def ensure_optional_dependencies() -> None:
+    try:
+        import google.oauth2.service_account  # type: ignore
+    except ModuleNotFoundError:
+        _install_google_stubs()
+
+    try:
+        import googleapiclient.discovery  # type: ignore
+        import googleapiclient.http  # type: ignore
+        import googleapiclient.errors  # type: ignore
+    except ModuleNotFoundError:
+        _install_googleapiclient_stubs()
+
+    _install_chromadb_stub()
+
+
+def build_schema() -> Dict[str, Any]:
+    ensure_optional_dependencies()
+
+    from app.main import create_app
+
+    app = create_app()
+    schema = app.openapi()
     schema["servers"] = [{"url": "http://localhost:5000"}]
+    return schema
 
 
 def format_scalar(value: Any) -> str:
@@ -96,15 +176,7 @@ def dump_yaml(data: Any, indent: int = 0) -> str:
 
 
 def main() -> None:
-    schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-    apply_operation_ids(schema)
-    ensure_servers(schema)
-
+    schema = build_schema()
     output_path = Path(__file__).resolve().parents[1] / "openapi.yaml"
     yaml_content = dump_yaml(schema) + "\n"
     output_path.write_text(yaml_content, encoding="utf-8")

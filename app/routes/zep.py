@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from scripts.memory_zep_local import save_to_zep, search_zep
 
-router = APIRouter(prefix="/zep", tags=["zep"])
+router = APIRouter(prefix="/zep", tags=["zep"], include_in_schema=False)
 
 
 class ZepPayload(BaseModel):

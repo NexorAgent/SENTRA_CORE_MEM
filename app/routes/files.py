@@ -39,7 +39,7 @@ class FileWriteResponse(BaseModel):
     commit_message: str | None
 
 
-@router.post("/files/read", name="files.read")
+@router.post("/files/read", name="files.read", operation_id="files.read")
 def read_file(request: FileReadRequest, audit_logger: AuditLogger = Depends(get_audit_logger)) -> FileReadResponse:
     audit_logger.log("files.read", request.model_dump(exclude={"user"}), request.user)
     try:
@@ -60,7 +60,7 @@ def read_file(request: FileReadRequest, audit_logger: AuditLogger = Depends(get_
     )
 
 
-@router.post("/files/write", name="files.write")
+@router.post("/files/write", name="files.write", operation_id="files.write")
 def write_file(
     request: FileWriteRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),

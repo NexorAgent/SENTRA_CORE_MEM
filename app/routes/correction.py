@@ -22,7 +22,11 @@ class CorrectionResponse(BaseModel):
     errors: str | None = None
 
 
-@router.post("/correct_file", response_model=CorrectionResponse)
+@router.post(
+    "/correct_file",
+    response_model=CorrectionResponse,
+    include_in_schema=False,
+)
 def correct_file_endpoint(request: CorrectionRequest):
     full_path = request.file_path
 

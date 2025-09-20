@@ -15,7 +15,7 @@ from app.routes.zep import router as zep_router
 def create_app() -> FastAPI:
     app = FastAPI(title="SENTRA API", version="1.0.0")
 
-    @app.get("/")
+    @app.get("/", include_in_schema=False)
     def health_check() -> dict[str, str]:
         return {"status": "ok", "message": "SENTRA API active"}
 

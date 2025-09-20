@@ -61,7 +61,11 @@ class MemoryNoteFindResponse(BaseModel):
     results: List[MemoryNoteModel]
 
 
-@router.post("/memory/note/add", name="memory.note.add")
+@router.post(
+    "/memory/note/add",
+    name="memory.note.add",
+    operation_id="memory.note.add",
+)
 def add_memory_note(
     request: MemoryNoteAddRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
@@ -77,7 +81,11 @@ def add_memory_note(
     return MemoryNoteAddResponse(note=MemoryNoteModel.from_domain(note), created=created)
 
 
-@router.post("/memory/note/find", name="memory.note.find")
+@router.post(
+    "/memory/note/find",
+    name="memory.note.find",
+    operation_id="memory.note.find",
+)
 def find_memory_notes(
     request: MemoryNoteFindRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
