@@ -84,7 +84,13 @@ def write_file(
     target_path.write_text(request.content, encoding="utf-8")
     digest = sha256(request.content.encode("utf-8")).hexdigest()
     try:
-        commit_message = git_helper.commit_and_push("files.write", target_path, request.agent, digest)
+        commit_message = git_helper.commit_and_push(
+            "files.write",
+            target_path,
+            request.agent,
+            digest,
+            idempotency_key=request.idempotency_key,
+        )
     except GitOpsError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
     return FileWriteResponse(
