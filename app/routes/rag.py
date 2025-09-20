@@ -45,7 +45,7 @@ class RAGQueryResponse(BaseModel):
     results: Dict[str, Any]
 
 
-@router.post("/rag/index", name="rag.index")
+@router.post("/rag/index", name="rag.index", operation_id="rag.index")
 def rag_index(
     request: RAGIndexRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
@@ -65,7 +65,7 @@ def rag_index(
     return RAGIndexResponse(document_ids=ids)
 
 
-@router.post("/rag/query", name="rag.query")
+@router.post("/rag/query", name="rag.query", operation_id="rag.query")
 def rag_query(
     request: RAGQueryRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),

@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Sentra Memory Plugin",
   "name_for_model": "sentra_memory",
-  "description_for_human": "Permet à ChatGPT de gérer la reprise de projet, l’écriture de notes et de fichiers dans SENTRA.",
-  "description_for_model": "Plugin pour exécuter des opérations : /reprise pour relancer l’analyse du projet, /write_note pour ajouter une note dans la mémoire, /write_file pour créer ou mettre à jour un fichier dans un projet.",
+  "description_for_human": "Permet à ChatGPT d’utiliser les outils MCP SENTRA : lecture/écriture de fichiers, notes mémoire, automatisations n8n, intégrations Google et bus collaboratif.",
+  "description_for_model": "Plugin MCP exposant files.read, files.write, memory.note.add, memory.note.find, n8n.trigger, gcal.create_event, gdrive.upload, bus.send, bus.poll, bus.updateStatus et rag.index/query.",
   "auth": {
     "type": "none"
   },

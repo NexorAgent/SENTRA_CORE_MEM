@@ -1,18 +1,19 @@
 openapi: "3.1.0"
 info:
-  title: "Sentra Memory Plugin API"
-  description: "API pour piloter la reprise et l'écriture dans un projet SENTRA (Discord ↔ résumé GPT, notes, fichiers)."
-  version: "1.1.0"
+  title: "SENTRA API"
+  version: "1.0.0"
 paths:
-  /correct_file:
+  /files/read:
     post:
-      summary: "Correct File Endpoint"
-      operationId: "correctFile"
+      tags:
+        - "files"
+      summary: "Files.Read"
+      operationId: "files.read"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CorrectionRequest"
+              $ref: "#/components/schemas/FileReadRequest"
         required: true
       responses:
         200:
@@ -20,34 +21,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CorrectionResponse"
+                $ref: "#/components/schemas/FileReadResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /check_env:
-    get:
-      summary: "Check Env"
-      description: "Route de debug : affiche si OPENAI_API_KEY est défini et son préfixe."
-      operationId: "checkEnv"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CheckEnvResponse"
-  /reprise:
+  /files/write:
     post:
-      summary: "Reprise Projet"
-      operationId: "repriseProjet"
+      tags:
+        - "files"
+      summary: "Files.Write"
+      operationId: "files.write"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RepriseRequest"
+              $ref: "#/components/schemas/FileWriteRequest"
         required: true
       responses:
         200:
@@ -55,22 +46,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepriseResponse"
+                $ref: "#/components/schemas/FileWriteResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /write_note:
+  /memory/note/add:
     post:
-      summary: "Write Note"
-      operationId: "writeNote"
+      tags:
+        - "memory"
+      summary: "Memory.Note.Add"
+      operationId: "memory.note.add"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WriteNoteRequest"
+              $ref: "#/components/schemas/MemoryNoteAddRequest"
         required: true
       responses:
         200:
@@ -78,64 +71,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WriteResponse"
+                $ref: "#/components/schemas/MemoryNoteAddResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /read_note:
-    get:
-      summary: "Read Note"
-      description: "Lecture intelligente universelle :\n- Si 'filepath' fourni, lire tout fichier texte (md/txt) → status success si contenu, error sinon.\n- Sinon, recherche classique mémoire IA.\n- Toujours status explicite, suggestions en cas d’erreur."
-      operationId: "readNote"
-      parameters:
-        -
-          name: "term"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            default: ""
-            title: "Term"
-        -
-          name: "limit"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            default: 5
-            title: "Limit"
-        -
-          name: "filepath"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            title: "Filepath"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReadNoteResponse"
-        422:
-          description: "Validation Error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-  /move_file:
+  /memory/note/find:
     post:
-      summary: "Move File"
-      operationId: "moveFile"
+      tags:
+        - "memory"
+      summary: "Memory.Note.Find"
+      operationId: "memory.note.find"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MoveFileRequest"
+              $ref: "#/components/schemas/MemoryNoteFindRequest"
         required: true
       responses:
         200:
@@ -143,22 +96,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WriteResponse"
+                $ref: "#/components/schemas/MemoryNoteFindResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /write_file:
+  /n8n/trigger:
     post:
-      summary: "Write File"
-      operationId: "writeFile"
+      tags:
+        - "n8n"
+      summary: "N8N.Trigger"
+      operationId: "n8n.trigger"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WriteFileRequest"
+              $ref: "#/components/schemas/N8NTriggerRequest"
         required: true
       responses:
         200:
@@ -166,49 +121,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WriteResponse"
+                $ref: "#/components/schemas/N8NTriggerResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /get_memorial:
-    get:
-      summary: "Get Memorial"
-      description: "Renvoie en texte brut le contenu de projects/<projet>/fichiers/Z_MEMORIAL.md."
-      operationId: "getMemorial"
-      parameters:
-        -
-          name: "project"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            default: "sentra_core"
-            title: "Project"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            text/plain:
-              schema:
-                type: "string"
-        422:
-          description: "Validation Error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-  /archive_file:
+  /google/gcal/create_event:
     post:
-      summary: "Archive File"
-      operationId: "archiveFile"
+      tags:
+        - "google"
+      summary: "Gcal.Create Event"
+      operationId: "gcal.create_event"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ArchiveFileRequest"
+              $ref: "#/components/schemas/GCalCreateEventRequest"
         required: true
       responses:
         200:
@@ -216,127 +146,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WriteResponse"
+                $ref: "#/components/schemas/GCalCreateEventResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /list_files:
-    get:
-      summary: "List Files"
-      operationId: "listFiles"
-      parameters:
-        -
-          name: "dir"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            title: "Dir"
-        -
-          name: "pattern"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            default: "*"
-            title: "Pattern"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ListFilesResponse"
-        422:
-          description: "Validation Error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-  /search:
-    get:
-      summary: "Search Files"
-      operationId: "searchFiles"
-      parameters:
-        -
-          name: "term"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            title: "Term"
-        -
-          name: "dir"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            title: "Dir"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SearchResponse"
-        422:
-          description: "Validation Error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-  /explore:
-    get:
-      tags:
-        - "monitoring"
-      summary: "Explore"
-      description: "Explore l'arborescence d'un projet et retourne la structure récursive à partir de 'path'."
-      operationId: "exploreProject"
-      parameters:
-        -
-          name: "project"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            description: "Nom du projet"
-            title: "Project"
-          description: "Nom du projet"
-        -
-          name: "path"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            description: "Chemin relatif à explorer (défaut: racine du projet)"
-            default: "/"
-            title: "Path"
-          description: "Chemin relatif à explorer (défaut: racine du projet)"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExploreResponse"
-        422:
-          description: "Validation Error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-  /delete_file:
+  /google/gdrive/upload:
     post:
-      summary: "Delete File"
-      operationId: "deleteFile"
+      tags:
+        - "google"
+      summary: "Gdrive.Upload"
+      operationId: "gdrive.upload"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DeleteFileRequest"
+              $ref: "#/components/schemas/GDriveUploadRequest"
         required: true
       responses:
         200:
@@ -344,249 +171,557 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WriteResponse"
+                $ref: "#/components/schemas/GDriveUploadResponse"
         422:
           description: "Validation Error"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-  /:
-    get:
+  /bus/send:
+    post:
       tags:
-        - "monitoring"
-      summary: "Home"
-      operationId: "home"
+        - "bus"
+      summary: "Bus.Send"
+      operationId: "bus.send"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusSendRequest"
+        required: true
       responses:
         200:
           description: "Successful Response"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HomeResponse"
-  /status:
-    get:
+                $ref: "#/components/schemas/BusSendResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /bus/poll:
+    post:
       tags:
-        - "monitoring"
-      summary: "Status"
-      operationId: "status"
+        - "bus"
+      summary: "Bus.Poll"
+      operationId: "bus.poll"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusPollRequest"
+        required: true
       responses:
         200:
           description: "Successful Response"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatusResponse"
-  /version:
-    get:
-      tags:
-        - "monitoring"
-      summary: "Get Version"
-      operationId: "getVersion"
-      responses:
-        200:
-          description: "Successful Response"
+                $ref: "#/components/schemas/BusPollResponse"
+        422:
+          description: "Validation Error"
           content:
-            text/plain:
+            application/json:
               schema:
-                type: "string"
-  /readme:
-    get:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /bus/updateStatus:
+    post:
       tags:
-        - "monitoring"
-      summary: "Get Readme"
-      operationId: "getReadme"
-      responses:
-        200:
-          description: "Successful Response"
-          content:
-            text/plain:
-              schema:
-                type: "string"
-  /logs/latest:
-    get:
-      tags:
-        - "logs"
-      summary: "Get Latest Logs"
-      operationId: "getLatestLogs"
+        - "bus"
+      summary: "Bus.Updatestatus"
+      operationId: "bus.updateStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusUpdateStatusRequest"
+        required: true
       responses:
         200:
           description: "Successful Response"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LogsResponse"
-  /agents:
-    get:
+                $ref: "#/components/schemas/BusUpdateStatusResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /rag/index:
+    post:
       tags:
-        - "monitoring"
-      summary: "List Agents"
-      operationId: "listAgents"
+        - "rag"
+      summary: "Rag.Index"
+      operationId: "rag.index"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RAGIndexRequest"
+        required: true
       responses:
         200:
           description: "Successful Response"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentsResponse"
+                $ref: "#/components/schemas/RAGIndexResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /rag/query:
+    post:
+      tags:
+        - "rag"
+      summary: "Rag.Query"
+      operationId: "rag.query"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RAGQueryRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RAGQueryResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
 components:
   schemas:
-    AgentsResponse:
+    BusPollRequest:
       properties:
-        active_agents:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        spreadsheet_id:
+          type: "string"
+          minLength: 1
+          title: "Spreadsheet Id"
+        worksheet:
+          type: "string"
+          minLength: 1
+          title: "Worksheet"
+        status:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Status"
+        limit:
+          type: "integer"
+          maximum: 100.0
+          minimum: 1.0
+          title: "Limit"
+          default: 20
+      type: "object"
+      required:
+        - "user"
+        - "spreadsheet_id"
+        - "worksheet"
+      title: "BusPollRequest"
+    BusPollResponse:
+      properties:
+        records:
+          items:
+            $ref: "#/components/schemas/BusRecord"
+          type: "array"
+          title: "Records"
+      type: "object"
+      required:
+        - "records"
+      title: "BusPollResponse"
+    BusRecord:
+      properties:
+        message_id:
+          type: "string"
+          title: "Message Id"
+        timestamp:
+          type: "string"
+          title: "Timestamp"
+        user:
+          type: "string"
+          title: "User"
+        agent:
+          type: "string"
+          title: "Agent"
+        status:
+          type: "string"
+          title: "Status"
+        payload:
+          additionalProperties: true
+          type: "object"
+          title: "Payload"
+      type: "object"
+      required:
+        - "message_id"
+        - "timestamp"
+        - "user"
+        - "agent"
+        - "status"
+        - "payload"
+      title: "BusRecord"
+    BusSendRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        spreadsheet_id:
+          type: "string"
+          minLength: 1
+          title: "Spreadsheet Id"
+        worksheet:
+          type: "string"
+          minLength: 1
+          title: "Worksheet"
+        payload:
+          additionalProperties: true
+          type: "object"
+          title: "Payload"
+        idempotency_key:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Idempotency Key"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+        - "spreadsheet_id"
+        - "worksheet"
+      title: "BusSendRequest"
+    BusSendResponse:
+      properties:
+        message_id:
+          type: "string"
+          title: "Message Id"
+        status:
+          type: "string"
+          title: "Status"
+        timestamp:
+          type: "string"
+          title: "Timestamp"
+      type: "object"
+      required:
+        - "message_id"
+        - "status"
+        - "timestamp"
+      title: "BusSendResponse"
+    BusUpdateStatusRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        spreadsheet_id:
+          type: "string"
+          minLength: 1
+          title: "Spreadsheet Id"
+        worksheet:
+          type: "string"
+          minLength: 1
+          title: "Worksheet"
+        message_id:
+          type: "string"
+          minLength: 1
+          title: "Message Id"
+        status:
+          type: "string"
+          minLength: 1
+          title: "Status"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+        - "spreadsheet_id"
+        - "worksheet"
+        - "message_id"
+        - "status"
+      title: "BusUpdateStatusRequest"
+    BusUpdateStatusResponse:
+      properties:
+        message_id:
+          type: "string"
+          title: "Message Id"
+        status:
+          type: "string"
+          title: "Status"
+      type: "object"
+      required:
+        - "message_id"
+        - "status"
+      title: "BusUpdateStatusResponse"
+    FileReadRequest:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+          description: "Path beginning with /projects, /reports, or /students"
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+      type: "object"
+      required:
+        - "path"
+        - "user"
+      title: "FileReadRequest"
+    FileReadResponse:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+        content:
+          type: "string"
+          title: "Content"
+        sha256:
+          type: "string"
+          title: "Sha256"
+        last_modified:
+          anyOf:
+            -
+              type: "string"
+              format: "date-time"
+            -
+              type: "null"
+          title: "Last Modified"
+      type: "object"
+      required:
+        - "path"
+        - "content"
+        - "sha256"
+        - "last_modified"
+      title: "FileReadResponse"
+    FileWriteRequest:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+          description: "Path beginning with /projects, /reports, or /students"
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        content:
+          type: "string"
+          title: "Content"
+          description: "File contents to persist"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        idempotency_key:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Idempotency Key"
+          description: "Caller-supplied idempotency key"
+      type: "object"
+      required:
+        - "path"
+        - "user"
+        - "content"
+        - "agent"
+      title: "FileWriteRequest"
+    FileWriteResponse:
+      properties:
+        path:
+          type: "string"
+          title: "Path"
+        sha256:
+          type: "string"
+          title: "Sha256"
+        committed:
+          type: "boolean"
+          title: "Committed"
+        commit_message:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Commit Message"
+      type: "object"
+      required:
+        - "path"
+        - "sha256"
+        - "committed"
+        - "commit_message"
+      title: "FileWriteResponse"
+    GCalCreateEventRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        calendar_id:
+          type: "string"
+          minLength: 1
+          title: "Calendar Id"
+        summary:
+          type: "string"
+          minLength: 1
+          title: "Summary"
+        description:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Description"
+        location:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Location"
+        start:
+          type: "string"
+          format: "date-time"
+          title: "Start"
+        end:
+          type: "string"
+          format: "date-time"
+          title: "End"
+        timezone:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Timezone"
+        attendees:
           items:
             type: "string"
           type: "array"
-          title: "Active Agents"
+          title: "Attendees"
+        idempotency_key:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Idempotency Key"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+        - "calendar_id"
+        - "summary"
+        - "start"
+        - "end"
+      title: "GCalCreateEventRequest"
+    GCalCreateEventResponse:
+      properties:
+        event_id:
+          type: "string"
+          title: "Event Id"
+        html_link:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Html Link"
         status:
           type: "string"
           title: "Status"
       type: "object"
       required:
-        - "active_agents"
+        - "event_id"
+        - "html_link"
         - "status"
-      title: "AgentsResponse"
-    ArchiveFileRequest:
+      title: "GCalCreateEventResponse"
+    GDriveUploadRequest:
       properties:
-        path:
+        user:
           type: "string"
-          title: "Path"
-        archive_dir:
+          minLength: 1
+          title: "User"
+        agent:
           type: "string"
-          title: "Archive Dir"
-      type: "object"
-      required:
-        - "path"
-        - "archive_dir"
-      title: "ArchiveFileRequest"
-    CheckEnvResponse:
-      properties:
-        env_OK:
-          type: "boolean"
-          title: "Env Ok"
-        OPENAI_API_KEY_prefix:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Openai Api Key Prefix"
-        detail:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Detail"
-      type: "object"
-      required:
-        - "env_OK"
-      title: "CheckEnvResponse"
-    CorrectionRequest:
-      properties:
-        file_path:
-          type: "string"
-          title: "File Path"
-        agent_id:
-          type: "string"
-          title: "Agent Id"
-      type: "object"
-      required:
-        - "file_path"
-        - "agent_id"
-      title: "CorrectionRequest"
-    CorrectionResponse:
-      properties:
-        status:
-          type: "string"
-          enum:
-            - "success"
-            - "error"
-            - "forbidden"
-            - "exception"
-          title: "Status"
-        message:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Message"
-        output:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Output"
-        errors:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Errors"
-      type: "object"
-      required:
-        - "status"
-      title: "CorrectionResponse"
-    DeleteFileRequest:
-      properties:
-        path:
-          type: "string"
-          title: "Path"
-        validate_before_delete:
-          type: "boolean"
-          title: "Validate Before Delete"
-          default: true
-      type: "object"
-      required:
-        - "path"
-      title: "DeleteFileRequest"
-    ExploreItem:
-      properties:
+          minLength: 1
+          title: "Agent"
         name:
           type: "string"
+          minLength: 1
           title: "Name"
-        type:
+        mime_type:
           type: "string"
-          enum:
-            - "dir"
-            - "file"
-          title: "Type"
-        children:
+          minLength: 1
+          title: "Mime Type"
+        content_base64:
+          type: "string"
+          title: "Content Base64"
+          description: "Base64-encoded file content"
+        folder_id:
           anyOf:
             -
-              items:
-                $ref: "#/components/schemas/ExploreItem"
-              type: "array"
+              type: "string"
             -
               type: "null"
-          title: "Children"
+          title: "Folder Id"
       type: "object"
       required:
+        - "user"
+        - "agent"
         - "name"
-        - "type"
-      title: "ExploreItem"
-    ExploreResponse:
+        - "mime_type"
+        - "content_base64"
+      title: "GDriveUploadRequest"
+    GDriveUploadResponse:
       properties:
-        project:
+        file_id:
           type: "string"
-          title: "Project"
-        path:
-          type: "string"
-          title: "Path"
-        children:
-          items:
-            $ref: "#/components/schemas/ExploreItem"
-          type: "array"
-          title: "Children"
+          title: "File Id"
+        web_view_link:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Web View Link"
       type: "object"
       required:
-        - "project"
-        - "path"
-        - "children"
-      title: "ExploreResponse"
+        - "file_id"
+        - "web_view_link"
+      title: "GDriveUploadResponse"
     HTTPValidationError:
       properties:
         detail:
@@ -596,165 +731,262 @@ components:
           title: "Detail"
       type: "object"
       title: "HTTPValidationError"
-    HomeResponse:
+    MemoryNoteAddRequest:
       properties:
-        message:
+        user:
           type: "string"
-          title: "Message"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        note:
+          $ref: "#/components/schemas/MemoryNotePayload"
       type: "object"
       required:
-        - "message"
-      title: "HomeResponse"
-    ListFilesResponse:
+        - "user"
+        - "agent"
+        - "note"
+      title: "MemoryNoteAddRequest"
+    MemoryNoteAddResponse:
       properties:
-        status:
+        note:
+          $ref: "#/components/schemas/MemoryNoteModel"
+        created:
+          type: "boolean"
+          title: "Created"
+      type: "object"
+      required:
+        - "note"
+        - "created"
+      title: "MemoryNoteAddResponse"
+    MemoryNoteFindRequest:
+      properties:
+        user:
           type: "string"
-          title: "Status"
-        detail:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Detail"
-        files:
+          minLength: 1
+          title: "User"
+        query:
+          type: "string"
+          title: "Query"
+          description: "Full-text query string"
+          default: ""
+        tags:
           items:
             type: "string"
           type: "array"
-          title: "Files"
+          title: "Tags"
+        limit:
+          type: "integer"
+          maximum: 100.0
+          minimum: 1.0
+          title: "Limit"
+          default: 20
       type: "object"
       required:
-        - "status"
-        - "files"
-      title: "ListFilesResponse"
-    LogsResponse:
+        - "user"
+      title: "MemoryNoteFindRequest"
+    MemoryNoteFindResponse:
       properties:
-        latest:
-          items:
-            type: "string"
-          type: "array"
-          title: "Latest"
-      type: "object"
-      required:
-        - "latest"
-      title: "LogsResponse"
-    MoveFileRequest:
-      properties:
-        src:
-          type: "string"
-          title: "Src"
-        dst:
-          type: "string"
-          title: "Dst"
-      type: "object"
-      required:
-        - "src"
-        - "dst"
-      title: "MoveFileRequest"
-    ReadNoteResponse:
-      properties:
-        status:
-          type: "string"
-          title: "Status"
         results:
           items:
-            type: "string"
+            $ref: "#/components/schemas/MemoryNoteModel"
           type: "array"
           title: "Results"
-        suggestions:
-          items:
-            type: "string"
-          type: "array"
-          title: "Suggestions"
       type: "object"
       required:
-        - "status"
         - "results"
-      title: "ReadNoteResponse"
-    RepriseRequest:
+      title: "MemoryNoteFindResponse"
+    MemoryNoteModel:
       properties:
-        project:
+        note_id:
           type: "string"
-          title: "Project"
-      type: "object"
-      required:
-        - "project"
-      title: "RepriseRequest"
-    RepriseResponse:
-      properties:
-        status:
+          title: "Note Id"
+        text:
           type: "string"
-          title: "Status"
-        resume_path:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Resume Path"
-        resume_content:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Resume Content"
-        detail:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Detail"
-      type: "object"
-      required:
-        - "status"
-      title: "RepriseResponse"
-    SearchResponse:
-      properties:
-        status:
-          type: "string"
-          title: "Status"
-        detail:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Detail"
-        matches:
+          title: "Text"
+        tags:
           items:
             type: "string"
           type: "array"
-          title: "Matches"
+          title: "Tags"
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+        created_at:
+          type: "string"
+          title: "Created At"
+        updated_at:
+          type: "string"
+          title: "Updated At"
       type: "object"
       required:
-        - "status"
-        - "matches"
-      title: "SearchResponse"
-    StatusResponse:
+        - "note_id"
+        - "text"
+        - "tags"
+        - "metadata"
+        - "created_at"
+        - "updated_at"
+      title: "MemoryNoteModel"
+    MemoryNotePayload:
       properties:
-        status:
+        text:
           type: "string"
-          title: "Status"
-        project:
-          type: "string"
-          title: "Project"
-        version:
-          type: "string"
-          title: "Version"
-        agents:
+          minLength: 1
+          title: "Text"
+        tags:
           items:
             type: "string"
           type: "array"
-          title: "Agents"
+          title: "Tags"
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+        note_id:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Note Id"
+          description: "Explicit note identifier to enforce idempotency"
       type: "object"
       required:
-        - "status"
-        - "project"
-        - "version"
-        - "agents"
-      title: "StatusResponse"
+        - "text"
+      title: "MemoryNotePayload"
+    N8NTriggerRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        payload:
+          additionalProperties: true
+          type: "object"
+          title: "Payload"
+        idempotency_key:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Idempotency Key"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+      title: "N8NTriggerRequest"
+    N8NTriggerResponse:
+      properties:
+        result:
+          additionalProperties: true
+          type: "object"
+          title: "Result"
+      type: "object"
+      required:
+        - "result"
+      title: "N8NTriggerResponse"
+    RAGDocumentPayload:
+      properties:
+        text:
+          type: "string"
+          minLength: 1
+          title: "Text"
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+        id:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Id"
+      type: "object"
+      required:
+        - "text"
+      title: "RAGDocumentPayload"
+    RAGIndexRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        collection:
+          type: "string"
+          minLength: 1
+          title: "Collection"
+        documents:
+          items:
+            $ref: "#/components/schemas/RAGDocumentPayload"
+          type: "array"
+          title: "Documents"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+        - "collection"
+        - "documents"
+      title: "RAGIndexRequest"
+    RAGIndexResponse:
+      properties:
+        document_ids:
+          items:
+            type: "string"
+          type: "array"
+          title: "Document Ids"
+      type: "object"
+      required:
+        - "document_ids"
+      title: "RAGIndexResponse"
+    RAGQueryRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        collection:
+          type: "string"
+          minLength: 1
+          title: "Collection"
+        query:
+          type: "string"
+          minLength: 1
+          title: "Query"
+        n_results:
+          type: "integer"
+          maximum: 50.0
+          minimum: 1.0
+          title: "N Results"
+          default: 5
+      type: "object"
+      required:
+        - "user"
+        - "collection"
+        - "query"
+      title: "RAGQueryRequest"
+    RAGQueryResponse:
+      properties:
+        results:
+          additionalProperties: true
+          type: "object"
+          title: "Results"
+      type: "object"
+      required:
+        - "results"
+      title: "RAGQueryResponse"
     ValidationError:
       properties:
         loc:
@@ -778,67 +1010,6 @@ components:
         - "msg"
         - "type"
       title: "ValidationError"
-    WriteFileRequest:
-      properties:
-        project:
-          type: "string"
-          title: "Project"
-        filename:
-          type: "string"
-          title: "Filename"
-        content:
-          type: "string"
-          title: "Content"
-      type: "object"
-      required:
-        - "project"
-        - "filename"
-        - "content"
-      title: "WriteFileRequest"
-    WriteNoteRequest:
-      properties:
-        text:
-          type: "string"
-          title: "Text"
-        project:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Project"
-      type: "object"
-      required:
-        - "text"
-      title: "WriteNoteRequest"
-    WriteResponse:
-      properties:
-        status:
-          type: "string"
-          title: "Status"
-        detail:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Detail"
-        path:
-          anyOf:
-            -
-              type: "string"
-            -
-              type: "null"
-          title: "Path"
-        suggestions:
-          items:
-            type: "string"
-          type: "array"
-          title: "Suggestions"
-      type: "object"
-      required:
-        - "status"
-      title: "WriteResponse"
 servers:
   -
     url: "http://localhost:5000"

@@ -62,7 +62,7 @@ class BusUpdateStatusResponse(BaseModel):
     status: str
 
 
-@router.post("/bus/send", name="bus.send")
+@router.post("/bus/send", name="bus.send", operation_id="bus.send")
 def bus_send(
     request: BusSendRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
@@ -83,7 +83,7 @@ def bus_send(
     return BusSendResponse(**result)
 
 
-@router.post("/bus/poll", name="bus.poll")
+@router.post("/bus/poll", name="bus.poll", operation_id="bus.poll")
 def bus_poll(
     request: BusPollRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
@@ -102,7 +102,11 @@ def bus_poll(
     return BusPollResponse(records=[BusRecord(**record) for record in records])
 
 
-@router.post("/bus/updateStatus", name="bus.updateStatus")
+@router.post(
+    "/bus/updateStatus",
+    name="bus.updateStatus",
+    operation_id="bus.updateStatus",
+)
 def bus_update_status(
     request: BusUpdateStatusRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),

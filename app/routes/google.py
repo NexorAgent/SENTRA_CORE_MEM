@@ -45,7 +45,11 @@ class GCalCreateEventResponse(BaseModel):
     status: str
 
 
-@router.post("/google/gcal/create_event", name="gcal.create_event")
+@router.post(
+    "/google/gcal/create_event",
+    name="gcal.create_event",
+    operation_id="gcal.create_event",
+)
 def create_gcal_event(
     request: GCalCreateEventRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
@@ -98,7 +102,11 @@ class GDriveUploadResponse(BaseModel):
     web_view_link: str | None
 
 
-@router.post("/google/gdrive/upload", name="gdrive.upload")
+@router.post(
+    "/google/gdrive/upload",
+    name="gdrive.upload",
+    operation_id="gdrive.upload",
+)
 def upload_to_gdrive(
     request: GDriveUploadRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),

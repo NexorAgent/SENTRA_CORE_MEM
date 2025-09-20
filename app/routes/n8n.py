@@ -23,7 +23,7 @@ class N8NTriggerResponse(BaseModel):
     result: Dict[str, Any]
 
 
-@router.post("/n8n/trigger", name="n8n.trigger")
+@router.post("/n8n/trigger", name="n8n.trigger", operation_id="n8n.trigger")
 def trigger_workflow(
     request: N8NTriggerRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
