@@ -1,0 +1,1139 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SENTRA API",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "BusPollRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "spreadsheet_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Spreadsheet Id"
+          },
+          "worksheet": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Worksheet"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "spreadsheet_id",
+          "worksheet"
+        ],
+        "title": "BusPollRequest"
+      },
+      "BusPollResponse": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/BusRecord"
+            },
+            "type": "array",
+            "title": "Records"
+          }
+        },
+        "type": "object",
+        "required": [
+          "records"
+        ],
+        "title": "BusPollResponse"
+      },
+      "BusRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ts": {
+            "type": "string",
+            "title": "Ts"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "goal": {
+            "type": "string",
+            "title": "Goal"
+          },
+          "context_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context Json"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "last_update": {
+            "type": "string",
+            "title": "Last Update"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ts",
+          "from",
+          "to",
+          "topic",
+          "goal",
+          "context_json",
+          "status",
+          "error",
+          "last_update"
+        ],
+        "title": "BusRecord"
+      },
+      "BusSendRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "spreadsheet_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Spreadsheet Id"
+          },
+          "worksheet": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Worksheet"
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "title": "To"
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Topic"
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Goal"
+          },
+          "context_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context Json"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "spreadsheet_id",
+          "worksheet",
+          "from",
+          "to",
+          "topic",
+          "goal"
+        ],
+        "title": "BusSendRequest"
+      },
+      "BusSendResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ts": {
+            "type": "string",
+            "title": "Ts"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "goal": {
+            "type": "string",
+            "title": "Goal"
+          },
+          "context_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context Json"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "last_update": {
+            "type": "string",
+            "title": "Last Update"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ts",
+          "from",
+          "to",
+          "topic",
+          "goal",
+          "context_json",
+          "status",
+          "error",
+          "last_update"
+        ],
+        "title": "BusSendResponse"
+      },
+      "BusUpdateStatusRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "spreadsheet_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Spreadsheet Id"
+          },
+          "worksheet": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Worksheet"
+          },
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message Id"
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "spreadsheet_id",
+          "worksheet",
+          "message_id",
+          "status"
+        ],
+        "title": "BusUpdateStatusRequest"
+      },
+      "BusUpdateStatusResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ts": {
+            "type": "string",
+            "title": "Ts"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "goal": {
+            "type": "string",
+            "title": "Goal"
+          },
+          "context_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context Json"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "last_update": {
+            "type": "string",
+            "title": "Last Update"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ts",
+          "from",
+          "to",
+          "topic",
+          "goal",
+          "context_json",
+          "status",
+          "error",
+          "last_update"
+        ],
+        "title": "BusUpdateStatusResponse"
+      },
+      "FileReadRequest": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Path beginning with /projects, /reports, or /students"
+          },
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "user"
+        ],
+        "title": "FileReadRequest"
+      },
+      "FileReadResponse": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "content",
+          "sha256",
+          "last_modified"
+        ],
+        "title": "FileReadResponse"
+      },
+      "FileWriteRequest": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Path beginning with /projects, /reports, or /students"
+          },
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "File contents to persist"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key",
+            "description": "Caller-supplied idempotency key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "user",
+          "content",
+          "agent"
+        ],
+        "title": "FileWriteRequest"
+      },
+      "FileWriteResponse": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "committed": {
+            "type": "boolean",
+            "title": "Committed"
+          },
+          "commit_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "committed",
+          "commit_message"
+        ],
+        "title": "FileWriteResponse"
+      },
+      "GCalCreateEventRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "calendar_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Calendar Id"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "attendees": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attendees"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "agent",
+          "calendar_id",
+          "summary",
+          "start",
+          "end"
+        ],
+        "title": "GCalCreateEventRequest"
+      },
+      "GCalCreateEventResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Link"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "html_link",
+          "status"
+        ],
+        "title": "GCalCreateEventResponse"
+      },
+      "GDriveUploadRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Mime Type"
+          },
+          "content_base64": {
+            "type": "string",
+            "title": "Content Base64",
+            "description": "Base64-encoded file content"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "agent",
+          "name",
+          "mime_type",
+          "content_base64"
+        ],
+        "title": "GDriveUploadRequest"
+      },
+      "GDriveUploadResponse": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "title": "File Id"
+          },
+          "web_view_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web View Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id",
+          "web_view_link"
+        ],
+        "title": "GDriveUploadResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MemoryNoteAddRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "note": {
+            "$ref": "#/components/schemas/MemoryNotePayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "agent",
+          "note"
+        ],
+        "title": "MemoryNoteAddRequest"
+      },
+      "MemoryNoteAddResponse": {
+        "properties": {
+          "note": {
+            "$ref": "#/components/schemas/MemoryNoteModel"
+          },
+          "created": {
+            "type": "boolean",
+            "title": "Created"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note",
+          "created"
+        ],
+        "title": "MemoryNoteAddResponse"
+      },
+      "MemoryNoteFindRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "description": "Full-text query string",
+            "default": ""
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "MemoryNoteFindRequest"
+      },
+      "MemoryNoteFindResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryNoteModel"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "MemoryNoteFindResponse"
+      },
+      "MemoryNoteModel": {
+        "properties": {
+          "note_id": {
+            "type": "string",
+            "title": "Note Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note_id",
+          "text",
+          "tags",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MemoryNoteModel"
+      },
+      "MemoryNotePayload": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id",
+            "description": "Explicit note identifier to enforce idempotency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "MemoryNotePayload"
+      },
+      "N8NTriggerRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "agent"
+        ],
+        "title": "N8NTriggerRequest"
+      },
+      "N8NTriggerResponse": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "title": "N8NTriggerResponse"
+      },
+      "RAGDocumentPayload": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "RAGDocumentPayload"
+      },
+      "RAGIndexRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "agent": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Agent"
+          },
+          "collection": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Collection"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/RAGDocumentPayload"
+            },
+            "type": "array",
+            "title": "Documents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "agent",
+          "collection",
+          "documents"
+        ],
+        "title": "RAGIndexRequest"
+      },
+      "RAGIndexResponse": {
+        "properties": {
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_ids"
+        ],
+        "title": "RAGIndexResponse"
+      },
+      "RAGQueryHit": {
+        "properties": {
+          "excerpt": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Excerpt"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "excerpt",
+          "source",
+          "score"
+        ],
+        "title": "RAGQueryHit"
+      },
+      "RAGQueryRequest": {
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "title": "User"
+          },
+          "collection": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Collection"
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Query"
+          },
+          "n_results": {
+            "type": "integer",
+            "maximum": 50,
+            "minimum": 1,
+            "title": "N Results",
+            "default": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "collection",
+          "query"
+        ],
+        "title": "RAGQueryRequest"
+      },
+      "RAGQueryResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RAGQueryHit"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "title": "RAGQueryResponse"
+      },
+      "UploadCompatReq": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "content_base64": {
+            "type": "string",
+            "title": "Content Base64"
+          },
+          "mime": {
+            "type": "string",
+            "title": "Mime"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "content_base64",
+          "mime"
+        ],
+        "title": "UploadCompatReq"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
