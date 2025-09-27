@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -15,9 +15,8 @@ router = APIRouter(tags=["bus"])
 class BusSendRequest(BaseModel):
     user: str = Field(..., min_length=1)
     agent: str = Field(..., min_length=1)
-    spreadsheet_id: str = Field(..., min_length=1)
-    worksheet: str = Field(..., min_length=1)
     payload: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     idempotency_key: str | None = None
 
 
@@ -29,8 +28,8 @@ class BusSendResponse(BaseModel):
 
 class BusPollRequest(BaseModel):
     user: str = Field(..., min_length=1)
-    spreadsheet_id: str = Field(..., min_length=1)
-    worksheet: str = Field(..., min_length=1)
+    agent: str = Field(..., min_length=1)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     status: str | None = None
     limit: int = Field(20, ge=1, le=100)
 
@@ -51,8 +50,7 @@ class BusPollResponse(BaseModel):
 class BusUpdateStatusRequest(BaseModel):
     user: str = Field(..., min_length=1)
     agent: str = Field(..., min_length=1)
-    spreadsheet_id: str = Field(..., min_length=1)
-    worksheet: str = Field(..., min_length=1)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     message_id: str = Field(..., min_length=1)
     status: str = Field(..., min_length=1)
     error: str | None = None
@@ -64,6 +62,17 @@ class BusUpdateStatusResponse(BaseModel):
     timestamp: str
 
 
+def _resolve_sheet_targets(metadata: Dict[str, Any]) -> Tuple[str, str]:
+    spreadsheet_id = metadata.get("spreadsheet_id")
+    worksheet = metadata.get("worksheet")
+    if not spreadsheet_id or not worksheet:
+        raise HTTPException(
+            status_code=400,
+            detail="metadata.spreadsheet_id and metadata.worksheet are required",
+        )
+    return str(spreadsheet_id), str(worksheet)
+
+
 @router.post("/bus/send", name="bus.send", operation_id="bus.send")
 def bus_send(
     request: BusSendRequest,
@@ -71,10 +80,11 @@ def bus_send(
     service: BusService = Depends(get_bus_service),
 ) -> BusSendResponse:
     audit_logger.log("bus.send", request.model_dump(exclude={"user"}), request.user)
+    spreadsheet_id, worksheet = _resolve_sheet_targets(request.metadata)
     try:
         result = service.send(
-            spreadsheet_id=request.spreadsheet_id,
-            worksheet=request.worksheet,
+            spreadsheet_id=spreadsheet_id,
+            worksheet=worksheet,
             payload=request.payload,
             user=request.user,
             agent=request.agent,
@@ -92,10 +102,11 @@ def bus_poll(
     service: BusService = Depends(get_bus_service),
 ) -> BusPollResponse:
     audit_logger.log("bus.poll", request.model_dump(exclude={"user"}), request.user)
+    spreadsheet_id, worksheet = _resolve_sheet_targets(request.metadata)
     try:
         records = service.poll(
-            spreadsheet_id=request.spreadsheet_id,
-            worksheet=request.worksheet,
+            spreadsheet_id=spreadsheet_id,
+            worksheet=worksheet,
             status=request.status,
             limit=request.limit,
         )
@@ -115,10 +126,11 @@ def bus_update_status(
     service: BusService = Depends(get_bus_service),
 ) -> BusUpdateStatusResponse:
     audit_logger.log("bus.updateStatus", request.model_dump(exclude={"user"}), request.user)
+    spreadsheet_id, worksheet = _resolve_sheet_targets(request.metadata)
     try:
         result = service.update_status(
-            spreadsheet_id=request.spreadsheet_id,
-            worksheet=request.worksheet,
+            spreadsheet_id=spreadsheet_id,
+            worksheet=worksheet,
             message_id=request.message_id,
             status=request.status,
             error=request.error,

@@ -311,14 +311,15 @@ components:
           type: "string"
           minLength: 1
           title: "User"
-        spreadsheet_id:
+        agent:
           type: "string"
           minLength: 1
-          title: "Spreadsheet Id"
-        worksheet:
-          type: "string"
-          minLength: 1
-          title: "Worksheet"
+          title: "Agent"
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+          default: {}
         status:
           anyOf:
             -
@@ -335,8 +336,7 @@ components:
       type: "object"
       required:
         - "user"
-        - "spreadsheet_id"
-        - "worksheet"
+        - "agent"
       title: "BusPollRequest"
     BusPollResponse:
       properties:
@@ -389,18 +389,16 @@ components:
           type: "string"
           minLength: 1
           title: "Agent"
-        spreadsheet_id:
-          type: "string"
-          minLength: 1
-          title: "Spreadsheet Id"
-        worksheet:
-          type: "string"
-          minLength: 1
-          title: "Worksheet"
         payload:
           additionalProperties: true
           type: "object"
           title: "Payload"
+          default: {}
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+          default: {}
         idempotency_key:
           anyOf:
             -
@@ -412,8 +410,6 @@ components:
       required:
         - "user"
         - "agent"
-        - "spreadsheet_id"
-        - "worksheet"
       title: "BusSendRequest"
     BusSendResponse:
       properties:
@@ -442,14 +438,11 @@ components:
           type: "string"
           minLength: 1
           title: "Agent"
-        spreadsheet_id:
-          type: "string"
-          minLength: 1
-          title: "Spreadsheet Id"
-        worksheet:
-          type: "string"
-          minLength: 1
-          title: "Worksheet"
+        metadata:
+          additionalProperties: true
+          type: "object"
+          title: "Metadata"
+          default: {}
         message_id:
           type: "string"
           minLength: 1
@@ -458,12 +451,17 @@ components:
           type: "string"
           minLength: 1
           title: "Status"
+        error:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Error"
       type: "object"
       required:
         - "user"
         - "agent"
-        - "spreadsheet_id"
-        - "worksheet"
         - "message_id"
         - "status"
       title: "BusUpdateStatusRequest"
