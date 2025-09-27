@@ -68,9 +68,8 @@ def test_bus_flow_covering_send_poll_and_update(client, api_context):
         json={
             "user": "operator",
             "agent": "dispatcher",
-            "spreadsheet_id": "sheet-1",
-            "worksheet": "Requests",
             "payload": {"title": "Onboarding"},
+            "metadata": {"spreadsheet_id": "sheet-1", "worksheet": "Requests"},
         },
     )
     assert send_response.status_code == 200
@@ -83,10 +82,9 @@ def test_bus_flow_covering_send_poll_and_update(client, api_context):
         json={
             "user": "operator",
             "agent": "dispatcher",
-            "spreadsheet_id": "sheet-1",
-            "worksheet": "Requests",
             "message_id": message_id,
             "status": "done",
+            "metadata": {"spreadsheet_id": "sheet-1", "worksheet": "Requests"},
         },
     )
     assert update_response.status_code == 200
@@ -96,10 +94,10 @@ def test_bus_flow_covering_send_poll_and_update(client, api_context):
         "/bus/poll",
         json={
             "user": "operator",
-            "spreadsheet_id": "sheet-1",
-            "worksheet": "Requests",
+            "agent": "dispatcher",
             "status": "done",
             "limit": 5,
+            "metadata": {"spreadsheet_id": "sheet-1", "worksheet": "Requests"},
         },
     )
     assert poll_response.status_code == 200
