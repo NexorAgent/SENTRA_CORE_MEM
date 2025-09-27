@@ -96,3 +96,14 @@ services:
     ports:
       - "8081:80"
     restart: unless-stopped
+  mcp:
+    build:
+      context: .
+      dockerfile: docker/mcp.Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      SENTRA_API_BASE: "${SENTRA_API_BASE:-http://api:8000}"
+      FS_ROOTS_ALLOW: "${FS_ROOTS_ALLOW:-/projects,/reports,/students,/memory}"
+      FS_NAMING: "${FS_NAMING:-{YYYY}{MM}{DD}_{agent}_{topic}__{slug}.md}"
