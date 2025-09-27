@@ -3,17 +3,28 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel
 import subprocess
-import os
-ALLOWED_BASE_DIR = os.path.abspath("/sandbox/SENTRA_SANDBOX")
+from pathlib import Path
 
-def is_path_allowed(path):
-    return os.path.abspath(path).startswith(ALLOWED_BASE_DIR)
+from app.services.paths import BASE_DIR
+
+ALLOWED_BASE_DIR = BASE_DIR.resolve()
+
+
+def is_path_allowed(path: str) -> bool:
+    try:
+        Path(path).resolve().relative_to(ALLOWED_BASE_DIR)
+    except ValueError:
+        return False
+    return True
+
 
 router = APIRouter()
+
 
 class CorrectionRequest(BaseModel):
     file_path: str
     agent_id: str
+
 
 class CorrectionResponse(BaseModel):
     status: Literal["success", "error", "forbidden", "exception"]
@@ -31,26 +42,29 @@ def correct_file_endpoint(request: CorrectionRequest):
     full_path = request.file_path
 
     if request.agent_id != "SENTRA_CORRECTOR++":
-        return {"status": "forbidden", "message": "❌ Agent non autorisé"}
+        return {"status": "forbidden", "message": "[error] Agent non autorise"}
 
     if not is_path_allowed(full_path):
-        return {"status": "forbidden", "message": "❌ Ce fichier n’est pas dans la sandbox autorisée"}
+        return {
+            "status": "forbidden",
+            "message": "[error] Ce fichier n'est pas dans la sandbox autorisee",
+        }
 
-    if not os.path.exists(full_path):
-        return {"status": "error", "message": f"❌ Fichier introuvable : {full_path}"}
+    if not Path(full_path).exists():
+        return {"status": "error", "message": f"[error] Fichier introuvable : {full_path}"}
 
     try:
         result = subprocess.run(
             ["python", "scripts/corrector/sentra_corrector_agent.py", full_path],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         return {
             "status": "success" if result.returncode == 0 else "error",
             "output": result.stdout.strip(),
-            "errors": result.stderr.strip()
+            "errors": result.stderr.strip(),
         }
 
     except Exception as e:

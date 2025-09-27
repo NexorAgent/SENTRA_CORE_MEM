@@ -475,10 +475,14 @@ components:
         status:
           type: "string"
           title: "Status"
+        timestamp:
+          type: "string"
+          title: "Timestamp"
       type: "object"
       required:
         - "message_id"
         - "status"
+        - "timestamp"
       title: "BusUpdateStatusResponse"
     FileReadRequest:
       properties:

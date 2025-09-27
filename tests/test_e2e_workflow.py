@@ -165,10 +165,10 @@ def test_rag_index_and_query_flow(client, api_context):
             "agent": "researcher",
             "collection": "handbook",
             "documents": [
-                {"text": "SENTRA handbook overview", "metadata": {"section": "intro"}},
+                {"text": "SENTRA handbook overview", "metadata": {"section": "intro", "source": "handbook/intro.md"}},
                 {
                     "text": "Troubleshooting CodeXpert workflows",
-                    "metadata": {"section": "support"},
+                    "metadata": {"section": "support", "source": "handbook/support.md"},
                 },
             ],
         },
@@ -188,7 +188,7 @@ def test_rag_index_and_query_flow(client, api_context):
     )
     assert query_response.status_code == 200
     rag_results = query_response.json()["results"]
-    assert any("CodeXpert" in doc for doc in rag_results["documents"][0])
-
+    assert rag_results
+    assert any("CodeXpert" in hit["excerpt"] for hit in rag_results)
     rag_collection = api_context["rag_service"].collections["handbook"]
     assert set(rag_collection) == set(indexed_ids)

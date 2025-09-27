@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
+from hashlib import sha256
 from typing import Any, Dict, List
-from uuid import uuid5, NAMESPACE_URL
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -19,8 +20,14 @@ class RAGDocumentPayload(BaseModel):
     document_id: str | None = Field(default=None, alias="id")
 
     def compute_id(self) -> str:
-        base = self.document_id or str(uuid5(NAMESPACE_URL, self.text))
-        return base
+        if self.document_id:
+            return self.document_id
+        fingerprint = json.dumps(
+            {"text": self.text, "metadata": self.metadata},
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        return sha256(fingerprint.encode("utf-8")).hexdigest()
 
 
 class RAGIndexRequest(BaseModel):

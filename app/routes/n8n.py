@@ -31,7 +31,7 @@ def trigger_workflow(
 ) -> N8NTriggerResponse:
     audit_logger.log("n8n.trigger", request.model_dump(exclude={"user"}), request.user)
     try:
-        result = client.trigger(request.payload, idempotency_key=request.idempotency_key or request.agent)
+        result = client.trigger(request.payload, idempotency_key=request.idempotency_key)
     except N8NConfigurationError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:  # pragma: no cover - requests errors propagate

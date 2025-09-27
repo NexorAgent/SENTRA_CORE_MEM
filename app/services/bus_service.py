@@ -24,12 +24,9 @@ class BusService:
         self,
         spreadsheet_id: str,
         worksheet: str,
-        sender: str,
-        recipient: str,
-        topic: str,
-        goal: str,
-        context_json: Dict[str, Any],
+        payload: Dict[str, Any],
         user: str,
+        agent: str,
         idempotency_key: str | None = None,
     ) -> Dict[str, Any]:
         message_id = idempotency_key or str(uuid4())
@@ -37,11 +34,9 @@ class BusService:
         row = [
             message_id,
             timestamp,
-            sender,
-            recipient,
-            topic,
-            goal,
-            serialize_metadata(context_json),
+            user,
+            agent,
+            serialize_metadata(payload),
             "pending",
             "",
             timestamp,
@@ -50,7 +45,7 @@ class BusService:
         try:
             service.spreadsheets().values().append(
                 spreadsheetId=spreadsheet_id,
-                range=f"{worksheet}!A:J",
+                range=f"{worksheet}!A:H",
                 valueInputOption="RAW",
                 body={"values": [row]},
             ).execute()
@@ -61,13 +56,11 @@ class BusService:
             "workflow": "bus-dispatch",
             "spreadsheet_id": spreadsheet_id,
             "worksheet": worksheet,
-            "id": message_id,
-            "from": sender,
-            "to": recipient,
-            "topic": topic,
-            "goal": goal,
-            "context_json": context_json,
-            "ts": timestamp,
+            "message_id": message_id,
+            "user": user,
+            "agent": agent,
+            "payload": payload,
+            "timestamp": timestamp,
         }
         try:
             self._n8n_client.trigger(dispatch_payload, idempotency_key=message_id)
@@ -77,16 +70,9 @@ class BusService:
             raise BusServiceError(str(error)) from error
 
         return {
-            "id": message_id,
-            "ts": timestamp,
-            "from": sender,
-            "to": recipient,
-            "topic": topic,
-            "goal": goal,
-            "context_json": context_json,
+            "message_id": message_id,
             "status": "pending",
-            "error": "",
-            "last_update": timestamp,
+            "timestamp": timestamp,
         }
 
     def poll(self, spreadsheet_id: str, worksheet: str, status: Optional[str], limit: int) -> List[Dict[str, Any]]:
@@ -94,14 +80,18 @@ class BusService:
         try:
             result = service.spreadsheets().values().get(
                 spreadsheetId=spreadsheet_id,
-                range=f"{worksheet}!A:J",
+                range=f"{worksheet}!A:H",
             ).execute()
         except HttpError as error:
             raise BusServiceError(str(error)) from error
         values = result.get("values", [])
         records: List[Dict[str, Any]] = []
-        for row in values[1:]:
+        for index, row in enumerate(values):
+            if index == 0 and row and row[0].lower() == "message_id":
+                continue
             record = self._row_to_record(row)
+            if not record:
+                continue
             if status and record["status"].lower() != status.lower():
                 continue
             records.append(record)
@@ -116,22 +106,24 @@ class BusService:
         message_id: str,
         status: str,
         error: Optional[str] = None,
+        *,
+        agent: str | None = None,
     ) -> Dict[str, Any]:
         service = self._auth_manager.sheets_service()
         try:
             result = service.spreadsheets().values().get(
                 spreadsheetId=spreadsheet_id,
-                range=f"{worksheet}!A:J",
+                range=f"{worksheet}!A:H",
             ).execute()
         except HttpError as error:
             raise BusServiceError(str(error)) from error
         values = result.get("values", [])
         for index, row in enumerate(values, start=1):
             if row and row[0] == message_id:
-                padded = list(row) + [""] * max(0, 10 - len(row))
-                error_value = error if error is not None else padded[8]
+                padded = list(row) + [""] * max(0, 8 - len(row))
+                error_value = error if error is not None else padded[6]
                 timestamp = datetime.now(timezone.utc).isoformat()
-                update_range = f"{worksheet}!H{index}:J{index}"
+                update_range = f"{worksheet}!F{index}:H{index}"
                 try:
                     service.spreadsheets().values().update(
                         spreadsheetId=spreadsheet_id,
@@ -141,28 +133,34 @@ class BusService:
                     ).execute()
                 except HttpError as error:
                     raise BusServiceError(str(error)) from error
-                padded[7] = status
-                padded[8] = error_value
-                padded[9] = timestamp
-                return self._row_to_record(padded)
+                padded[5] = status
+                padded[6] = error_value
+                padded[7] = timestamp
+                record = self._row_to_record(padded)
+                if not record:
+                    break
+                return {
+                    "message_id": message_id,
+                    "status": status,
+                    "timestamp": timestamp,
+                }
         raise BusServiceError(f"Message {message_id} not found")
 
     @staticmethod
     def _row_to_record(row: Sequence[str]) -> Dict[str, Any]:
-        padded = list(row) + [""] * max(0, 10 - len(row))
+        if not row:
+            return {}
+        padded = list(row) + [""] * max(0, 8 - len(row))
         try:
-            context = json.loads(padded[6]) if padded[6] else {}
+            payload = json.loads(padded[4]) if padded[4] else {}
         except json.JSONDecodeError:
-            context = {}
+            payload = {}
+        status = padded[5] or "pending"
         return {
-            "id": padded[0],
-            "ts": padded[1],
-            "from": padded[2],
-            "to": padded[3],
-            "topic": padded[4],
-            "goal": padded[5],
-            "context_json": context,
-            "status": padded[7],
-            "error": padded[8],
-            "last_update": padded[9],
+            "message_id": padded[0],
+            "timestamp": padded[1],
+            "user": padded[2],
+            "agent": padded[3],
+            "status": status,
+            "payload": payload,
         }

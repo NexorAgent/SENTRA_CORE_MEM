@@ -34,8 +34,8 @@ if "googleapiclient" not in sys.modules:
     http_module.MediaInMemoryUpload = _MediaInMemoryUpload
 
     googleapiclient_module.errors = errors_module
-    googleapiclient_module.discovery = discovery_module
-    googleapiclient_module.http = http_module
+    discovery_module.build = _build
+    http_module.MediaInMemoryUpload = _MediaInMemoryUpload
 
     sys.modules["googleapiclient"] = googleapiclient_module
     sys.modules["googleapiclient.errors"] = errors_module
@@ -178,27 +178,26 @@ def test_send_appends_full_row_and_triggers_workflow(monkeypatch: pytest.MonkeyP
 
     bus, values_resource, n8n_client = _build_service()
 
+    payload = {"topic": "Spec review", "goal": "Summarize the draft", "nested": {"x": 1}}
+
     result = bus.send(
         spreadsheet_id="sheet-123",
         worksheet="Bus",
-        sender="orchestrator",
-        recipient="codexpert",
-        topic="Spec review",
-        goal="Summarize the draft",
-        context_json={"foo": "bar", "nested": {"x": 1}},
+        payload=payload,
         user="orchestrator",
+        agent="codexpert",
     )
 
     assert len(values_resource.append_calls) == 1
     append_call = values_resource.append_calls[0]
-    assert append_call["range"] == "Bus!A:J"
+    assert append_call["range"] == "Bus!A:H"
     assert append_call["valueInputOption"] == "RAW"
     appended_row = append_call["body"]["values"][0]
     assert appended_row[0] == "12345678-1234-5678-1234-567812345678"
     assert appended_row[1] == fixed_timestamp.isoformat()
-    assert appended_row[2:6] == ["orchestrator", "codexpert", "Spec review", "Summarize the draft"]
-    assert appended_row[6] == json.dumps({"foo": "bar", "nested": {"x": 1}}, sort_keys=True, ensure_ascii=False)
-    assert appended_row[7:] == ["pending", "", fixed_timestamp.isoformat()]
+    assert appended_row[2:4] == ["orchestrator", "codexpert"]
+    assert appended_row[4] == json.dumps(payload, sort_keys=True, ensure_ascii=False)
+    assert appended_row[5:] == ["pending", "", fixed_timestamp.isoformat()]
 
     assert len(n8n_client.trigger_calls) == 1
     trigger_call = n8n_client.trigger_calls[0]
@@ -207,40 +206,29 @@ def test_send_appends_full_row_and_triggers_workflow(monkeypatch: pytest.MonkeyP
         "workflow": "bus-dispatch",
         "spreadsheet_id": "sheet-123",
         "worksheet": "Bus",
-        "id": "12345678-1234-5678-1234-567812345678",
-        "from": "orchestrator",
-        "to": "codexpert",
-        "topic": "Spec review",
-        "goal": "Summarize the draft",
-        "context_json": {"foo": "bar", "nested": {"x": 1}},
-        "ts": fixed_timestamp.isoformat(),
+        "message_id": "12345678-1234-5678-1234-567812345678",
+        "user": "orchestrator",
+        "agent": "codexpert",
+        "payload": payload,
+        "timestamp": fixed_timestamp.isoformat(),
     }
 
     assert result == {
-        "id": "12345678-1234-5678-1234-567812345678",
-        "ts": fixed_timestamp.isoformat(),
-        "from": "orchestrator",
-        "to": "codexpert",
-        "topic": "Spec review",
-        "goal": "Summarize the draft",
-        "context_json": {"foo": "bar", "nested": {"x": 1}},
+        "message_id": "12345678-1234-5678-1234-567812345678",
         "status": "pending",
-        "error": "",
-        "last_update": fixed_timestamp.isoformat(),
+        "timestamp": fixed_timestamp.isoformat(),
     }
 
 
 def test_poll_filters_records_by_status() -> None:
     values = [
-        ["id", "ts", "from", "to", "topic", "goal", "context_json", "status", "error", "last_update"],
+        ["message_id", "timestamp", "user", "agent", "payload", "status", "error", "last_update"],
         [
             "msg-1",
             "2024-01-01T00:00:00+00:00",
             "orchestrator",
             "codexpert",
-            "Spec",
-            "Goal",
-            json.dumps({"alpha": 1}),
+            json.dumps({"alpha": 1}, sort_keys=True, ensure_ascii=False),
             "pending",
             "",
             "2024-01-01T00:00:00+00:00",
@@ -250,9 +238,7 @@ def test_poll_filters_records_by_status() -> None:
             "2024-01-02T00:00:00+00:00",
             "codexpert",
             "orchestrator",
-            "Spec",
-            "Goal",
-            json.dumps({"beta": 2}),
+            json.dumps({"beta": 2}, sort_keys=True, ensure_ascii=False),
             "completed",
             "",
             "2024-01-02T00:00:00+00:00",
@@ -264,9 +250,9 @@ def test_poll_filters_records_by_status() -> None:
     records = bus.poll("sheet-123", "Bus", status="pending", limit=10)
     assert len(records) == 1
     record = records[0]
-    assert record["id"] == "msg-1"
+    assert record["message_id"] == "msg-1"
     assert record["status"] == "pending"
-    assert record["context_json"] == {"alpha": 1}
+    assert record["payload"] == {"alpha": 1}
 
 
 def test_update_status_updates_error_and_last_update(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -281,15 +267,13 @@ def test_update_status_updates_error_and_last_update(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(bus_service, "datetime", _FixedDatetime)
 
     values = [
-        ["id", "ts", "from", "to", "topic", "goal", "context_json", "status", "error", "last_update"],
+        ["message_id", "timestamp", "user", "agent", "payload", "status", "error", "last_update"],
         [
             "msg-1",
             "2024-01-01T00:00:00+00:00",
             "orchestrator",
             "codexpert",
-            "Spec",
-            "Goal",
-            json.dumps({"alpha": 1}),
+            json.dumps({"alpha": 1}, sort_keys=True, ensure_ascii=False),
             "pending",
             "",
             "2024-01-01T00:00:00+00:00",
@@ -302,25 +286,18 @@ def test_update_status_updates_error_and_last_update(monkeypatch: pytest.MonkeyP
 
     assert len(values_resource.update_calls) == 1
     update_call = values_resource.update_calls[0]
-    assert update_call["range"] == "Bus!H2:J2"
+    assert update_call["range"] == "Bus!F2:H2"
     assert update_call["body"]["values"][0] == ["completed", "boom", fixed_timestamp.isoformat()]
 
     assert record == {
-        "id": "msg-1",
-        "ts": "2024-01-01T00:00:00+00:00",
-        "from": "orchestrator",
-        "to": "codexpert",
-        "topic": "Spec",
-        "goal": "Goal",
-        "context_json": {"alpha": 1},
+        "message_id": "msg-1",
         "status": "completed",
-        "error": "boom",
-        "last_update": fixed_timestamp.isoformat(),
+        "timestamp": fixed_timestamp.isoformat(),
     }
 
 
 def test_update_status_raises_when_message_missing() -> None:
-    values = [["id", "ts", "from", "to", "topic", "goal", "context_json", "status", "error", "last_update"]]
+    values = [["message_id", "timestamp", "user", "agent", "payload", "status", "error", "last_update"]]
     bus, _, _ = _build_service(values)
 
     with pytest.raises(BusServiceError):
@@ -339,15 +316,13 @@ def test_update_status_keeps_existing_error_when_not_provided(monkeypatch: pytes
     monkeypatch.setattr(bus_service, "datetime", _FixedDatetime)
 
     values = [
-        ["id", "ts", "from", "to", "topic", "goal", "context_json", "status", "error", "last_update"],
+        ["message_id", "timestamp", "user", "agent", "payload", "status", "error", "last_update"],
         [
             "msg-1",
             "2024-01-01T00:00:00+00:00",
             "orchestrator",
             "codexpert",
-            "Spec",
-            "Goal",
-            json.dumps({"alpha": 1}),
+            json.dumps({"alpha": 1}, sort_keys=True, ensure_ascii=False),
             "pending",
             "previous-error",
             "2024-01-01T00:00:00+00:00",
@@ -363,4 +338,8 @@ def test_update_status_keeps_existing_error_when_not_provided(monkeypatch: pytes
         "previous-error",
         fixed_timestamp.isoformat(),
     ]
-    assert record["error"] == "previous-error"
+    assert record == {
+        "message_id": "msg-1",
+        "status": "completed",
+        "timestamp": fixed_timestamp.isoformat(),
+    }

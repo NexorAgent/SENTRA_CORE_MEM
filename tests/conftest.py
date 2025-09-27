@@ -64,8 +64,25 @@ if "chromadb" not in sys.modules:
             for doc_id, doc_text, metadata in zip(ids, documents, metadatas):
                 self.records[doc_id] = {"document": doc_text, "metadata": metadata}
 
-        def query(self, *, query_texts: List[str], n_results: int) -> Dict[str, Any]:
-            return {"ids": [[]], "documents": [[]], "metadatas": [[]]}
+        def query(self, *, query_texts: List[str], n_results: int, include: List[str] | None = None) -> Dict[str, Any]:
+            query = (query_texts[0] if query_texts else "").lower()
+            matches: List[tuple[str, Dict[str, Any]]] = []
+            for doc_id, payload in self.records.items():
+                document = payload["document"]
+                if query and query not in document.lower():
+                    continue
+                matches.append((doc_id, payload))
+                if len(matches) >= n_results:
+                    break
+            include = include or ["ids", "documents", "metadatas", "distances"]
+            result: Dict[str, Any] = {"ids": [[doc_id for doc_id, _ in matches]]}
+            if "documents" in include:
+                result["documents"] = [[payload["document"] for _, payload in matches]]
+            if "metadatas" in include:
+                result["metadatas"] = [[payload["metadata"] for _, payload in matches]]
+            if "distances" in include:
+                result["distances"] = [[0.0 for _ in matches]]
+            return result
 
     class _PersistentClient:
         def __init__(self, path: str) -> None:
@@ -100,7 +117,14 @@ class DummyGitHelper:
     def __init__(self) -> None:
         self.commits: List[Dict[str, Any]] = []
 
-    def commit_and_push(self, tool: str, file_path: Path, agent: str, content_hash: str) -> str:
+    def commit_and_push(
+        self,
+        tool: str,
+        file_path: Path,
+        agent: str,
+        content_hash: str,
+        idempotency_key: str | None = None,
+    ) -> str:
         path = Path(file_path)
         message = f"[{tool}] {path.name} {content_hash} by {agent}"
         self.commits.append(
@@ -110,6 +134,7 @@ class DummyGitHelper:
                 "agent": agent,
                 "hash": content_hash,
                 "message": message,
+                "idempotency_key": idempotency_key,
             }
         )
         return message
@@ -203,6 +228,8 @@ class DummyBusRecord:
     agent: str
     status: str
     payload: Dict[str, Any]
+    error: str
+    last_update: str
 
 
 class DummyBusService:
@@ -230,6 +257,8 @@ class DummyBusService:
             agent=agent,
             status="pending",
             payload=dict(payload),
+            error="",
+            last_update=timestamp,
         )
         self.records.append(record)
         return {"message_id": message_id, "status": record.status, "timestamp": timestamp}
@@ -269,6 +298,8 @@ class DummyBusService:
         worksheet: str,
         message_id: str,
         status: str,
+        error: str | None = None,
+        agent: str | None = None,
     ) -> Dict[str, Any]:
         for record in self.records:
             if (
@@ -277,7 +308,14 @@ class DummyBusService:
                 and record.message_id == message_id
             ):
                 record.status = status
-                return {"message_id": message_id, "status": status}
+                if error is not None:
+                    record.error = error
+                record.last_update = record.timestamp
+                return {
+                    "message_id": message_id,
+                    "status": status,
+                    "timestamp": record.last_update,
+                }
         raise BusServiceError(f"Message {message_id} not found")
 
 
@@ -293,18 +331,26 @@ class DummyRAGService:
             collection[document.doc_id] = {"text": document.text, "metadata": dict(document.metadata)}
         return ids
 
-    def query(self, collection_name: str, query_text: str, n_results: int) -> Dict[str, Any]:
+    def query(self, collection_name: str, query_text: str, n_results: int) -> List[Dict[str, Any]]:
         collection = self.collections.get(collection_name, {})
-        matches: List[str] = []
+        results: List[Dict[str, Any]] = []
         lowered = query_text.lower()
-        for doc_id, payload in collection.items():
-            if lowered in payload["text"].lower():
-                matches.append(doc_id)
-            if len(matches) >= n_results:
+        for payload in collection.values():
+            if lowered not in payload["text"].lower():
+                continue
+            source = str(payload["metadata"].get("source", ""))
+            if not source:
+                continue
+            results.append(
+                {
+                    "excerpt": payload["text"],
+                    "source": source,
+                    "score": 1.0,
+                }
+            )
+            if len(results) >= n_results:
                 break
-        documents = [[collection[mid]["text"] for mid in matches]]
-        metadatas = [[collection[mid]["metadata"] for mid in matches]]
-        return {"ids": [matches], "documents": documents, "metadatas": metadatas}
+        return results
 
 
 @pytest.fixture
