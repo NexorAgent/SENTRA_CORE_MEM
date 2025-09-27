@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional, Sequence
 
 
 class GitOpsError(RuntimeError):
@@ -41,24 +41,60 @@ class GitOpsHelper:
                     self._idempotency_cache[idempotency_key] = None
                 return None
             raise
+        self._push()
+        if idempotency_key:
+            self._idempotency_cache[idempotency_key] = message
+        return message
+
+    def commit_paths(
+        self,
+        branch: str,
+        paths: Sequence[Path],
+        message: str,
+        agent: str,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Optional[str]]:
+        if idempotency_key and idempotency_key in self._idempotency_cache:
+            cached = self._idempotency_cache[idempotency_key]
+            return {"committed": cached is not None, "sha": cached}
+        if not paths:
+            raise ValueError("Aucun chemin à committer")
+        relative_paths = [path.relative_to(self._repo_root) for path in paths]
+        self._run(["git", "checkout", branch])
+        for rel in relative_paths:
+            self._run(["git", "add", str(rel)])
+        committed = True
+        try:
+            self._run(["git", "commit", "-m", message])
+        except GitOpsError as error:
+            if "nothing to commit" in str(error).lower():
+                committed = False
+            else:
+                raise
+        sha: Optional[str] = None
+        if committed:
+            sha = self._run(["git", "rev-parse", "HEAD"], capture_output=True).strip()
+            self._push()
+        if idempotency_key:
+            self._idempotency_cache[idempotency_key] = sha
+        return {"committed": committed, "sha": sha}
+
+    def _push(self) -> None:
         remote_output = self._run(["git", "remote"], capture_output=True)
         remote_names = [line.strip() for line in remote_output.splitlines() if line.strip()]
-        commit_message: Optional[str] = message
-        if remote_names:
-            try:
+        if not remote_names:
+            return
+        try:
+            self._run(["git", "push"])
+        except GitOpsError as error:
+            if error.returncode == 128:
+                try:
+                    self._run(["git", "pull", "--rebase"])
+                except GitOpsError:
+                    self._run(["git", "fetch", "--all"])
                 self._run(["git", "push"])
-            except GitOpsError as error:
-                if error.returncode == 128:
-                    try:
-                        self._run(["git", "pull", "--rebase"])
-                    except GitOpsError:
-                        self._run(["git", "fetch", "--all"])
-                    self._run(["git", "push"])
-                else:
-                    raise
-        if idempotency_key:
-            self._idempotency_cache[idempotency_key] = commit_message
-        return commit_message
+            else:
+                raise
 
     def _run(self, command: list[str], capture_output: bool = False) -> str:
         result = subprocess.run(

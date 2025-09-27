@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.routes.bus import router as bus_router
 from app.routes.correction import router as correction_router
 from app.routes.files import router as files_router
+from app.routes.git import router as git_router
 from app.routes.google import router as google_router
 from app.routes.memory import router as memory_router
 from app.routes.n8n import router as n8n_router
@@ -26,6 +27,7 @@ def create_app() -> FastAPI:
     app.include_router(bus_router)
     app.include_router(rag_router)
     app.include_router(correction_router)
+    app.include_router(git_router)
     app.include_router(zep_router)
 
     return app
