@@ -1,36 +1,34 @@
-from fastapi import FastAPI, HTTPException, Query
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from app.routes.bus import router as bus_router
 from app.routes.correction import router as correction_router
-from scripts.memory_zep_local import save_to_zep, search_zep
-from pydantic import BaseModel
+from app.routes.files import router as files_router
+from app.routes.google import router as google_router
+from app.routes.memory import router as memory_router
+from app.routes.n8n import router as n8n_router
+from app.routes.rag import router as rag_router
+from app.routes.zep import router as zep_router
 
-app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "SENTRA API active"}
+def create_app() -> FastAPI:
+    app = FastAPI(title="SENTRA API", version="1.0.0")
 
-# Route correction
-app.include_router(correction_router)
+    @app.get("/", include_in_schema=False)
+    def health_check() -> dict[str, str]:
+        return {"status": "ok", "message": "SENTRA API active"}
 
-# === ROUTES ZEP ===
+    app.include_router(files_router)
+    app.include_router(memory_router)
+    app.include_router(n8n_router)
+    app.include_router(google_router)
+    app.include_router(bus_router)
+    app.include_router(rag_router)
+    app.include_router(correction_router)
+    app.include_router(zep_router)
 
-class ZepPayload(BaseModel):
-    session_id: str
-    role: str
-    content: str
+    return app
 
-@app.post("/zep/save")
-def api_zep_save(payload: ZepPayload):
-    try:
-        res = save_to_zep(payload.session_id, payload.role, payload.content)
-        return {"status": "ok", "zep_response": res.json()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/zep/search")
-def api_zep_search(session_id: str = Query(...), query: str = Query(...)):
-    try:
-        results = search_zep(session_id, query)
-        return {"status": "ok", "results": results}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+app = create_app()

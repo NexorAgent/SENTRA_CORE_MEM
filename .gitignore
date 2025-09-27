@@ -28,3 +28,19 @@ memory_index.json
 
 cloudflared/
 !cloudflared/config.yml
+
+# n8n
+n8n/n8n_data/
+n8n/.n8n/
+**/*.sqlite
+
+# secrets & env
+.env*
+secrets/*.json
+
+# python
+__pycache__/
+*.pyc
+
+# docker
+*.log
