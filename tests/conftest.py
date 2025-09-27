@@ -116,6 +116,7 @@ class DummyAuditLogger:
 class DummyGitHelper:
     def __init__(self) -> None:
         self.commits: List[Dict[str, Any]] = []
+        self.cache: Dict[str, Dict[str, Any]] = {}
 
     def commit_and_push(
         self,
@@ -137,8 +138,33 @@ class DummyGitHelper:
                 "idempotency_key": idempotency_key,
             }
         )
+        if idempotency_key:
+            self.cache[idempotency_key] = {"committed": True, "sha": f"dummy-{len(self.commits)}"}
         return message
 
+    def commit_paths(
+        self,
+        *,
+        branch: str,
+        paths: List[Path],
+        message: str,
+        agent: str,
+        idempotency_key: str | None = None,
+    ) -> Dict[str, Any]:
+        if idempotency_key and idempotency_key in self.cache:
+            return self.cache[idempotency_key]
+        record = {
+            "branch": branch,
+            "paths": [Path(p) for p in paths],
+            "message": message,
+            "agent": agent,
+            "idempotency_key": idempotency_key,
+        }
+        self.commits.append(record)
+        result = {"committed": True, "sha": f"dummy-{len(self.commits)}"}
+        if idempotency_key:
+            self.cache[idempotency_key] = result
+        return result
 
 class DummyExecute:
     def __init__(self, payload: Dict[str, Any]) -> None:
@@ -402,3 +428,4 @@ def client(api_context):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
