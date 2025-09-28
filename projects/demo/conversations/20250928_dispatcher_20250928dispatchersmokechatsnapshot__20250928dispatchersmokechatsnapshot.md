@@ -1,2 +1,2 @@
-test snapshot path OK
-2025-09-28T07:02:26Z
+snapshot test
+2025-09-28T11:39:31Z
