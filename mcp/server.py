@@ -210,23 +210,34 @@ def tool_git_commit(args: GitCommitArgs) -> Dict[str, Any]:
 def tool_snapshot(args: SnapshotArgs) -> Dict[str, Any]:
     _check_rate("conversation.snapshot.save", args.agent)
     log_charter_read("conversation.snapshot.save", args.user, args.agent)
-    topic = args.namespace
-    filename = fs_policy.ensure_library_path(
-        f"/memory/snapshots/{args.namespace}/{args.namespace}.md",
-        agent=args.agent,
-        topic=topic,
-    )
+
+    from datetime import datetime
+    today = datetime.utcnow().strftime("%Y%m%d")
+
+    # topic = namespace "nettoyé" pour la règle {YYYY}{MM}{DD}_{agent}_{topic}__{slug}.md
+    topic = args.namespace.replace("/", "-").strip() or "chat"
+
+    # chemin RELATIF autorisé par la policy (prefix /projects)
+    rel = f"/projects/demo/conversations/{today}_{args.agent}_{topic}__snapshot.md"
+
+    # validation + normalisation du chemin via la policy
+    filename = fs_policy.ensure_library_path(rel, agent=args.agent, topic=topic)
+
     content_lines = [
         f"# Snapshot {args.namespace}",
-        "", f"Agent : {args.agent}", f"Utilisateur : {args.user}",
+        "",
+        f"Agent : {args.agent}",
+        f"Utilisateur : {args.user}",
     ]
     if args.summary_hint:
         content_lines.extend(["", f"Résumé : {args.summary_hint}"])
+
     payload = {
         "user": args.user,
         "agent": args.agent,
         "path": str(filename),
         "content": "\n".join(content_lines) + "\n",
     }
+    # délègue l’écriture/commit/push à l’API
     result = _post("/files/write", payload, role="writer")
     return {"snapshot_path": result.get("path")}

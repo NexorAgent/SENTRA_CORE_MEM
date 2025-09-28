@@ -47,6 +47,7 @@ class GitOpsHelper:
         # Retourne le flux non vide (stdout en priorité)
         return stdout if stdout else stderr
 
+<<<<<<< Updated upstream
     def _push(self) -> None:
         # s'il n'y a pas de remote, on sort proprement
         remotes = self._run(["git", "remote"], capture_output=True).splitlines()
@@ -63,14 +64,41 @@ class GitOpsHelper:
         except GitOpsError as error:
             if error.returncode == 128:
                 # tentatives de rattrapage en cas de divergence
+=======
+    def _current_branch(self) -> str:
+        return self._run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True).strip()
+
+    def _push(self) -> None:
+        remote_output = self._run(["git", "remote"], capture_output=True)
+        remote_names = [line.strip() for line in remote_output.splitlines() if line.strip()]
+        if not remote_names:
+            return
+        try:
+            self._run(["git", "push"])
+        except GitOpsError as error:
+            msg = str(error).lower()
+            if "fetch first" in msg or "non-fast-forward" in msg:
+                branch = self._current_branch()
+                # récupère & rebase sur l’upstream, puis re-push
+                self._run(["git", "pull", "--rebase", "--autostash", "origin", branch])
+                self._run(["git", "push"])
+                return
+            if error.returncode == 128:
+>>>>>>> Stashed changes
                 try:
                     self._run(["git", "pull", "--rebase"])
                 except GitOpsError:
                     self._run(["git", "fetch", "--all"])
+<<<<<<< Updated upstream
                 # re-push
                 self._run(["git", "push", "-u", "origin", "HEAD"])
             else:
                 raise
+=======
+                self._run(["git", "push"])
+                return
+            raise
+>>>>>>> Stashed changes
 
     # --- API publiques ---
     def commit_and_push(
