@@ -12,7 +12,11 @@ from mcp.middleware.ethics import log_charter_read
 from mcp.middleware.rate_limit import RateLimitError, RateLimiter
 from mcp.policies import fs_policy
 
-API_BASE = os.getenv("SENTRA_API_BASE", "http://api:8000").rstrip("/")
+API_BASE = (
+    os.getenv("SENTRA_API_BASE")
+    or os.getenv("API_BASE_URL")
+    or "http://api:8000"
+).rstrip("/")
 RATE_LIMITER = RateLimiter(limit=5, window_seconds=10)
 
 app = FastAPI(title="SENTRA MCP Sidecar", version="1.0.0")
@@ -87,11 +91,19 @@ def _role_headers(role: str, extra: Optional[Dict[str, str]] = None) -> Dict[str
 def _post(endpoint: str, payload: Dict[str, Any], role: str) -> Dict[str, Any]:
     url = f"{API_BASE}{endpoint}"
     try:
-        response = requests.post(url, json=payload, headers=_role_headers(role), timeout=10)
+        response = requests.post(
+            url, json=payload, headers=_role_headers(role), timeout=30
+        )
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Erreur réseau vers API: {exc}")
+    # Si erreur côté API, renvoie le texte tel quel (souvent du JSON FastAPI)
     if response.status_code >= 400:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        detail = response.text
+        # Essaie de rendre “json” si possible
+        try:
+            raise HTTPException(status_code=response.status_code, detail=response.json())
+        except ValueError:
+            raise HTTPException(status_code=response.status_code, detail=detail)
     try:
         return response.json()
     except ValueError:
