@@ -9,6 +9,7 @@ ALLOWED_ROOTS: Dict[str, Path] = {
     "projects": BASE_DIR / "projects",
     "reports": BASE_DIR / "reports",
     "students": BASE_DIR / "students",
+    "memory": BASE_DIR / "memory",
 }
 
 
@@ -23,7 +24,7 @@ def resolve_workspace_path(path_value: str) -> Path:
     parts = normalized.split("/", 1)
     root_key = parts[0]
     if root_key not in ALLOWED_ROOTS:
-        raise ValueError("Path must begin with /projects, /reports, or /students")
+        raise ValueError("Path must begin with /projects, /reports, /students, or /memory")
     base = ALLOWED_ROOTS[root_key]
     ensure_allowed_root(base)
     relative = parts[1] if len(parts) > 1 else ""
