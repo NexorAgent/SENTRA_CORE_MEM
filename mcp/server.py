@@ -1,220 +1,314 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import requests
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+import httpx
+from fastapi import FastAPI
+from fastapi_mcp import FastApiMCP
+from fastapi_mcp.types import HTTPRequestInfo
+import mcp.types as mcp_types
 
+from app.main import create_app
 from mcp.middleware.ethics import log_charter_read
 from mcp.middleware.rate_limit import RateLimitError, RateLimiter
 from mcp.policies import fs_policy
 
 API_BASE = os.getenv("SENTRA_API_BASE", "http://api:8000").rstrip("/")
-RATE_LIMITER = RateLimiter(limit=5, window_seconds=10)
+RATE_LIMIT = int(os.getenv("MCP_RATE_LIMIT", "5"))
+RATE_WINDOW_SECONDS = int(os.getenv("MCP_RATE_WINDOW_SECONDS", "10"))
 
-app = FastAPI(title="SENTRA MCP Sidecar", version="1.0.0")
+INCLUDED_OPERATIONS = [
+    "files.read",
+    "files.write",
+    "rag.index",
+    "rag.query",
+    "n8n.trigger",
+    "git.commitPush",
+]
 
+TOOL_ALIASES: Dict[str, str] = {
+    "rag.index": "doc.index",
+    "rag.query": "doc.query",
+    "git.commitPush": "git.commit_push",
+}
 
-class RAGDocumentPayload(BaseModel):
-    text: str = Field(..., min_length=1)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    id: Optional[str] = Field(default=None, alias="doc_id")
+RATE_POLICIES: Dict[str, Dict[str, Any]] = {
+    "files.read": {"subject": ["user"], "role": "reader", "user": ["user"], "agent": None},
+    "files.write": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+    "doc.index": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+    "doc.query": {"subject": ["user"], "role": "reader", "user": ["user"], "agent": None},
+    "n8n.trigger": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+    "git.commit_push": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+    "conversation.snapshot.save": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+}
 
-    class Config:
-        populate_by_name = True
+SNAPSHOT_INPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "title": "conversation.snapshot.saveArguments",
+    "additionalProperties": False,
+    "properties": {
+        "user": {"type": "string", "minLength": 1, "description": "User identifier"},
+        "agent": {"type": "string", "minLength": 1, "description": "Agent name creating the snapshot"},
+        "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Snapshot namespace used for folder and filename",
+        },
+        "summary_hint": {"type": "string", "description": "Optional short summary appended to the snapshot body"},
+    },
+    "required": ["user", "agent", "namespace"],
+}
 
-
-class FilesReadArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    path: str = Field(..., min_length=1)
-
-
-class FilesWriteArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
-    path: str = Field(..., min_length=1)
-    content: str = Field(...)
-    idempotency_key: Optional[str] = None
-
-
-class N8NTriggerArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
-    payload: Dict[str, Any] = Field(default_factory=dict)
-    idempotency_key: Optional[str] = None
-
-
-class DocIndexArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
-    collection: str = Field(..., min_length=1)
-    documents: List[RAGDocumentPayload]
-
-
-class DocQueryArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    collection: str = Field(..., min_length=1)
-    query: str = Field(..., min_length=1)
-    n_results: int = Field(5, ge=1, le=50)
-
-
-class GitCommitArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
-    branch: str = Field(..., min_length=1)
-    paths: List[str] = Field(..., min_items=1)
-    message: str = Field(..., min_length=1)
-    idempotency_key: Optional[str] = None
-
-
-class SnapshotArgs(BaseModel):
-    user: str = Field(..., min_length=1)
-    agent: str = Field(..., min_length=1)
-    namespace: str = Field(..., min_length=1)
-    summary_hint: Optional[str] = None
+SNAPSHOT_OUTPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "title": "conversation.snapshot.saveResult",
+    "additionalProperties": False,
+    "properties": {
+        "snapshot_path": {"type": "string", "description": "Absolute path to the snapshot markdown file"},
+    },
+    "required": ["snapshot_path"],
+}
 
 
-def _role_headers(role: str, extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
-    headers = {"X-ROLE": role}
-    if extra:
-        headers.update(extra)
-    return headers
+class SentraFastApiMCP(FastApiMCP):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self._tool_aliases = TOOL_ALIASES
+        self._rate_limiter = RateLimiter(limit=RATE_LIMIT, window_seconds=RATE_WINDOW_SECONDS)
+        super().__init__(*args, **kwargs)
+        self._apply_aliases()
+        self._register_snapshot_tool()
+
+    def _apply_aliases(self) -> None:
+        for original, alias in self._tool_aliases.items():
+            if original not in self.operation_map:
+                continue
+            if alias in self.operation_map:
+                continue
+            self.operation_map[alias] = self.operation_map.pop(original)
+            for tool in self.tools:
+                if tool.name == original:
+                    tool.name = alias
+                    break
+
+    def _register_snapshot_tool(self) -> None:
+        snapshot_tool = mcp_types.Tool(
+            name="conversation.snapshot.save",
+            description="Create or update a markdown snapshot under /memory/snapshots/{namespace}.",
+            inputSchema=SNAPSHOT_INPUT_SCHEMA,
+            outputSchema=SNAPSHOT_OUTPUT_SCHEMA,
+        )
+        if all(tool.name != snapshot_tool.name for tool in self.tools):
+            self.tools.append(snapshot_tool)
+        self.operation_map.setdefault("conversation.snapshot.save", {"custom": True})
+        self.tools.sort(key=lambda tool: tool.name)
+
+    @staticmethod
+    def _merge_headers(http_info: Optional[HTTPRequestInfo], extra: Dict[str, str]) -> HTTPRequestInfo:
+        if http_info:
+            headers = dict(http_info.headers or {})
+            headers.update(extra)
+            return HTTPRequestInfo(
+                method=http_info.method,
+                path=http_info.path,
+                headers=headers,
+                cookies=dict(http_info.cookies or {}),
+                query_params=dict(http_info.query_params or {}),
+                body=http_info.body,
+            )
+        return HTTPRequestInfo(
+            method="POST",
+            path="/",
+            headers=extra,
+            cookies={},
+            query_params={},
+            body=None,
+        )
+
+    @staticmethod
+    def _extract(arguments: Dict[str, Any], path: Optional[List[str]]) -> Optional[Any]:
+        if not path:
+            return None
+        value: Any = arguments
+        for key in path:
+            if not isinstance(value, dict):
+                return None
+            value = value.get(key)
+        return value
+
+    def _enforce_policy(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Optional[str]]:
+        policy = RATE_POLICIES.get(tool_name)
+        if not policy:
+            return {"role": None, "user": None, "agent": None}
+        user = self._extract(arguments, policy.get("user"))
+        agent = self._extract(arguments, policy.get("agent"))
+        subject = self._extract(arguments, policy.get("subject")) or agent or user or ""
+        try:
+            self._rate_limiter.hit(tool_name, str(subject or ""))
+        except RateLimitError as error:
+            raise Exception(str(error)) from error
+        if not user:
+            raise Exception("The 'user' field is required for this tool.")
+        log_charter_read(tool_name, str(user), str(agent) if agent is not None else None)
+        return {"role": policy.get("role"), "user": str(user), "agent": str(agent) if agent is not None else None}
+
+    def _transform_arguments(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        transformed = dict(arguments or {})
+        if tool_name == "files.read":
+            path = transformed.get("path")
+            if path:
+                try:
+                    transformed["path"] = str(fs_policy.ensure_library_path(str(path)))
+                except ValueError as error:
+                    raise Exception(str(error)) from error
+        elif tool_name == "files.write":
+            path = transformed.get("path")
+            agent = transformed.get("agent")
+            if path and agent:
+                topic_hint = Path(str(path)).stem or "note"
+                try:
+                    transformed["path"] = str(
+                        fs_policy.ensure_library_path(str(path), agent=str(agent), topic=topic_hint)
+                    )
+                except ValueError as error:
+                    raise Exception(str(error)) from error
+        elif tool_name == "doc.index":
+            documents = transformed.get("documents") or []
+            if not isinstance(documents, list):
+                raise Exception("documents must be a list")
+            sanitized_docs: List[Dict[str, Any]] = []
+            for raw_doc in documents:
+                if not isinstance(raw_doc, dict):
+                    raise Exception("Each document must be an object")
+                metadata = dict(raw_doc.get("metadata") or {})
+                source = metadata.get("source")
+                if not source:
+                    raise Exception("metadata.source is required for doc.index")
+                try:
+                    source_path = fs_policy.ensure_library_path(str(source))
+                    metadata = fs_policy.ensure_metadata_source(metadata, source_path)
+                except ValueError as error:
+                    raise Exception(str(error)) from error
+                sanitized_docs.append(
+                    {
+                        "text": raw_doc.get("text"),
+                        "metadata": metadata,
+                        "id": raw_doc.get("id"),
+                    }
+                )
+            transformed["documents"] = sanitized_docs
+        return transformed
+
+    async def _execute_api_tool(
+        self,
+        client: httpx.AsyncClient,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        operation_map: Dict[str, Dict[str, Any]],
+        http_request_info: Optional[HTTPRequestInfo] = None,
+    ) -> List[mcp_types.TextContent]:
+        arguments = dict(arguments or {})
+        policy = self._enforce_policy(tool_name, arguments)
+        transformed_args = self._transform_arguments(tool_name, arguments)
+        if tool_name == "conversation.snapshot.save":
+            return await self._handle_snapshot(transformed_args)
+        headers: Dict[str, str] = {}
+        role = policy.get("role")
+        if role:
+            headers["X-ROLE"] = str(role)
+        merged_info = self._merge_headers(http_request_info, headers) if headers else http_request_info
+        return await super()._execute_api_tool(client, tool_name, transformed_args, operation_map, merged_info)
+
+    async def _handle_snapshot(self, arguments: Dict[str, Any]) -> List[mcp_types.TextContent]:
+        namespace = arguments.get("namespace")
+        agent = arguments.get("agent")
+        user = arguments.get("user")
+        summary_hint = arguments.get("summary_hint")
+        if not namespace:
+            raise Exception("namespace is required")
+        if not agent:
+            raise Exception("agent is required")
+        if not user:
+            raise Exception("user is required")
+        try:
+            target_path = fs_policy.ensure_library_path(
+                f"/memory/snapshots/{namespace}/{namespace}.md",
+                agent=str(agent),
+                topic=str(namespace),
+            )
+        except ValueError as error:
+            raise Exception(str(error)) from error
+        lines = [
+            f"# Snapshot {namespace}",
+            "",
+            f"Agent: {agent}",
+            f"User: {user}",
+        ]
+        if summary_hint:
+            lines.extend(["", f"Summary: {summary_hint}"])
+        payload = {
+            "user": user,
+            "agent": agent,
+            "path": str(target_path),
+            "content": "\n".join(lines) + "\n",
+        }
+        response = await self._request(
+            self._http_client,
+            method="post",
+            path="/files/write",
+            query={},
+            headers={"X-ROLE": "writer"},
+            body=payload,
+        )
+        try:
+            body = response.json()
+        except json.JSONDecodeError:
+            raw_payload = response.text if hasattr(response, "text") else str(response.content)
+            raise Exception(
+                f"conversation.snapshot.save returned an unexpected payload: {raw_payload}"
+            )
+        if 400 <= response.status_code < 600:
+            serialized = json.dumps(body, indent=2, ensure_ascii=False)
+            raise Exception(
+                f"Error calling conversation.snapshot.save. Status code: {response.status_code}. Response: {serialized}"
+            )
+        snapshot_path = body.get("path") if isinstance(body, dict) else None
+        result = {"snapshot_path": snapshot_path}
+        return [mcp_types.TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
 
 
-def _post(endpoint: str, payload: Dict[str, Any], role: str) -> Dict[str, Any]:
-    url = f"{API_BASE}{endpoint}"
-    try:
-        response = requests.post(url, json=payload, headers=_role_headers(role), timeout=10)
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Erreur réseau vers API: {exc}")
-    if response.status_code >= 400:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
-    try:
-        return response.json()
-    except ValueError:
-        return {"content": response.text, "status_code": response.status_code}
-
-
-def _check_rate(tool: str, agent: Optional[str]) -> None:
-    try:
-        RATE_LIMITER.hit(tool, agent or "")
-    except RateLimitError as exc:
-        raise HTTPException(status_code=429, detail=str(exc))
-
-
-@app.post("/tools/files.read")
-def tool_files_read(args: FilesReadArgs) -> Dict[str, Any]:
-    _check_rate("files.read", args.user)
-    log_charter_read("files.read", args.user, None)
-    path = fs_policy.ensure_library_path(args.path)
-    return _post("/files/read", {"user": args.user, "path": str(path)}, role="reader")
-
-
-@app.post("/tools/files.write")
-def tool_files_write(args: FilesWriteArgs) -> Dict[str, Any]:
-    _check_rate("files.write", args.agent)
-    log_charter_read("files.write", args.user, args.agent)
-    topic_hint = Path(args.path).stem or "note"
-    target_path = fs_policy.ensure_library_path(args.path, args.agent, topic_hint)
-    payload = {
-        "user": args.user,
-        "agent": args.agent,
-        "path": str(target_path),
-        "content": args.content,
-        "idempotency_key": args.idempotency_key,
-    }
-    return _post("/files/write", payload, role="writer")
-
-
-@app.post("/tools/n8n.trigger")
-def tool_n8n_trigger(args: N8NTriggerArgs) -> Dict[str, Any]:
-    _check_rate("n8n.trigger", args.agent)
-    log_charter_read("n8n.trigger", args.user, args.agent)
-    payload = {
-        "user": args.user,
-        "agent": args.agent,
-        "payload": args.payload,
-        "idempotency_key": args.idempotency_key,
-    }
-    return _post("/n8n/trigger", payload, role="writer")
-
-
-@app.post("/tools/doc.index")
-def tool_doc_index(args: DocIndexArgs) -> Dict[str, Any]:
-    _check_rate("doc.index", args.agent)
-    log_charter_read("doc.index", args.user, args.agent)
-    documents: List[Dict[str, Any]] = []
-    for doc in args.documents:
-        if not doc.metadata.get("source"):
-            raise HTTPException(status_code=400, detail="metadata.source obligatoire pour l’indexation")
-        source_path = fs_policy.ensure_library_path(str(doc.metadata["source"]))
-        metadata = fs_policy.ensure_metadata_source(doc.metadata, source_path)
-        documents.append({
-            "text": doc.text,
-            "metadata": metadata,
-            "id": doc.id,
-        })
-    payload = {
-        "user": args.user,
-        "agent": args.agent,
-        "collection": args.collection,
-        "documents": documents,
-    }
-    return _post("/rag/index", payload, role="writer")
-
-
-@app.post("/tools/doc.query")
-def tool_doc_query(args: DocQueryArgs) -> Dict[str, Any]:
-    _check_rate("doc.query", args.user)
-    log_charter_read("doc.query", args.user, None)
-    payload = {
-        "user": args.user,
-        "collection": args.collection,
-        "query": args.query,
-        "n_results": args.n_results,
-    }
-    return _post("/rag/query", payload, role="reader")
-
-
-@app.post("/tools/git.commit_push")
-def tool_git_commit(args: GitCommitArgs) -> Dict[str, Any]:
-    _check_rate("git.commit_push", args.agent)
-    log_charter_read("git.commit_push", args.user, args.agent)
-    payload = {
-        "user": args.user,
-        "agent": args.agent,
-        "branch": args.branch,
-        "paths": args.paths,
-        "message": args.message,
-        "idempotency_key": args.idempotency_key,
-    }
-    return _post("/git/commitPush", payload, role="writer")
-
-
-@app.post("/tools/conversation.snapshot.save")
-def tool_snapshot(args: SnapshotArgs) -> Dict[str, Any]:
-    _check_rate("conversation.snapshot.save", args.agent)
-    log_charter_read("conversation.snapshot.save", args.user, args.agent)
-    topic = args.namespace
-    filename = fs_policy.ensure_library_path(
-        f"/memory/snapshots/{args.namespace}/{args.namespace}.md",
-        agent=args.agent,
-        topic=topic,
+def create_mcp_app() -> FastAPI:
+    api_app = create_app()
+    http_client = httpx.AsyncClient(base_url=API_BASE, timeout=10.0)
+    mcp_server = SentraFastApiMCP(
+        api_app,
+        name="SENTRA MCP",
+        description="SENTRA tools exposed through MCP",
+        http_client=http_client,
+        include_operations=INCLUDED_OPERATIONS,
     )
-    content_lines = [
-        f"# Snapshot {args.namespace}",
-        "", f"Agent : {args.agent}", f"Utilisateur : {args.user}",
-    ]
-    if args.summary_hint:
-        content_lines.extend(["", f"Résumé : {args.summary_hint}"])
-    payload = {
-        "user": args.user,
-        "agent": args.agent,
-        "path": str(filename),
-        "content": "\n".join(content_lines) + "\n",
-    }
-    result = _post("/files/write", payload, role="writer")
-    return {"snapshot_path": result.get("path")}
+    app = FastAPI(title="SENTRA MCP Gateway", version="1.0.0")
+
+    mcp_server.mount(app, mount_path="/mcp")
+
+    app.state.http_client = http_client
+    app.state.mcp_server = mcp_server
+
+    @app.on_event("shutdown")
+    async def _shutdown() -> None:
+        await http_client.aclose()
+
+    @app.get("/", include_in_schema=False)
+    async def root() -> Dict[str, str]:
+        return {"status": "ok", "mcp": "/mcp"}
+
+    @app.get("/healthz", include_in_schema=False)
+    async def healthz() -> Dict[str, str]:
+        return {"status": "ok"}
+
+    return app
+
+
+app = create_mcp_app()

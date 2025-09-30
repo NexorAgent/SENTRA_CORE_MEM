@@ -1,20 +1,20 @@
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get install -y --no-install-recommends curl build-essential git && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir \
-    fastapi==0.110.0 \
-    uvicorn==0.29.0 \
-    requests==2.32.3 \
-    pydantic==2.11.0
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY mcp /app/mcp
+COPY . /app
+
+ENV PYTHONPATH=/app
 
 CMD ["uvicorn", "mcp.server:app", "--host", "0.0.0.0", "--port", "8400"]

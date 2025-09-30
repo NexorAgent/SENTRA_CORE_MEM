@@ -43,7 +43,7 @@ docker compose up -d --build mcp
 ## 5. Smoketest rapide
 
 ```bash
-bash scripts/smoke_mcp.sh
+python scripts/smoke_mcp.py
 ```
 
 - Vérifie lecture/écriture fichiers
@@ -57,3 +57,4 @@ bash scripts/smoke_mcp.sh
 - Le sidecar s’appuie sur l’API FastAPI locale (`SENTRA_API_BASE`, défaut `http://api:8000`).
 - Ajustez les allowlists via `FS_ROOTS_ALLOW` et `FS_NAMING` si besoin.
 - Les logs d’éthique s’écrivent dans `memory/audit.ndjson` (ou `stdout` si dossier absent).
+- Le serveur MCP expose un endpoint SSE sur \\/mcp\\ et un healthcheck sur \\/healthz\\.
