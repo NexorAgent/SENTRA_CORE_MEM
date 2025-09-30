@@ -17,4 +17,4 @@ COPY . /app
 
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "mcp.server:app", "--host", "0.0.0.0", "--port", "8400"]
+CMD ["uvicorn", "sentra_mcp_gateway.server:app", "--host", "0.0.0.0", "--port", "8400"]

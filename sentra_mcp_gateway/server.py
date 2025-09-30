@@ -12,9 +12,9 @@ from fastapi_mcp.types import HTTPRequestInfo
 import mcp.types as mcp_types
 
 from app.main import create_app
-from mcp.middleware.ethics import log_charter_read
-from mcp.middleware.rate_limit import RateLimitError, RateLimiter
-from mcp.policies import fs_policy
+from sentra_mcp_gateway.middleware.ethics import log_charter_read
+from sentra_mcp_gateway.middleware.rate_limit import RateLimitError, RateLimiter
+from sentra_mcp_gateway.policies import fs_policy
 
 API_BASE = os.getenv("SENTRA_API_BASE", "http://api:8000").rstrip("/")
 RATE_LIMIT = int(os.getenv("MCP_RATE_LIMIT", "5"))

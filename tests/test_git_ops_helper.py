@@ -24,6 +24,8 @@ def test_commit_and_push_retries_after_pull(tmp_path, monkeypatch):
             return ""
         if command[:2] == ["git", "fetch"]:
             return ""
+        if command[:4] == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+            return "main\n" if capture_output else ""
         if command[:2] == ["git", "push"]:
             push_attempts["count"] += 1
             if push_attempts["count"] == 1:
@@ -55,6 +57,8 @@ def test_commit_and_push_short_circuits_with_idempotency(tmp_path, monkeypatch):
             return ""
         if command[:2] == ["git", "commit"]:
             return ""
+        if command[:4] == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+            return "main\n" if capture_output else ""
         if command[:2] == ["git", "remote"]:
             return ""
         raise AssertionError(f"Unexpected git command: {command}")
