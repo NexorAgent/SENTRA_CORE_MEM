@@ -5,7 +5,8 @@ from typing import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.dependencies import get_audit_logger, get_rag_service
+from app import dependencies as dependencies_module
+from app.db import session as session_module
 from app.main import create_app
 from app.services.rag_service import RAGDocument, RAGService
 
@@ -16,24 +17,17 @@ class _DummyAuditLogger:
 
 
 @pytest.fixture()
-def rag_service(tmp_path) -> Iterator[RAGService]:
-    service = RAGService(persist_directory=tmp_path / "chroma")
-    yield service
+def rag_service(api_context) -> RAGService:
+    dependencies_module.get_rag_service.cache_clear()
+    return RAGService()
 
 
 @pytest.fixture()
-def rag_client(tmp_path) -> Iterator[TestClient]:
-    app = create_app()
-    service = RAGService(persist_directory=tmp_path / "chroma_api")
-
-    app.dependency_overrides[get_rag_service] = lambda: service
-    app.dependency_overrides[get_audit_logger] = lambda: _DummyAuditLogger()
-
-    try:
-        with TestClient(app) as client:
-            yield client
-    finally:
-        app.dependency_overrides.clear()
+def rag_client(client) -> Iterator[TestClient]:
+    dependencies_module.get_rag_service.cache_clear()
+    client.app.dependency_overrides[dependencies_module.get_rag_service] = dependencies_module.get_rag_service
+    client.app.dependency_overrides[dependencies_module.get_audit_logger] = lambda: _DummyAuditLogger()
+    yield client
 
 
 def test_rag_service_returns_structured_matches(rag_service: RAGService) -> None:
@@ -49,9 +43,9 @@ def test_rag_service_returns_structured_matches(rag_service: RAGService) -> None
             metadata={"source": "notes/doc-2.md"},
         ),
     ]
-    rag_service.index("unit", documents)
-
-    matches = rag_service.query("unit", "alpha", n_results=2)
+    with session_module.get_session() as session:
+        rag_service.index(session, "unit", documents)
+        matches = rag_service.query(session, "unit", "alpha", n_results=2)
 
     assert isinstance(matches, list)
     assert matches

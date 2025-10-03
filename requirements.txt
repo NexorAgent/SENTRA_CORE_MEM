@@ -1,17 +1,40 @@
-openai
-Flask==2.2.5
-gunicorn==20.1.0
-discord.py>=2.5.0,<2.6.0
-python-dotenv==1.0.1
-requests==2.32.1
-unicodedata2 ; sys_platform == 'win32'
-packaging
+# Core API stack
+fastapi==0.113.0
+uvicorn[standard]==0.30.1
+pydantic==2.9.1
+pydantic-settings>=2.5.2,<3.0.0
 
-fastapi>=0.110.0
+# Persistence & data
+SQLAlchemy==2.0.34
+psycopg[binary]==3.1.19
+pgvector==0.2.5
+alembic==1.13.2
+
+# Memory & retrieval
+sentence-transformers==3.0.1
+numpy==1.26.4
+scikit-learn==1.5.2
+langchain>=0.2.15,<0.3.0
+langchain-community>=0.2.15,<0.3.0
+# External integrations
+google-auth==2.34.0
+google-api-python-client==2.147.0
+requests==2.32.3
+discord.py==2.5.0
+
+# Ops & runtime
 fastapi-mcp==0.4.0
-uvicorn
-pydantic>=2.0.0,<3.0.0
-chromadb>=0.5.0
-google-auth>=2.0.0
-google-api-python-client>=2.0.0
-mcp[cli]>=1.1.0
+mcp[cli]>=1.12.0,<2.0.0
+python-dotenv==1.0.1
+packaging==24.1
+gunicorn==22.0.0
+
+# Optional per-platform utilities
+unicodedata2 ; sys_platform == "win32"
+
+
+
+
+
+
+

@@ -6,8 +6,9 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
-from app.dependencies import get_audit_logger, get_rag_service
+from app.dependencies import get_audit_logger, get_db_session, get_rag_service
 from app.services.audit import AuditLogger
 from app.services.rag_service import RAGDocument, RAGService
 
@@ -52,6 +53,7 @@ class RAGQueryHit(BaseModel):
     excerpt: str = Field(..., min_length=1)
     source: str = Field(..., min_length=1)
     score: float
+    metadata: Dict[str, Any] | None = None
 
 
 class RAGQueryResponse(BaseModel):
@@ -63,6 +65,7 @@ def rag_index(
     request: RAGIndexRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
     service: RAGService = Depends(get_rag_service),
+    session: Session = Depends(get_db_session),
 ) -> RAGIndexResponse:
     audit_logger.log("rag.index", request.model_dump(exclude={"user"}), request.user)
     if not request.documents:
@@ -72,8 +75,8 @@ def rag_index(
         for doc in request.documents
     ]
     try:
-        ids = service.index(request.collection, documents)
-    except Exception as error:  # pragma: no cover - chroma runtime errors
+        ids = service.index(session, request.collection, documents)
+    except Exception as error:  # pragma: no cover - runtime errors propagate
         raise HTTPException(status_code=500, detail=str(error)) from error
     return RAGIndexResponse(document_ids=ids)
 
@@ -83,10 +86,12 @@ def rag_query(
     request: RAGQueryRequest,
     audit_logger: AuditLogger = Depends(get_audit_logger),
     service: RAGService = Depends(get_rag_service),
+    session: Session = Depends(get_db_session),
 ) -> RAGQueryResponse:
     audit_logger.log("rag.query", request.model_dump(exclude={"user"}), request.user)
     try:
-        result = service.query(request.collection, request.query, request.n_results)
+        result = service.query(session, request.collection, request.query, request.n_results)
     except Exception as error:  # pragma: no cover
         raise HTTPException(status_code=500, detail=str(error)) from error
     return RAGQueryResponse(results=result)
+

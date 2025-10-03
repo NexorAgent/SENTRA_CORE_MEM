@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
+
 import sys
 import types
+
 
 if "google" not in sys.modules:
     google_module = types.ModuleType("google")
@@ -99,11 +101,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import dependencies as dependencies_module
+from app.core import config as config_module
+from app.db import session as session_module
+from app.db import setup as setup_module
 from app.main import create_app
+from app.memory.service import MemoryService
 from app.services import paths as paths_module
 from app.services.bus_service import BusServiceError
-from app.services.memory_store import MemoryStore
-
+from app.vector import embedding as embedding_module
 
 class DummyAuditLogger:
     def __init__(self) -> None:
@@ -349,7 +354,7 @@ class DummyRAGService:
     def __init__(self) -> None:
         self.collections: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
-    def index(self, collection_name: str, documents: List[Any]) -> List[str]:
+    def index(self, session, collection_name: str, documents: List[Any]) -> List[str]:
         collection = self.collections.setdefault(collection_name, {})
         ids: List[str] = []
         for document in documents:
@@ -357,7 +362,7 @@ class DummyRAGService:
             collection[document.doc_id] = {"text": document.text, "metadata": dict(document.metadata)}
         return ids
 
-    def query(self, collection_name: str, query_text: str, n_results: int) -> List[Dict[str, Any]]:
+    def query(self, session, collection_name: str, query_text: str, n_results: int) -> List[Dict[str, Any]]:
         collection = self.collections.get(collection_name, {})
         results: List[Dict[str, Any]] = []
         lowered = query_text.lower()
@@ -382,23 +387,47 @@ class DummyRAGService:
 @pytest.fixture
 def api_context(tmp_path, monkeypatch):
     base_dir = tmp_path / "sentra"
-    for subdir in ("projects", "reports", "students", "logs", "memory", "archive"):
+    for subdir in (
+        "projects",
+        "reports",
+        "students",
+        "logs",
+        "memory/library",
+        "memory/library/archives",
+        "memory/snapshots",
+    ):
         (base_dir / subdir).mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(paths_module, "BASE_DIR", base_dir)
-    monkeypatch.setattr(
-        paths_module,
-        "ALLOWED_ROOTS",
-        {
-            "projects": base_dir / "projects",
-            "reports": base_dir / "reports",
-            "students": base_dir / "students",
-        },
-    )
+    db_url = f"sqlite:///{(base_dir / 'sentra.db').as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+
+    config_module.get_settings.cache_clear()
+    settings = config_module.get_settings()
+    settings.base_dir = base_dir
+    settings.allowed_roots = ("projects", "reports", "students", "memory")
+    settings.database_url = db_url
+    settings.database_echo = False
+
+    embedding_module.get_embedding_service.cache_clear()
+    embedding_module.SentenceTransformer = None
+
+    session_module.reset_engine()
+    setup_module.init_db()
+
+    paths_module.get_base_dir.cache_clear()
+    paths_module.get_allowed_roots.cache_clear()
+
+    dependencies_module.get_memory_service.cache_clear()
+    dependencies_module.get_rag_service.cache_clear()
+    dependencies_module.get_git_helper.cache_clear()
+    dependencies_module.get_audit_logger.cache_clear()
+    dependencies_module.get_bus_service.cache_clear()
+    dependencies_module.get_google_auth_manager.cache_clear()
+    dependencies_module.get_n8n_client.cache_clear()
 
     audit_logger = DummyAuditLogger()
     git_helper = DummyGitHelper()
-    memory_store = MemoryStore(base_dir / "memory")
+    memory_service = MemoryService()
     bus_service = DummyBusService()
     google_manager = DummyGoogleAuthManager()
     rag_service = DummyRAGService()
@@ -409,7 +438,7 @@ def api_context(tmp_path, monkeypatch):
         "audit_events": audit_logger.events,
         "git_helper": git_helper,
         "git_commits": git_helper.commits,
-        "memory_store": memory_store,
+        "memory_service": memory_service,
         "bus_service": bus_service,
         "google_manager": google_manager,
         "rag_service": rag_service,
@@ -421,11 +450,25 @@ def client(api_context):
     app = create_app()
     app.dependency_overrides[dependencies_module.get_audit_logger] = lambda: api_context["audit_logger"]
     app.dependency_overrides[dependencies_module.get_git_helper] = lambda: api_context["git_helper"]
-    app.dependency_overrides[dependencies_module.get_memory_store] = lambda: api_context["memory_store"]
+    app.dependency_overrides[dependencies_module.get_memory_service] = lambda: api_context["memory_service"]
     app.dependency_overrides[dependencies_module.get_bus_service] = lambda: api_context["bus_service"]
     app.dependency_overrides[dependencies_module.get_google_auth_manager] = lambda: api_context["google_manager"]
     app.dependency_overrides[dependencies_module.get_rag_service] = lambda: api_context["rag_service"]
+
+    async def _session_dependency():
+        with session_module.get_session() as session:
+            yield session
+
+    app.dependency_overrides[dependencies_module.get_db_session] = _session_dependency
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+
+
+
+
+
+
 

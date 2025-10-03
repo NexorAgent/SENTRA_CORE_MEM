@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
-  title: "SENTRA API"
-  version: "1.0.0"
+  title: "SENTRA Core API"
+  version: "2.0.0"
 paths:
   /files/read:
     post:
@@ -303,6 +303,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+  /git/commitPush:
+    post:
+      tags:
+        - "git"
+      summary: "Git.Commitpush"
+      operationId: "git.commitPush"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GitCommitRequest"
+        required: true
+      responses:
+        200:
+          description: "Successful Response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitCommitResponse"
+        422:
+          description: "Validation Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
 components:
   schemas:
     BusPollRequest:
@@ -316,10 +341,8 @@ components:
           minLength: 1
           title: "Agent"
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
-          default: {}
         status:
           anyOf:
             -
@@ -367,7 +390,6 @@ components:
           type: "string"
           title: "Status"
         payload:
-          additionalProperties: true
           type: "object"
           title: "Payload"
       type: "object"
@@ -390,15 +412,11 @@ components:
           minLength: 1
           title: "Agent"
         payload:
-          additionalProperties: true
           type: "object"
           title: "Payload"
-          default: {}
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
-          default: {}
         idempotency_key:
           anyOf:
             -
@@ -439,10 +457,8 @@ components:
           minLength: 1
           title: "Agent"
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
-          default: {}
         message_id:
           type: "string"
           minLength: 1
@@ -724,6 +740,66 @@ components:
         - "file_id"
         - "web_view_link"
       title: "GDriveUploadResponse"
+    GitCommitRequest:
+      properties:
+        user:
+          type: "string"
+          minLength: 1
+          title: "User"
+        agent:
+          type: "string"
+          minLength: 1
+          title: "Agent"
+        branch:
+          type: "string"
+          minLength: 1
+          title: "Branch"
+        paths:
+          items:
+            type: "string"
+          type: "array"
+          minItems: 1
+          title: "Paths"
+        message:
+          type: "string"
+          minLength: 1
+          title: "Message"
+        idempotency_key:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Idempotency Key"
+      type: "object"
+      required:
+        - "user"
+        - "agent"
+        - "branch"
+        - "paths"
+        - "message"
+      title: "GitCommitRequest"
+    GitCommitResponse:
+      properties:
+        branch:
+          type: "string"
+          title: "Branch"
+        committed:
+          type: "boolean"
+          title: "Committed"
+        sha:
+          anyOf:
+            -
+              type: "string"
+            -
+              type: "null"
+          title: "Sha"
+      type: "object"
+      required:
+        - "branch"
+        - "committed"
+        - "sha"
+      title: "GitCommitResponse"
     HTTPValidationError:
       properties:
         detail:
@@ -805,6 +881,12 @@ components:
         note_id:
           type: "string"
           title: "Note Id"
+        user:
+          type: "string"
+          title: "User"
+        agent:
+          type: "string"
+          title: "Agent"
         text:
           type: "string"
           title: "Text"
@@ -814,9 +896,15 @@ components:
           type: "array"
           title: "Tags"
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
+        score:
+          anyOf:
+            -
+              type: "number"
+            -
+              type: "null"
+          title: "Score"
         created_at:
           type: "string"
           title: "Created At"
@@ -826,6 +914,8 @@ components:
       type: "object"
       required:
         - "note_id"
+        - "user"
+        - "agent"
         - "text"
         - "tags"
         - "metadata"
@@ -844,7 +934,6 @@ components:
           type: "array"
           title: "Tags"
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
         note_id:
@@ -870,7 +959,6 @@ components:
           minLength: 1
           title: "Agent"
         payload:
-          additionalProperties: true
           type: "object"
           title: "Payload"
         idempotency_key:
@@ -888,7 +976,6 @@ components:
     N8NTriggerResponse:
       properties:
         result:
-          additionalProperties: true
           type: "object"
           title: "Result"
       type: "object"
@@ -902,7 +989,6 @@ components:
           minLength: 1
           title: "Text"
         metadata:
-          additionalProperties: true
           type: "object"
           title: "Metadata"
         id:
@@ -953,6 +1039,32 @@ components:
       required:
         - "document_ids"
       title: "RAGIndexResponse"
+    RAGQueryHit:
+      properties:
+        excerpt:
+          type: "string"
+          minLength: 1
+          title: "Excerpt"
+        source:
+          type: "string"
+          minLength: 1
+          title: "Source"
+        score:
+          type: "number"
+          title: "Score"
+        metadata:
+          anyOf:
+            -
+              type: "object"
+            -
+              type: "null"
+          title: "Metadata"
+      type: "object"
+      required:
+        - "excerpt"
+        - "source"
+        - "score"
+      title: "RAGQueryHit"
     RAGQueryRequest:
       properties:
         user:
@@ -982,12 +1094,11 @@ components:
     RAGQueryResponse:
       properties:
         results:
-          additionalProperties: true
-          type: "object"
+          items:
+            $ref: "#/components/schemas/RAGQueryHit"
+          type: "array"
           title: "Results"
       type: "object"
-      required:
-        - "results"
       title: "RAGQueryResponse"
     ValidationError:
       properties:
