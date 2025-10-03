@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Sequence
-from pathlib import Path
-from threading import Lock
 
-import chromadb
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.db.models.rag import RAGDocument as RAGDocumentModel
+from app.vector.embedding import EmbeddingService, get_embedding_service
 
 
 @dataclass(slots=True)
@@ -16,63 +19,107 @@ class RAGDocument:
 
 
 class RAGService:
-    def __init__(self, persist_directory: Path) -> None:
-        self._persist_directory = persist_directory
-        self._persist_directory.mkdir(parents=True, exist_ok=True)
-        self._client = chromadb.PersistentClient(path=str(self._persist_directory))
-        self._lock = Lock()
+    def __init__(self, embedding_service: EmbeddingService | None = None) -> None:
+        self._embedding_service = embedding_service or get_embedding_service()
 
-    def index(self, collection_name: str, documents: Sequence[RAGDocument]) -> List[str]:
-        with self._lock:
-            collection = self._client.get_or_create_collection(name=collection_name)
-            ids = [doc.doc_id for doc in documents]
-            texts = [doc.text for doc in documents]
-            metadatas = [self._normalize_metadata(doc.metadata) for doc in documents]
-            collection.upsert(ids=ids, documents=texts, metadatas=metadatas)
-            return ids
-
-    def query(self, collection_name: str, query_text: str, n_results: int) -> List[Dict[str, Any]]:
-        collection = self._client.get_or_create_collection(name=collection_name)
-        raw = collection.query(
-            query_texts=[query_text],
-            n_results=n_results,
-            include=["documents", "metadatas", "distances"],
-        )
-
-        matches: List[Dict[str, Any]] = []
-        documents = raw.get("documents") or []
-        metadatas = raw.get("metadatas") or []
-        distances = raw.get("distances") or []
-
-        for index, document_group in enumerate(documents):
-            metadata_group = metadatas[index] if index < len(metadatas) else []
-            distance_group = distances[index] if index < len(distances) else []
-
-            for position, excerpt in enumerate(document_group or []):
-                metadata = metadata_group[position] if position < len(metadata_group) else {}
-                metadata = metadata or {}
-                source = metadata.get("source")
-                if not source:
-                    continue
-
-                score = 0.0
-                if position < len(distance_group) and distance_group[position] is not None:
-                    raw_score = float(distance_group[position])
-                    score = 1.0 - raw_score if 0.0 <= raw_score <= 1.0 else raw_score
-
-                matches.append(
-                    {
-                        "excerpt": excerpt,
-                        "source": str(source),
-                        "score": score,
-                    }
+    def index(
+        self,
+        session: Session,
+        collection_name: str,
+        documents: Sequence[RAGDocument],
+    ) -> List[str]:
+        if not documents:
+            return []
+        embeddings = self._embedding_service.embed([doc.text for doc in documents])
+        now = datetime.now(timezone.utc)
+        indexed_ids: List[str] = []
+        for doc, vector in zip(documents, embeddings):
+            primary_key = (collection_name, doc.doc_id)
+            existing = session.get(RAGDocumentModel, primary_key)
+            payload = dict(doc.metadata or {})
+            if existing:
+                existing.text = doc.text
+                existing.payload = payload
+                existing.embedding = vector
+                existing.updated_at = now
+                session.add(existing)
+            else:
+                record = RAGDocumentModel(
+                    collection=collection_name,
+                    doc_id=doc.doc_id,
+                    text=doc.text,
+                    payload=payload,
+                    embedding=vector,
+                    created_at=now,
+                    updated_at=now,
                 )
+                session.add(record)
+            indexed_ids.append(doc.doc_id)
+        session.flush()
+        return indexed_ids
 
-        return matches
+    def query(
+        self,
+        session: Session,
+        collection_name: str,
+        query_text: str,
+        n_results: int,
+    ) -> List[Dict[str, Any]]:
+        embedding = self._embedding_service.embed([query_text])[0]
+        base_stmt = select(RAGDocumentModel).where(RAGDocumentModel.collection == collection_name)
+        bind = session.get_bind()
+        if bind and bind.dialect.name == "postgresql":
+            distance = RAGDocumentModel.embedding.cosine_distance(embedding)  # type: ignore[attr-defined]
+            stmt = (
+                base_stmt.add_columns((1 - distance).label("score"))
+                .order_by(distance.asc())
+                .limit(n_results)
+            )
+            rows = session.execute(stmt).all()
+            results = []
+            for record, score in rows:
+                formatted = self._format_result(record, float(score) if score is not None else 0.0)
+                if formatted:
+                    results.append(formatted)
+            return results
 
+        rows = session.execute(base_stmt).scalars().all()
+        scored = []
+        for record in rows:
+            if not record.embedding:
+                continue
+            score = MemorySearchMixin.cosine_similarity(embedding, record.embedding)
+            scored.append((record, score))
+        scored.sort(key=lambda item: item[1], reverse=True)
+        limited = scored[:n_results]
+        results = []
+        for record, score in limited:
+            formatted = self._format_result(record, score)
+            if formatted:
+                results.append(formatted)
+        return results
+
+    def _format_result(self, record: RAGDocumentModel, score: float) -> Dict[str, Any] | None:
+        metadata = dict(getattr(record, "payload", {}) or {})
+        source = metadata.get("source")
+        if not source:
+            return None
+        return {
+            "excerpt": record.text,
+            "source": str(source),
+            "score": float(score),
+            "metadata": metadata,
+        }
+
+
+class MemorySearchMixin:
     @staticmethod
-    def _normalize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
-        normalized: Dict[str, Any] = {}
-        for key, value in metadata.items():
-            normalized[key] = value if isinstance(value, (str, int, float, bool)) else str(value)
-        return normalized
+    def cosine_similarity(vector_a: Sequence[float], vector_b: Sequence[float]) -> float:
+        if not vector_a or not vector_b:
+            return 0.0
+        dot = sum(a * b for a, b in zip(vector_a, vector_b))
+        norm_a = sum(a * a for a in vector_a) ** 0.5
+        norm_b = sum(b * b for b in vector_b) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)

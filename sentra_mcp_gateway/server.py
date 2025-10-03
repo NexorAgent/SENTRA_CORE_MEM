@@ -35,6 +35,27 @@ TOOL_ALIASES: Dict[str, str] = {
     "git.commitPush": "git.commit_push",
 }
 
+ECHO_INPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "title": "sentra.echoArguments",
+    "additionalProperties": False,
+    "properties": {
+        "message": {"type": "string", "description": "Message to echo back"},
+    },
+    "required": ["message"],
+}
+
+ECHO_OUTPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "title": "sentra.echoResult",
+    "additionalProperties": False,
+    "properties": {
+        "message": {"type": "string"},
+    },
+    "required": ["message"],
+}
+
+
 RATE_POLICIES: Dict[str, Dict[str, Any]] = {
     "files.read": {"subject": ["user"], "role": "reader", "user": ["user"], "agent": None},
     "files.write": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
@@ -43,6 +64,7 @@ RATE_POLICIES: Dict[str, Dict[str, Any]] = {
     "n8n.trigger": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
     "git.commit_push": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
     "conversation.snapshot.save": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
+    "sentra.echo": {"subject": None, "role": "reader", "user": None, "agent": None},
 }
 
 SNAPSHOT_INPUT_SCHEMA: Dict[str, Any] = {
@@ -80,6 +102,7 @@ class SentraFastApiMCP(FastApiMCP):
         super().__init__(*args, **kwargs)
         self._apply_aliases()
         self._register_snapshot_tool()
+        self._register_echo_tool()
 
     def _apply_aliases(self) -> None:
         for original, alias in self._tool_aliases.items():
@@ -103,6 +126,18 @@ class SentraFastApiMCP(FastApiMCP):
         if all(tool.name != snapshot_tool.name for tool in self.tools):
             self.tools.append(snapshot_tool)
         self.operation_map.setdefault("conversation.snapshot.save", {"custom": True})
+        self.tools.sort(key=lambda tool: tool.name)
+
+    def _register_echo_tool(self) -> None:
+        echo_tool = mcp_types.Tool(
+            name="sentra.echo",
+            description="Echo back a test message to validate MCP connectivity.",
+            inputSchema=ECHO_INPUT_SCHEMA,
+            outputSchema=ECHO_OUTPUT_SCHEMA,
+        )
+        if all(tool.name != echo_tool.name for tool in self.tools):
+            self.tools.append(echo_tool)
+        self.operation_map.setdefault("sentra.echo", {"custom": True})
         self.tools.sort(key=lambda tool: tool.name)
 
     @staticmethod
@@ -214,6 +249,8 @@ class SentraFastApiMCP(FastApiMCP):
         transformed_args = self._transform_arguments(tool_name, arguments)
         if tool_name == "conversation.snapshot.save":
             return await self._handle_snapshot(transformed_args)
+        if tool_name == "sentra.echo":
+            return self._handle_echo(transformed_args)
         headers: Dict[str, str] = {}
         role = policy.get("role")
         if role:
@@ -277,6 +314,13 @@ class SentraFastApiMCP(FastApiMCP):
         snapshot_path = body.get("path") if isinstance(body, dict) else None
         result = {"snapshot_path": snapshot_path}
         return [mcp_types.TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
+
+    def _handle_echo(self, arguments: Dict[str, Any]) -> List[mcp_types.TextContent]:
+        message = arguments.get("message")
+        if message is None or not isinstance(message, str) or not message.strip():
+            raise Exception("message is required and must be a non-empty string")
+        payload = json.dumps({"message": message}, indent=2, ensure_ascii=False)
+        return [mcp_types.TextContent(type="text", text=payload)]
 
 
 def create_mcp_app() -> FastAPI:

@@ -1,10 +1,38 @@
-version: "3.8"
+version: "3.9"
+
 services:
+  postgres:
+    image: ankane/pgvector:pg16
+    container_name: sentra_postgres
+    environment:
+      POSTGRES_DB: sentra_core
+      POSTGRES_USER: sentra
+      POSTGRES_PASSWORD: sentra
+      PGTZ: Europe/Paris
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentra -d sentra_core"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentra:sentra@postgres:5432/sentra_core
+      SENTRA_API_BASE: http://api:8000
+      PYTHONPATH: /app
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - ./scripts:/app/scripts
       - ./memory:/app/memory
@@ -12,17 +40,26 @@ services:
       - ./logs:/app/logs
       - ./.gemini:/root/.gemini
       - /sandbox:/sandbox
-    env_file:
-      - .env
-    environment:
-      - PYTHONPATH=/app
     ports:
-      - "8001:8000"
       - "8000:8000"
     dns:
       - 213.186.33.99
       - 8.8.8.8
       - 1.1.1.1
+
+  vector-worker:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    command: python -m app.workers.vector_ingestion
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentra:sentra@postgres:5432/sentra_core
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - workers
 
   discord:
     build:
@@ -31,7 +68,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - api
+      api:
+        condition: service_started
     dns:
       - 213.186.33.99
       - 8.8.8.8
@@ -47,7 +85,8 @@ services:
       - ./memory:/app/memory
       - ./projects:/app/projects
     depends_on:
-      - api
+      api:
+        condition: service_started
     dns:
       - 213.186.33.99
       - 8.8.8.8
@@ -57,7 +96,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.n8nzip
-
     restart: always
     ports:
       - "5679:5678"
@@ -96,6 +134,7 @@ services:
     ports:
       - "8081:80"
     restart: unless-stopped
+
   mcp:
     build:
       context: .
@@ -104,9 +143,9 @@ services:
       api:
         condition: service_started
     environment:
-      SENTRA_API_BASE: "${SENTRA_API_BASE:-http://api:8000}"
-      FS_ROOTS_ALLOW: "${FS_ROOTS_ALLOW:-/projects,/reports,/students,/memory}"
-      FS_NAMING: "${FS_NAMING:-{YYYY}{MM}{DD}_{agent}_{topic}__{slug}.md}"
+      SENTRA_API_BASE: ${SENTRA_API_BASE:-http://api:8000}
+      FS_ROOTS_ALLOW: ${FS_ROOTS_ALLOW:-/projects,/reports,/students,/memory}
+      FS_NAMING: ${FS_NAMING:-{YYYY}{MM}{DD}_{agent}_{topic}__{slug}.md}
     volumes:
       - type: bind
         source: ${SSH_AUTH_SOCK:-/tmp/ssh-agent.sock}
@@ -121,3 +160,5 @@ services:
       timeout: 5s
       retries: 5
 
+volumes:
+  pgdata:

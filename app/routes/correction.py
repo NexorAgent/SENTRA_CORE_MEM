@@ -5,17 +5,9 @@ from pydantic import BaseModel
 import subprocess
 from pathlib import Path
 
-from app.services.paths import BASE_DIR
+from app.services.paths import get_base_dir
 
-ALLOWED_BASE_DIR = BASE_DIR.resolve()
-
-
-def is_path_allowed(path: str) -> bool:
-    try:
-        Path(path).resolve().relative_to(ALLOWED_BASE_DIR)
-    except ValueError:
-        return False
-    return True
+ALLOWED_BASE_DIR = get_base_dir().resolve()
 
 
 router = APIRouter()
@@ -69,3 +61,12 @@ def correct_file_endpoint(request: CorrectionRequest):
 
     except Exception as e:
         return {"status": "exception", "message": str(e)}
+
+
+
+def is_path_allowed(path: str) -> bool:
+    try:
+        Path(path).resolve().relative_to(ALLOWED_BASE_DIR)
+    except ValueError:
+        return False
+    return True
