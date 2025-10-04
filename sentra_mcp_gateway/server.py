@@ -27,6 +27,7 @@ INCLUDED_OPERATIONS = [
     "rag.query",
     "n8n.trigger",
     "git.commitPush",
+    "sentra.echo",
 ]
 
 TOOL_ALIASES: Dict[str, str] = {
@@ -41,6 +42,8 @@ ECHO_INPUT_SCHEMA: Dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "message": {"type": "string", "description": "Message to echo back"},
+        "user": {"type": "string", "description": "Optional caller identifier"},
+        "agent": {"type": "string", "description": "Optional agent identifier"},
     },
     "required": ["message"],
 }
@@ -57,15 +60,56 @@ ECHO_OUTPUT_SCHEMA: Dict[str, Any] = {
 
 
 RATE_POLICIES: Dict[str, Dict[str, Any]] = {
-    "files.read": {"subject": ["user"], "role": "reader", "user": ["user"], "agent": None},
-    "files.write": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
-    "doc.index": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
-    "doc.query": {"subject": ["user"], "role": "reader", "user": ["user"], "agent": None},
-    "n8n.trigger": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
-    "git.commit_push": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
-    "conversation.snapshot.save": {"subject": ["agent"], "role": "writer", "user": ["user"], "agent": ["agent"]},
-    "sentra.echo": {"subject": None, "role": "reader", "user": None, "agent": None},
+    "files.read": {
+        "subject": ["user"],
+        "role": "reader",
+        "user": ["user"],
+        "agent": None,
+    },
+    "files.write": {
+        "subject": ["agent"],
+        "role": "writer",
+        "user": ["user"],
+        "agent": ["agent"],
+    },
+    "doc.index": {
+        "subject": ["agent"],
+        "role": "writer",
+        "user": ["user"],
+        "agent": ["agent"],
+    },
+    "doc.query": {
+        "subject": ["user"],
+        "role": "reader",
+        "user": ["user"],
+        "agent": None,
+    },
+    "n8n.trigger": {
+        "subject": ["agent"],
+        "role": "writer",
+        "user": ["user"],
+        "agent": ["agent"],
+    },
+    "git.commit_push": {
+        "subject": ["agent"],
+        "role": "writer",
+        "user": ["user"],
+        "agent": ["agent"],
+    },
+    "conversation.snapshot.save": {
+        "subject": ["agent"],
+        "role": "writer",
+        "user": ["user"],
+        "agent": ["agent"],
+    },
+    "sentra.echo": {
+        "subject": ["user"],
+        "role": "reader",
+        "user": ["user"],
+        "agent": None,
+    },
 }
+
 
 SNAPSHOT_INPUT_SCHEMA: Dict[str, Any] = {
     "type": "object",
@@ -129,18 +173,18 @@ class SentraFastApiMCP(FastApiMCP):
         self.tools.sort(key=lambda tool: tool.name)
 
     def _register_echo_tool(self) -> None:
+        """Register minimal echo tool without outputSchema (text output allowed)."""
         echo_tool = mcp_types.Tool(
             name="sentra.echo",
             description="Echo back a test message to validate MCP connectivity.",
             inputSchema=ECHO_INPUT_SCHEMA,
-            outputSchema=ECHO_OUTPUT_SCHEMA,
         )
         if all(tool.name != echo_tool.name for tool in self.tools):
             self.tools.append(echo_tool)
-        self.operation_map.setdefault("sentra.echo", {"custom": True})
+
+        self.operation_map["sentra.echo"] = {"custom": True}
         self.tools.sort(key=lambda tool: tool.name)
 
-    @staticmethod
     def _merge_headers(http_info: Optional[HTTPRequestInfo], extra: Dict[str, str]) -> HTTPRequestInfo:
         if http_info:
             headers = dict(http_info.headers or {})
@@ -317,11 +361,11 @@ class SentraFastApiMCP(FastApiMCP):
 
     def _handle_echo(self, arguments: Dict[str, Any]) -> List[mcp_types.TextContent]:
         message = arguments.get("message")
-        if message is None or not isinstance(message, str) or not message.strip():
+        if not isinstance(message, str) or not message.strip():
             raise Exception("message is required and must be a non-empty string")
+
         payload = json.dumps({"message": message}, indent=2, ensure_ascii=False)
         return [mcp_types.TextContent(type="text", text=payload)]
-
 
 def create_mcp_app() -> FastAPI:
     api_app = create_app()
