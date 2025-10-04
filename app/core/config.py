@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     google_credentials_file: str | None = Field(default=None)
     n8n_webhook_url: str | None = Field(default=None)
     sentra_api_base: str = Field(default="http://api:8000")
+    mcp_gateway_base_url: str = Field(default="http://mcp:8400/mcp", description="Base URL of the MCP gateway")
+    mcp_bridge_timeout_seconds: int = Field(default=30, description="Timeout for MCP bridge requests")
 
     def resolve_path(self, path: str | Path) -> Path:
         candidate = Path(path)
@@ -61,3 +63,5 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
+
+

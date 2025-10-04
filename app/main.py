@@ -15,6 +15,7 @@ from app.routes.memory import router as memory_router
 from app.routes.n8n import router as n8n_router
 from app.routes.rag import router as rag_router
 from app.routes.zep import router as zep_router
+from app.routes.mcp_bridge import router as mcp_bridge_router
 
 
 @asynccontextmanager
@@ -46,3 +47,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+

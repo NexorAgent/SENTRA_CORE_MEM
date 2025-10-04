@@ -85,3 +85,6 @@
 - Gestion de jobs vectoriels avancés (profil `vector-worker`).
 
 Pour les étapes détaillées d installation : `README.md` + `docs/ovh_debian_manual.md`.
+
+
+| pp/routes/mcp_bridge.py | Bridge HTTP vers MCP (init + call tools)
