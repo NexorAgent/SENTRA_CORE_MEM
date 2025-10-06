@@ -379,7 +379,7 @@ def create_mcp_app() -> FastAPI:
     )
     app = FastAPI(title="SENTRA MCP Gateway", version="1.0.0")
 
-    mcp_server.mount(app, mount_path="/mcp")
+    mcp_server.mount_http(app, mount_path="/mcp/messages")
 
     app.state.http_client = http_client
     app.state.mcp_server = mcp_server
@@ -400,3 +400,4 @@ def create_mcp_app() -> FastAPI:
 
 
 app = create_mcp_app()
+

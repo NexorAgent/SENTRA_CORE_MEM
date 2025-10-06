@@ -42,9 +42,11 @@ def create_app() -> FastAPI:
     app.include_router(correction_router)
     app.include_router(git_router)
     app.include_router(zep_router)
+    app.include_router(mcp_bridge_router)
 
     return app
 
 
 app = create_app()
+
 
