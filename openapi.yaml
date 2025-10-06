@@ -1266,7 +1266,7 @@ components:
       additionalProperties: false
 servers:
   -
-    url: "http://localhost:5000"
+    url: "https://api.sentracoremem.ovh"
 
 
 
