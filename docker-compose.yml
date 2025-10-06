@@ -2,22 +2,21 @@ version: "3.9"
 
 services:
   postgres:
-    image: ankane/pgvector:pg16
+    image: pgvector/pgvector:pg15
     container_name: sentra_postgres
     environment:
       POSTGRES_DB: sentra_core
       POSTGRES_USER: sentra
       POSTGRES_PASSWORD: sentra
-      PGTZ: Europe/Paris
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sentra -d sentra_core"]
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5433:5432"
 
   api:
     build:
@@ -25,9 +24,10 @@ services:
       dockerfile: docker/api.Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
-      DATABASE_URL: postgresql+psycopg://sentra:sentra@postgres:5432/sentra_core
-      SENTRA_API_BASE: http://api:8000
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_PASSWORD: sentra
       PYTHONPATH: /app
+      SENTRA_API_BASE: http://api:8000
     env_file:
       - .env
     depends_on:
@@ -160,5 +160,16 @@ services:
       timeout: 5s
       retries: 5
 
+  mcp-proxy:
+    image: nginx:1.27-alpine
+    container_name: sentra_mcp_proxy
+    depends_on:
+      mcp:
+        condition: service_started
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/mcp-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
 volumes:
   pgdata:

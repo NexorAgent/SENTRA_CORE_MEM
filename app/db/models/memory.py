@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Index, String, Text, types
+from sqlalchemy import DateTime, Index, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.config import get_settings
@@ -25,8 +26,8 @@ class MemoryNote(Base):
     user: Mapped[str] = mapped_column(String(64))
     agent: Mapped[str] = mapped_column(String(64))
     text: Mapped[str] = mapped_column(Text())
-    tags: Mapped[list[str]] = mapped_column(types.JSON(), default=list)
-    payload: Mapped[dict[str, Any]] = mapped_column(types.JSON(), default=dict)
+    tags: Mapped[list[str]] = mapped_column(JSONB(), default=list)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB(), default=dict)
     embedding: Mapped[list[float] | None] = mapped_column(
         VectorType(settings.embedding_vector_dimension), nullable=True
     )
@@ -35,3 +36,4 @@ class MemoryNote(Base):
 
 
 __all__ = ["MemoryNote"]
+
