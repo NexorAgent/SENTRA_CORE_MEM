@@ -146,11 +146,12 @@ services:
       SENTRA_API_BASE: ${SENTRA_API_BASE:-http://api:8000}
       FS_ROOTS_ALLOW: ${FS_ROOTS_ALLOW:-/projects,/reports,/students,/memory}
       FS_NAMING: ${FS_NAMING:-{YYYY}{MM}{DD}_{agent}_{topic}__{slug}.md}
-    volumes:
-      - type: bind
-        source: ${SSH_AUTH_SOCK:-/tmp/ssh-agent.sock}
-        target: /ssh-agent
-        read_only: true
+    volumes: []
+    # volumes:
+    # - type: bind
+    #   source: ${SSH_AUTH_SOCK:-/tmp/ssh-agent.sock}
+    #   target: /ssh-agent
+    #   read_only: true
     ports:
       - "8400:8400"
     restart: unless-stopped
