@@ -10,7 +10,7 @@ paths:
       tags:
         - files
       summary: Files.Read
-      operationId: files.read
+      operationId: filesread
       requestBody:
         required: true
         content:
@@ -35,7 +35,7 @@ paths:
       tags:
         - files
       summary: Files.Write
-      operationId: files.write
+      operationId: fileswrite
       requestBody:
         required: true
         content:
@@ -60,7 +60,7 @@ paths:
       tags:
         - mcp-bridge
       summary: Bridge MCP Tools
-      operationId: bridge.mcp.tools
+      operationId: bridgeMcpTools
       responses:
         '200':
           description: List of MCP tools
@@ -79,7 +79,7 @@ paths:
       tags:
         - mcp-bridge
       summary: Bridge MCP tool invocation
-      operationId: bridge.mcp.tools.call
+      operationId: bridgeMcpToolsCall
       requestBody:
         required: true
         content:
@@ -310,6 +310,7 @@ components:
           title: StructuredContent
           anyOf:
             - type: object
+              items: {}
             - type: array
             - type: string
             - type: number
