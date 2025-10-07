@@ -328,6 +328,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+  /bridge/mcp/tools:
+    get:
+      tags:
+        - "mcp-bridge"
+      summary: "Bridge MCP Tools"
+      operationId: "bridge.mcp.tools"
+      responses:
+        '200':
+          description: "List of MCP tools"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPListToolsResponse"
+        '502':
+          description: "Upstream MCP bridge error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPBridgeError"
+  /bridge/mcp/tools/call:
+    post:
+      tags:
+        - "mcp-bridge"
+      summary: "Bridge MCP tool invocation"
+      operationId: "bridge.mcp.tools.call"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MCPToolCallRequest"
+      responses:
+        '200':
+          description: "Tool invocation result"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPToolCallResponse"
+        '502':
+          description: "Upstream MCP bridge error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPBridgeError"
 components:
   schemas:
     BusPollRequest:
@@ -1123,6 +1167,107 @@ components:
         - "msg"
         - "type"
       title: "ValidationError"
+    MCPBridgeToolDescriptor:
+      type: "object"
+      required:
+        - "name"
+      properties:
+        name:
+          type: "string"
+          title: "Name"
+        description:
+          anyOf:
+            - type: "string"
+            - type: "null"
+          title: "Description"
+        inputSchema:
+          anyOf:
+            - type: "object"
+            - type: "null"
+          title: "InputSchema"
+        outputSchema:
+          anyOf:
+            - type: "object"
+            - type: "null"
+          title: "OutputSchema"
+      title: "MCPBridgeToolDescriptor"
+      additionalProperties: false
+    MCPListToolsResponse:
+      type: "object"
+      required:
+        - "tools"
+      properties:
+        tools:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/MCPBridgeToolDescriptor"
+      title: "MCPListToolsResponse"
+      additionalProperties: false
+    MCPToolCallRequest:
+      type: "object"
+      required:
+        - "tool"
+      properties:
+        tool:
+          type: "string"
+          title: "Tool"
+        arguments:
+          type: "object"
+          title: "Arguments"
+          additionalProperties: true
+          default: {}
+      title: "MCPToolCallRequest"
+      additionalProperties: false
+    MCPToolCallResponse:
+      type: "object"
+      required:
+        - "tool"
+        - "isError"
+      properties:
+        tool:
+          type: "string"
+          title: "Tool"
+        isError:
+          type: "boolean"
+          title: "IsError"
+        content:
+          type: "array"
+          title: "Content"
+          items:
+            type: "object"
+            additionalProperties: true
+          default: []
+        structuredContent:
+          title: "StructuredContent"
+          anyOf:
+            - type: "object"
+            - type: "array"
+            - type: "string"
+            - type: "number"
+            - type: "boolean"
+            - type: "null"
+        error:
+          anyOf:
+            - type: "object"
+              additionalProperties: true
+            - type: "null"
+          title: "Error"
+      title: "MCPToolCallResponse"
+      additionalProperties: false
+    MCPBridgeError:
+      type: "object"
+      required:
+        - "detail"
+      properties:
+        detail:
+          type: "string"
+          title: "Detail"
+      title: "MCPBridgeError"
+      additionalProperties: false
 servers:
   -
-    url: "http://localhost:5000"
+    url: "https://api.sentracoremem.ovh"
+
+
+
+

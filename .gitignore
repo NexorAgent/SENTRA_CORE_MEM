@@ -57,3 +57,4 @@ logs/
 logs_raw/
 logs_compressed/
 memory/**/*.ndjson
+.env

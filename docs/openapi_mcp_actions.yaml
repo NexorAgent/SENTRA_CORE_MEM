@@ -1,0 +1,323 @@
+openapi: "3.1.0"
+info:
+  title: "SENTRA Core MCP Actions"
+  version: "2.0.0"
+servers:
+  - url: "https://api.sentracoremem.ovh"
+paths:
+  /files/read:
+    post:
+      tags:
+        - files
+      summary: Files.Read
+      operationId: files.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileReadRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileReadResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /files/write:
+    post:
+      tags:
+        - files
+      summary: Files.Write
+      operationId: files.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileWriteRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWriteResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /bridge/mcp/tools:
+    get:
+      tags:
+        - mcp-bridge
+      summary: Bridge MCP Tools
+      operationId: bridge.mcp.tools
+      responses:
+        '200':
+          description: List of MCP tools
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPListToolsResponse'
+        '502':
+          description: Upstream MCP bridge error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPBridgeError'
+  /bridge/mcp/tools/call:
+    post:
+      tags:
+        - mcp-bridge
+      summary: Bridge MCP tool invocation
+      operationId: bridge.mcp.tools.call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPToolCallRequest'
+      responses:
+        '200':
+          description: Tool invocation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolCallResponse'
+        '502':
+          description: Upstream MCP bridge error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPBridgeError'
+components:
+  schemas:
+    FileReadRequest:
+      type: object
+      title: FileReadRequest
+      required:
+        - path
+        - user
+      properties:
+        path:
+          type: string
+          title: Path
+          description: Path beginning with /projects, /reports, or /students
+        user:
+          type: string
+          minLength: 1
+          title: User
+    FileReadResponse:
+      type: object
+      title: FileReadResponse
+      required:
+        - path
+        - content
+        - sha256
+        - last_modified
+      properties:
+        path:
+          type: string
+          title: Path
+        content:
+          type: string
+          title: Content
+        sha256:
+          type: string
+          title: Sha256
+        last_modified:
+          title: Last Modified
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+    FileWriteRequest:
+      type: object
+      title: FileWriteRequest
+      required:
+        - path
+        - user
+        - content
+        - agent
+      properties:
+        path:
+          type: string
+          title: Path
+          description: Path beginning with /projects, /reports, or /students
+        user:
+          type: string
+          minLength: 1
+          title: User
+        content:
+          type: string
+          title: Content
+          description: File contents to persist
+        agent:
+          type: string
+          minLength: 1
+          title: Agent
+        idempotency_key:
+          title: Idempotency Key
+          description: Caller-supplied idempotency key
+          anyOf:
+            - type: string
+            - type: 'null'
+    FileWriteResponse:
+      type: object
+      title: FileWriteResponse
+      required:
+        - path
+        - sha256
+        - committed
+        - commit_message
+      properties:
+        path:
+          type: string
+          title: Path
+        sha256:
+          type: string
+          title: Sha256
+        committed:
+          type: boolean
+          title: Committed
+        commit_message:
+          title: Commit Message
+          anyOf:
+            - type: string
+            - type: 'null'
+    HTTPValidationError:
+      type: object
+      title: HTTPValidationError
+      properties:
+        detail:
+          type: array
+          title: Detail
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      type: object
+      title: ValidationError
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          title: Location
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+    MCPListToolsResponse:
+      type: object
+      title: MCPListToolsResponse
+      required:
+        - tools
+      properties:
+        tools:
+          type: array
+          title: Tools
+          items:
+            $ref: '#/components/schemas/MCPBridgeToolDescriptor'
+    MCPBridgeToolDescriptor:
+      type: object
+      title: MCPBridgeToolDescriptor
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          title: Description
+          anyOf:
+            - type: string
+            - type: 'null'
+        inputSchema:
+          title: InputSchema
+          anyOf:
+            - type: object
+            - type: 'null'
+        outputSchema:
+          title: OutputSchema
+          anyOf:
+            - type: object
+            - type: 'null'
+    MCPBridgeError:
+      type: object
+      title: MCPBridgeError
+      additionalProperties: false
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          title: Detail
+    MCPToolCallRequest:
+      type: object
+      title: MCPToolCallRequest
+      additionalProperties: false
+      required:
+        - tool
+      properties:
+        tool:
+          type: string
+          title: Tool
+        arguments:
+          type: object
+          title: Arguments
+          additionalProperties: true
+          default: {}
+    MCPToolCallResponse:
+      type: object
+      title: MCPToolCallResponse
+      additionalProperties: false
+      required:
+        - tool
+        - isError
+      properties:
+        tool:
+          type: string
+          title: Tool
+        isError:
+          type: boolean
+          title: IsError
+        content:
+          type: array
+          title: Content
+          items:
+            type: object
+            additionalProperties: true
+          default: []
+        structuredContent:
+          title: StructuredContent
+          anyOf:
+            - type: object
+            - type: array
+            - type: string
+            - type: number
+            - type: boolean
+            - type: 'null'
+        error:
+          title: Error
+          anyOf:
+            - type: object
+              additionalProperties: true
+            - type: 'null'
